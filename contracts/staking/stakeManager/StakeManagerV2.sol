@@ -1193,6 +1193,10 @@ contract StakeManager is
     ) private {
         require(fee >= minHeimdallFee, "fee too small");
         _transferTokenFrom(from, address(this), fee.add(additionalAmount));
+        _topUpFee(user, fee);
+    }
+
+    function _topUpFee(address user, uint256 fee) internal {
         totalHeimdallFee = totalHeimdallFee.add(fee);
         logger.logTopUpFee(user, fee);
     }

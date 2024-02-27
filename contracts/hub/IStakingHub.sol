@@ -160,4 +160,15 @@ interface IStakingHub {
     /// @param staker The staker to check.
     /// @return frozen Whether the staker is frozen.
     function isFrozen(address staker) external view returns (bool frozen);
+
+    /// @notice Returns the id of the locker.
+    /// @param lockerAddr The address of the locker.
+    /// @return id The id of the locker.
+    function lockerId(address lockerAddr) external view returns (uint256 id);
+
+    /// @notice Returns the id of the service.
+    /// @param serviceAddr The address of the service.
+    /// @return id The id of the service.
+    function serviceId(address serviceAddr) external view returns (uint256 id);
+
 }
