@@ -28,8 +28,11 @@ const baseConfig = {
     version: foundryConfig.profile.default.solc_version,
     settings: {
       optimizer: {
-        enabled: true,
+        enabled: foundryConfig.profile.default.optimizer,
         runs: foundryConfig.profile.default.optimizer_runs,
+        details: {
+          yul: false,
+        },
       },
     },
   },
