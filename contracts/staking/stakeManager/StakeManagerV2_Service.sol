@@ -81,12 +81,12 @@ contract ServicePoS is StakeManager, IService {
 
     function onFinalizeUnsubscribe(address staker) public onlyStakingHub {}
 
-    function registeOrModifyStakerParams(address staker, RegisterParams calldata params) external onlyWhenUnlocked {
+    function registeOrModifyStakerParams(RegisterParams calldata params) external onlyWhenUnlocked {
         // @todo check locker balance ?
         require(params.initalStake >= minDeposit, "Invalid stake");
         require(params.signerPubKey.length == 64, "not pub");
         address signer = address(uint160(uint256(keccak256(params.signerPubKey))));
         require(signer != address(0) && signerToValidator[signer] == 0, "Invalid signer");
-        registerParams[staker] = params;
+        registerParams[msg.sender] = params;
     }
 }
