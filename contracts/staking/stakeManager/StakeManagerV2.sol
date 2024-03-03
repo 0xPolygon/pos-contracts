@@ -197,11 +197,6 @@ contract StakeManager is
         delegationEnabled = enabled;
     }
 
-    // Housekeeping function. @todo remove later
-    function forceUnstake(uint256 validatorId) external onlyGovernance {
-        _unstake(validatorId, currentEpoch);
-    }
-
     function setCurrentEpoch(uint256 _currentEpoch) external onlyGovernance {
         currentEpoch = _currentEpoch;
     }
