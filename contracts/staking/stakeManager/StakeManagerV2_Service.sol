@@ -27,15 +27,14 @@ contract ServicePoS is StakeManager, IService {
     mapping(address => RegisterParams) public registerParams;
 
     // self-registers as Service, @todo set msg.sender as owner ?
-    // @todo make this reinitialize(2)
-    constructor(
+    function reinitializeV2(
         IStakingHub _stakingHub,
-        IStakingHub.LockerSettings[] memory _lockerSettings,
+        IStakingHub.LockerSettings[] calldata _lockerSettings,
         uint40 _unsubNotice,
         ISlasher _slasher,
         ILocker _maticLocker,
         ILocker _polLocker
-    ) public {
+    ) external onlyGovernance {
         stakingHub = _stakingHub;
         stakingHub.registerService(_lockerSettings, _unsubNotice, address(_slasher));
         slasher = _slasher;
@@ -48,28 +47,6 @@ contract ServicePoS is StakeManager, IService {
         _;
     }
 
-    function initiateSlasherUpdate(address _slasher) public onlyOwner {
-        stakingHub.initiateSlasherUpdate(_slasher);
-    }
-
-    function finalizeSlasherUpdate() public onlyOwner {
-        stakingHub.finalizeSlasherUpdate();
-    }
-
-    function freeze(address staker, bytes calldata proof) external onlyOwner {
-        slasher.freeze(staker, proof);
-    }
-
-    function slash(address staker, uint8[] calldata percentages) external {
-        slasher.slash(staker, percentages);
-    }
-
-    /// @notice services monitor
-    function terminateStaker(address staker) public onlyOwner {
-        stakingHub.terminate(staker);
-        //@todo _unstake(staker, 0, true);
-    }
-
     // ========== TRIGGERS ==========
     function onSubscribe(address staker, uint256 lockingInUntil) public onlyStakingHub onlyWhenUnlocked {
         RegisterParams memory params = registerParams[staker];
@@ -77,25 +54,62 @@ contract ServicePoS is StakeManager, IService {
 
         require(params.initalStake != 0, "Staker not registered");
         require(currentValidatorSetSize() < validatorThreshold, "no more slots");
+        // check if staker has enough locked funds, @todo heimdall fee needs to taken seperately? -> override claimfee
+        require(
+            maticLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >=
+                params.initalStake.add(params.heimdallFee),
+            "Insufficient funds (re)staked on locker"
+        );
 
         _topUpFee(staker, params.heimdallFee);
         _stakeFor(staker, params.initalStake, params.acceptDelegation, params.signerPubKey);
     }
 
-    // override stakeFor (override keyword introduced in 0.6.0)
-    function stakeFor(
-        address user,
-        uint256 amount,
-        uint256 heimdallFee,
-        bool acceptDelegation,
-        bytes memory signerPubkey
-    ) public {
-        revert("disabled");
+    function onInitiateUnsubscribe(address staker, bool isLockedIn) public onlyStakingHub {
+        if (isLockedIn) revert("locked in");
+        uint256 validatorId = NFTContract.tokenOfOwnerByIndex(staker, 0);
+        require(validatorAuction[validatorId].amount == 0);
+
+        Status status = validators[validatorId].status;
+        require(
+            validators[validatorId].activationEpoch > 0 &&
+                validators[validatorId].deactivationEpoch == 0 &&
+                (status == Status.Active || status == Status.Locked)
+        );
+
+        uint256 exitEpoch = currentEpoch.add(1); // notice period
+        _unstake(validatorId, exitEpoch);
     }
 
-    // function onInitiateUnsubscribe(address staker, bool) public onlyStakingHub {}
+    function onFinalizeUnsubscribe(address staker) public onlyStakingHub {
+        uint256 validatorId = NFTContract.tokenOfOwnerByIndex(staker, 0);
 
-    function onFinalizeUnsubscribe(address staker) public onlyStakingHub {}
+        uint256 deactivationEpoch = validators[validatorId].deactivationEpoch;
+        // can only claim stake back after WITHDRAWAL_DELAY
+        require(
+            deactivationEpoch > 0 &&
+                deactivationEpoch.add(WITHDRAWAL_DELAY) <= currentEpoch &&
+                validators[validatorId].status != Status.Unstaked
+        );
+
+        uint256 amount = validators[validatorId].amount;
+        uint256 newTotalStaked = totalStaked.sub(amount);
+        totalStaked = newTotalStaked;
+
+        _liquidateRewards(validatorId, msg.sender);
+
+        NFTContract.burn(validatorId);
+
+        validators[validatorId].amount = 0;
+        validators[validatorId].jailTime = 0;
+        validators[validatorId].signer = address(0);
+
+        signerToValidator[validators[validatorId].signer] = INCORRECT_VALIDATOR_ID;
+        validators[validatorId].status = Status.Unstaked;
+
+        _transferToken(msg.sender, amount);
+        logger.logUnstaked(msg.sender, validatorId, amount, newTotalStaked);
+    }
 
     // @notice registers staker params
     // @dev has to be called by staker, before subscribing to the service
@@ -106,10 +120,7 @@ contract ServicePoS is StakeManager, IService {
         address signer = address(uint160(uint256(keccak256(params.signerPubKey))));
         require(signer != address(0) && signerToValidator[signer] == 0, "Invalid signer");
 
-        // check if staker has enough locked funds
-        uint256 stakeRequired = params.initalStake.add(params.heimdallFee);
         require(params.heimdallFee >= minHeimdallFee, "fee too small");
-        require(maticLocker.balanceOf(msg.sender, stakingHub.serviceId(address(this))) >= stakeRequired, "Insufficient funds (re)staked on locker");
 
         registerParams[msg.sender] = params;
     }

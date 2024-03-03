@@ -55,8 +55,6 @@ contract StakeManager is
     }
 
     function _assertStaker(uint256 validatorId) private view {
-        // TODO how to do this in onSubscribe? we don't specify any NFT id!
-
         require(NFTContract.ownerOf(validatorId) == msg.sender);
     }
 
@@ -336,10 +334,12 @@ contract StakeManager is
         Public Methods
      */
 
+     // @todo confirm how hiemdall fee is supposed to work
     function topUpForFee(address user, uint256 heimdallFee) public onlyWhenUnlocked {
         _transferAndTopUp(user, msg.sender, heimdallFee, 0);
     }
 
+    // @todo confirm how hiemdall fee is supposed to work
     function claimFee(
         uint256 accumFeeAmount,
         uint256 index,
@@ -414,20 +414,22 @@ contract StakeManager is
         logger.logConfirmAuction(newValidatorId, validatorId, auctionAmount);
     }
 
-    function unstake(uint256 validatorId) external onlyStaker(validatorId) {
-        require(validatorAuction[validatorId].amount == 0);
+    // function unstake(uint256 validatorId) external onlyStaker(validatorId) {
+    //     revert("deprecated");
+        // require(validatorAuction[validatorId].amount == 0);
 
-        Status status = validators[validatorId].status;
-        require(
-            validators[validatorId].activationEpoch > 0 &&
-                validators[validatorId].deactivationEpoch == 0 &&
-                (status == Status.Active || status == Status.Locked)
-        );
+        // Status status = validators[validatorId].status;
+        // require(
+        //     validators[validatorId].activationEpoch > 0 &&
+        //         validators[validatorId].deactivationEpoch == 0 &&
+        //         (status == Status.Active || status == Status.Locked)
+        // );
 
-        uint256 exitEpoch = currentEpoch.add(1); // notice period
-        _unstake(validatorId, exitEpoch);
-    }
+        // uint256 exitEpoch = currentEpoch.add(1); // notice period
+        // _unstake(validatorId, exitEpoch);
+    // }
 
+    // @todo requires vault spec
     function transferFunds(
         uint256 validatorId,
         uint256 amount,
@@ -441,6 +443,7 @@ contract StakeManager is
         return token.transfer(delegator, amount);
     }
 
+    // @todo requires vault spec
     function delegationDeposit(
         uint256 validatorId,
         uint256 amount,
@@ -450,47 +453,50 @@ contract StakeManager is
     }
 
     // TODO staking
-    function stakeFor(
-        address user,
-        uint256 amount,
-        uint256 heimdallFee,
-        bool acceptDelegation,
-        bytes memory signerPubkey
-    ) public onlyWhenUnlocked {
-        require(currentValidatorSetSize() < validatorThreshold, "no more slots");
-        require(amount >= minDeposit, "not enough deposit");
-        _transferAndTopUp(user, msg.sender, heimdallFee, amount);
-        _stakeFor(user, amount, acceptDelegation, signerPubkey);
-    }
+    // function stakeFor(
+    //     address user,
+    //     uint256 amount,
+    //     uint256 heimdallFee,
+    //     bool acceptDelegation,
+    //     bytes memory signerPubkey
+    // ) public onlyWhenUnlocked {
+    //     revert("deprecated");
+    //     require(currentValidatorSetSize() < validatorThreshold, "no more slots");
+    //     require(amount >= minDeposit, "not enough deposit");
+    //     _transferAndTopUp(user, msg.sender, heimdallFee, amount);
+    //     _stakeFor(user, amount, acceptDelegation, signerPubkey);
+    // }
 
-    function unstakeClaim(uint256 validatorId) public onlyStaker(validatorId) {
-        uint256 deactivationEpoch = validators[validatorId].deactivationEpoch;
-        // can only claim stake back after WITHDRAWAL_DELAY
-        require(
-            deactivationEpoch > 0 &&
-                deactivationEpoch.add(WITHDRAWAL_DELAY) <= currentEpoch &&
-                validators[validatorId].status != Status.Unstaked
-        );
+    // onFinalizeUnsubscribe
+    // function unstakeClaim(uint256 validatorId) public onlyStaker(validatorId) {
+    //     revert("deprecated");
+    //     uint256 deactivationEpoch = validators[validatorId].deactivationEpoch;
+    //     // can only claim stake back after WITHDRAWAL_DELAY
+    //     require(
+    //         deactivationEpoch > 0 &&
+    //             deactivationEpoch.add(WITHDRAWAL_DELAY) <= currentEpoch &&
+    //             validators[validatorId].status != Status.Unstaked
+    //     );
 
-        uint256 amount = validators[validatorId].amount;
-        uint256 newTotalStaked = totalStaked.sub(amount);
-        totalStaked = newTotalStaked;
+    //     uint256 amount = validators[validatorId].amount;
+    //     uint256 newTotalStaked = totalStaked.sub(amount);
+    //     totalStaked = newTotalStaked;
 
-        // claim last checkpoint reward if it was signed by validator
-        _liquidateRewards(validatorId, msg.sender);
+    //     // claim last checkpoint reward if it was signed by validator
+    //     _liquidateRewards(validatorId, msg.sender);
 
-        NFTContract.burn(validatorId);
+    //     NFTContract.burn(validatorId);
 
-        validators[validatorId].amount = 0;
-        validators[validatorId].jailTime = 0;
-        validators[validatorId].signer = address(0);
+    //     validators[validatorId].amount = 0;
+    //     validators[validatorId].jailTime = 0;
+    //     validators[validatorId].signer = address(0);
 
-        signerToValidator[validators[validatorId].signer] = INCORRECT_VALIDATOR_ID;
-        validators[validatorId].status = Status.Unstaked;
+    //     signerToValidator[validators[validatorId].signer] = INCORRECT_VALIDATOR_ID;
+    //     validators[validatorId].status = Status.Unstaked;
 
-        _transferToken(msg.sender, amount);
-        logger.logUnstaked(msg.sender, validatorId, amount, newTotalStaked);
-    }
+    //     _transferToken(msg.sender, amount);
+    //     logger.logUnstaked(msg.sender, validatorId, amount, newTotalStaked);
+    // }
 
     function restake(
         uint256 validatorId,
@@ -1128,6 +1134,8 @@ contract StakeManager is
     // TODO unsubscribe
     function _unstake(uint256 validatorId, uint256 exitEpoch) internal {
         // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
+        // ^ liquidating rewards only on onFinalizeUnsubscribe, slash should update validators[id].amount
+
         // must think how to handle it correctly
         _updateRewards(validatorId);
 
@@ -1145,7 +1153,8 @@ contract StakeManager is
         }
 
         _removeSigner(validators[validatorId].signer);
-        _liquidateRewards(validatorId, validator);
+        // @todo note: call liquidate on locker at onFinalizeUnsubscribe
+        // _liquidateRewards(validatorId, validator);
 
         uint256 targetEpoch = exitEpoch <= currentEpoch ? 0 : exitEpoch;
         updateTimeline(-(int256(amount) + delegationAmount), -1, targetEpoch);
@@ -1165,7 +1174,7 @@ contract StakeManager is
         currentEpoch = nextEpoch;
     }
 
-    function _liquidateRewards(uint256 validatorId, address validatorUser) private {
+    function _liquidateRewards(uint256 validatorId, address validatorUser) internal {
         uint256 reward = validators[validatorId].reward.sub(INITIALIZED_AMOUNT);
         totalRewardsLiquidated = totalRewardsLiquidated.add(reward);
         validators[validatorId].reward = INITIALIZED_AMOUNT;
@@ -1173,7 +1182,9 @@ contract StakeManager is
         logger.logClaimRewards(validatorId, reward, totalRewardsLiquidated);
     }
 
-    function _transferToken(address destination, uint256 amount) private {
+    function _transferToken(address destination, uint256 amount) internal {
+        // @todo call rewards contract, based on spec
+        revert("spec required");
         require(token.transfer(destination, amount), "transfer failed");
     }
 
@@ -1181,7 +1192,9 @@ contract StakeManager is
         address from,
         address destination,
         uint256 amount
-    ) private {
+    ) internal {
+        // @todo call rewards contract, based on spec
+        revert("spec required");
         require(token.transferFrom(from, destination, amount), "transfer from failed");
     }
 
