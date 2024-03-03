@@ -15,7 +15,6 @@ import {IStakingHub} from "../../hub/IStakingHub.sol";
 contract ServicePoS is StakeManager, IService {
     IStakingHub public stakingHub;
     ISlasher public slasher;
-    ILocker public maticLocker;
     ILocker public polLocker;
 
     struct RegisterParams {
@@ -24,21 +23,18 @@ contract ServicePoS is StakeManager, IService {
         bool acceptDelegation;
         bytes signerPubKey;
     }
-    mapping(address => RegisterParams) public registerParams;
+    mapping(address /*staker*/ => RegisterParams) public registerParams;
 
-    // self-registers as Service, @todo set msg.sender as owner ?
     function reinitializeV2(
         IStakingHub _stakingHub,
         IStakingHub.LockerSettings[] calldata _lockerSettings,
         uint40 _unsubNotice,
         ISlasher _slasher,
-        ILocker _maticLocker,
         ILocker _polLocker
     ) external onlyGovernance {
         stakingHub = _stakingHub;
         stakingHub.registerService(_lockerSettings, _unsubNotice, address(_slasher));
         slasher = _slasher;
-        maticLocker = _maticLocker;
         polLocker = _polLocker;
     }
 
@@ -48,7 +44,7 @@ contract ServicePoS is StakeManager, IService {
     }
 
     // ========== TRIGGERS ==========
-    function onSubscribe(address staker, uint256 lockingInUntil) public onlyStakingHub onlyWhenUnlocked {
+    function onSubscribe(address staker, uint256 /*lockingInUntil*/) public onlyStakingHub onlyWhenUnlocked {
         RegisterParams memory params = registerParams[staker];
         delete registerParams[staker];
 
@@ -56,7 +52,7 @@ contract ServicePoS is StakeManager, IService {
         require(currentValidatorSetSize() < validatorThreshold, "no more slots");
         // check if staker has enough locked funds, @todo heimdall fee needs to taken seperately? -> override claimfee
         require(
-            maticLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >=
+            polLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >=
                 params.initalStake.add(params.heimdallFee),
             "Insufficient funds (re)staked on locker"
         );
