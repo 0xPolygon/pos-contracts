@@ -307,10 +307,6 @@ contract StakeManager is
         IValidatorShare(contractAddr).drain(tokenAddr, destination, amount);
     }
 
-    function drain(address destination, uint256 amount) external onlyGovernance {
-        _transferToken(destination, amount);
-    }
-
     function reinitialize(
         address _NFTContract,
         address _stakingLogger,
@@ -931,22 +927,6 @@ contract StakeManager is
         delete validatorStateChanges[_currentEpoch];
 
         currentEpoch = nextEpoch;
-    }
-
-    function _transferToken(address destination, uint256 amount) internal {
-        // @todo call rewards contract, based on spec
-        revert("spec required");
-        require(token.transfer(destination, amount), "transfer failed");
-    }
-
-    function _transferTokenFrom(
-        address from,
-        address destination,
-        uint256 amount
-    ) internal {
-        // @todo call rewards contract, based on spec
-        revert("spec required");
-        require(token.transferFrom(from, destination, amount), "transfer from failed");
     }
 
     function _topUpFee(address user, uint256 fee) internal {

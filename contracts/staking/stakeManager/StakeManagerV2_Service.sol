@@ -246,4 +246,9 @@ contract ServicePoS is StakeManager, IService {
         _updateRewards(validatorId);
         _liquidateRewards(validatorId, msg.sender);
     }
+
+    function drain(address _token, address _destination, uint256 _amount) external onlyGovernance {
+        IERC20(_token).safeTransfer(_destination, _amount);
+    }
+
 }
