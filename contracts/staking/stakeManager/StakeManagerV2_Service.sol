@@ -49,7 +49,6 @@ contract ServicePoS is StakeManager, IService {
         _;
     }
 
-    // ========== TRIGGERS ==========
     function onSubscribe(address staker, uint256 /*lockingInUntil*/) public onlyStakingHub onlyWhenUnlocked {
         RegisterParams memory params = registerParams[staker];
         delete registerParams[staker];

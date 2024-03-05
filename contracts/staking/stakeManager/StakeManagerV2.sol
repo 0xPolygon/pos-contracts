@@ -332,36 +332,19 @@ contract StakeManager is
     }
 
     function startAuction(
-        uint256 validatorId,
-        uint256 amount,
-        bool _acceptDelegation,
-        bytes calldata _signerPubkey
+        uint256 /*validatorId*/,
+        uint256 /*amount*/,
+        bool /*_acceptDelegation*/,
+        bytes calldata /*_signerPubkey*/
     ) external onlyWhenUnlocked {
-        delegatedFwd(
-            extensionCode,
-            abi.encodeWithSelector(
-                StakeManagerExtension(extensionCode).startAuction.selector,
-                validatorId,
-                amount,
-                _acceptDelegation,
-                _signerPubkey
-            )
-        );
+        revert("disabled");
     }
 
     function confirmAuctionBid(
-        uint256 validatorId,
-        uint256 heimdallFee /** for new validator */
+        uint256 /*validatorId*/,
+        uint256 /*heimdallFee*/ /** for new validator */
     ) external onlyWhenUnlocked {
-        delegatedFwd(
-            extensionCode,
-            abi.encodeWithSelector(
-                StakeManagerExtension(extensionCode).confirmAuctionBid.selector,
-                validatorId,
-                heimdallFee,
-                address(this)
-            )
-        );
+        revert("disabled");
     }
 
     function migrateDelegation(
