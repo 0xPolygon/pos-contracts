@@ -16,7 +16,7 @@ $BOR --datadir $DIR/data \
   --ipcdisable \
   --http.api 'personal,db,eth,net,web3,txpool,miner,admin,bor' \
   --syncmode 'full' \
-  --networkid '137' \
+  --networkid '15001' \
   --unlock '0x9fb29aac15b9a4b7f17c3385939b007540f4d791, 0x96C42C56fdb78294F96B0cFa33c92bed7D75F96a' \
   --password $DIR/password.txt \
   --allow-insecure-unlock \

@@ -30,8 +30,6 @@ glob(directoryPath, function (err, files) {
         borChainIdHex.length % 2 !== 0 ? `0${borChainIdHex}` : borChainIdHex,
     };
 
-    console.log("using borChainId", data.borChainId);
-
     const templateString = fs.readFileSync(file).toString();
     const resultString = nunjucks.renderString(templateString, data);
     fs.writeFileSync(file.replace(".template", ""), resultString);
