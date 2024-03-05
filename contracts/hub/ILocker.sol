@@ -36,6 +36,13 @@ interface ILocker {
     /// @param freezeStart The freeze period id used to snapshot the stakers balance once at start of freeze period for slashing aggregation.
     function onSlash(address staker, uint256 service, uint8 percentage, uint40 freezeStart) external;
 
+    /// @notice Increases staker's total balance, and approval for the specified service
+    /// @dev underlying tokens are transferred, caller must have approved the locker to transfer atleast amount
+    /// @param staker The staker whose balance is to be increased.
+    /// @param service The service for who the staker's approval is being increased.
+    /// @param amount The amount of underlying tokens to be deposited.
+    function depositAndApproveFor(address staker, uint256 service, uint256 amount) external;
+
     /// @return The id of the locker.
     function id() external view returns (uint256);
 

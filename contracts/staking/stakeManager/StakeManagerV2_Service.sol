@@ -2,7 +2,7 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import {StakeManager,IERC20,IValidatorShare,Registry} from "./StakeManagerV2.sol";
+import {StakeManager, IERC20, IValidatorShare, Registry} from "./StakeManagerV2.sol";
 import {IService} from "../../hub/IService.sol";
 import {ISlasher} from "../../hub/ISlasher.sol";
 import {ILocker} from "../../hub/ILocker.sol";
@@ -57,8 +57,7 @@ contract ServicePoS is StakeManager, IService {
         require(params.initalStake != 0, "Staker not registered");
         require(currentValidatorSetSize() < validatorThreshold, "no more slots");
         require(
-            polLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >=
-                params.initalStake,
+            polLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >= params.initalStake,
             "Insufficient funds (re)staked on locker"
         );
 
@@ -132,11 +131,7 @@ contract ServicePoS is StakeManager, IService {
         _topUpFee(user, heimdallFee);
     }
 
-    function claimFee(
-        uint256 accumFeeAmount,
-        uint256 index,
-        bytes calldata proof
-    ) external {
+    function claimFee(uint256 accumFeeAmount, uint256 index, bytes calldata proof) external {
         //Ignoring other params because rewards' distribution is on chain
         require(
             keccak256(abi.encode(msg.sender, accumFeeAmount)).checkMembership(index, accountStateRoot, proof),
@@ -148,7 +143,6 @@ contract ServicePoS is StakeManager, IService {
         polToken.safeTransfer(msg.sender, withdrawAmount);
     }
 
-    // @todo check if staking hub supports restaking
     function restake(
         uint256 validatorId,
         uint256 amount,
@@ -169,20 +163,16 @@ contract ServicePoS is StakeManager, IService {
 
         uint256 newTotalStaked = totalStaked.add(amount);
         totalStaked = newTotalStaked;
-        // @todo notify locker of stake increase
-        validators[validatorId].amount = validators[validatorId].amount.add(amount);
-
+        uint256 newAmount = validators[validatorId].amount.add(amount);
+        validators[validatorId].amount = newAmount;
         updateTimeline(int256(amount), 0, 0);
 
         logger.logStakeUpdate(validatorId);
-        logger.logRestaked(validatorId, validators[validatorId].amount, newTotalStaked);
+        logger.logRestaked(validatorId, newAmount, newTotalStaked);
+        polLocker.depositAndApproveFor(NFTContract.ownerOf(validatorId), stakingHub.serviceId(address(this)), newAmount);
     }
 
-    function transferFunds(
-        uint256 validatorId,
-        uint256 amount,
-        address delegator
-    ) external returns (bool) {
+    function transferFunds(uint256 validatorId, uint256 amount, address delegator) external returns (bool) {
         require(
             validators[validatorId].contractAddress == msg.sender ||
                 Registry(registry).getSlashingManagerAddress() == msg.sender,
@@ -198,7 +188,6 @@ contract ServicePoS is StakeManager, IService {
     ) external onlyDelegation(validatorId) returns (bool) {
         return polToken.transferFrom(delegator, address(this), amount);
     }
-
 
     function dethroneAndStake(
         address auctionUser,
