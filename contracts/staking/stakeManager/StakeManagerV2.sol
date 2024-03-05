@@ -328,29 +328,6 @@ contract StakeManager is
     /**
         Public Methods
      */
-
-     // @todo confirm how hiemdall fee is supposed to work
-    function topUpForFee(address user, uint256 heimdallFee) public onlyWhenUnlocked {
-        _transferAndTopUp(user, msg.sender, heimdallFee, 0);
-    }
-
-    // @todo confirm how hiemdall fee is supposed to work
-    function claimFee(
-        uint256 accumFeeAmount,
-        uint256 index,
-        bytes memory proof
-    ) public {
-        //Ignoring other params because rewards' distribution is on chain
-        require(
-            keccak256(abi.encode(msg.sender, accumFeeAmount)).checkMembership(index, accountStateRoot, proof),
-            "Wrong acc proof"
-        );
-        uint256 withdrawAmount = accumFeeAmount.sub(userFeeExit[msg.sender]);
-        _claimFee(msg.sender, withdrawAmount);
-        userFeeExit[msg.sender] = accumFeeAmount;
-        _transferToken(msg.sender, withdrawAmount);
-    }
-
     function totalStakedFor(address user) external view returns (uint256) {
         if (user == address(0x0) || NFTContract.balanceOf(user) == 0) {
             return 0;
@@ -389,141 +366,6 @@ contract StakeManager is
                 address(this)
             )
         );
-    }
-
-    // TODO staking
-    function dethroneAndStake(
-        address auctionUser,
-        uint256 heimdallFee,
-        uint256 validatorId,
-        uint256 auctionAmount,
-        bool acceptDelegation,
-        bytes calldata signerPubkey
-    ) external {
-        require(msg.sender == address(this), "not allowed");
-        // dethrone
-        _transferAndTopUp(auctionUser, auctionUser, heimdallFee, 0);
-        _unstake(validatorId, currentEpoch);
-
-        uint256 newValidatorId = _stakeFor(auctionUser, auctionAmount, acceptDelegation, signerPubkey);
-        logger.logConfirmAuction(newValidatorId, validatorId, auctionAmount);
-    }
-
-    // function unstake(uint256 validatorId) external onlyStaker(validatorId) {
-    //     revert("deprecated");
-        // require(validatorAuction[validatorId].amount == 0);
-
-        // Status status = validators[validatorId].status;
-        // require(
-        //     validators[validatorId].activationEpoch > 0 &&
-        //         validators[validatorId].deactivationEpoch == 0 &&
-        //         (status == Status.Active || status == Status.Locked)
-        // );
-
-        // uint256 exitEpoch = currentEpoch.add(1); // notice period
-        // _unstake(validatorId, exitEpoch);
-    // }
-
-    // @todo requires vault spec
-    function transferFunds(
-        uint256 validatorId,
-        uint256 amount,
-        address delegator
-    ) external returns (bool) {
-        require(
-            validators[validatorId].contractAddress == msg.sender ||
-                Registry(registry).getSlashingManagerAddress() == msg.sender,
-            "not allowed"
-        );
-        return token.transfer(delegator, amount);
-    }
-
-    // @todo requires vault spec
-    function delegationDeposit(
-        uint256 validatorId,
-        uint256 amount,
-        address delegator
-    ) external onlyDelegation(validatorId) returns (bool) {
-        return token.transferFrom(delegator, address(this), amount);
-    }
-
-    // TODO staking
-    // function stakeFor(
-    //     address user,
-    //     uint256 amount,
-    //     uint256 heimdallFee,
-    //     bool acceptDelegation,
-    //     bytes memory signerPubkey
-    // ) public onlyWhenUnlocked {
-    //     revert("deprecated");
-    //     require(currentValidatorSetSize() < validatorThreshold, "no more slots");
-    //     require(amount >= minDeposit, "not enough deposit");
-    //     _transferAndTopUp(user, msg.sender, heimdallFee, amount);
-    //     _stakeFor(user, amount, acceptDelegation, signerPubkey);
-    // }
-
-    // onFinalizeUnsubscribe
-    // function unstakeClaim(uint256 validatorId) public onlyStaker(validatorId) {
-    //     revert("deprecated");
-    //     uint256 deactivationEpoch = validators[validatorId].deactivationEpoch;
-    //     // can only claim stake back after WITHDRAWAL_DELAY
-    //     require(
-    //         deactivationEpoch > 0 &&
-    //             deactivationEpoch.add(WITHDRAWAL_DELAY) <= currentEpoch &&
-    //             validators[validatorId].status != Status.Unstaked
-    //     );
-
-    //     uint256 amount = validators[validatorId].amount;
-    //     uint256 newTotalStaked = totalStaked.sub(amount);
-    //     totalStaked = newTotalStaked;
-
-    //     // claim last checkpoint reward if it was signed by validator
-    //     _liquidateRewards(validatorId, msg.sender);
-
-    //     NFTContract.burn(validatorId);
-
-    //     validators[validatorId].amount = 0;
-    //     validators[validatorId].jailTime = 0;
-    //     validators[validatorId].signer = address(0);
-
-    //     signerToValidator[validators[validatorId].signer] = INCORRECT_VALIDATOR_ID;
-    //     validators[validatorId].status = Status.Unstaked;
-
-    //     _transferToken(msg.sender, amount);
-    //     logger.logUnstaked(msg.sender, validatorId, amount, newTotalStaked);
-    // }
-
-    function restake(
-        uint256 validatorId,
-        uint256 amount,
-        bool stakeRewards
-    ) public onlyWhenUnlocked onlyStaker(validatorId) {
-        require(validators[validatorId].deactivationEpoch == 0, "No restaking");
-
-        if (amount > 0) {
-            _transferTokenFrom(msg.sender, address(this), amount);
-        }
-
-        _updateRewards(validatorId);
-
-        if (stakeRewards) {
-            amount = amount.add(validators[validatorId].reward).sub(INITIALIZED_AMOUNT);
-            validators[validatorId].reward = INITIALIZED_AMOUNT;
-        }
-
-        uint256 newTotalStaked = totalStaked.add(amount);
-        totalStaked = newTotalStaked;
-        validators[validatorId].amount = validators[validatorId].amount.add(amount);
-
-        updateTimeline(int256(amount), 0, 0);
-
-        logger.logStakeUpdate(validatorId);
-        logger.logRestaked(validatorId, validators[validatorId].amount, newTotalStaked);
-    }
-
-    function withdrawRewards(uint256 validatorId) public onlyStaker(validatorId) {
-        _updateRewards(validatorId);
-        _liquidateRewards(validatorId, msg.sender);
     }
 
     function migrateDelegation(
@@ -685,52 +527,6 @@ contract StakeManager is
         uint256 totalReward = validators[validatorId].delegatorsReward.sub(INITIALIZED_AMOUNT);
         validators[validatorId].delegatorsReward = INITIALIZED_AMOUNT;
         return totalReward;
-    }
-
-    function slash(bytes calldata _slashingInfoList) external returns (uint256) {
-        require(Registry(registry).getSlashingManagerAddress() == msg.sender, "Not slash manager");
-
-        RLPReader.RLPItem[] memory slashingInfoList = _slashingInfoList.toRlpItem().toList();
-        int256 valJailed;
-        uint256 jailedAmount;
-        uint256 totalAmount;
-        uint256 i;
-
-        for (; i < slashingInfoList.length; i++) {
-            RLPReader.RLPItem[] memory slashData = slashingInfoList[i].toList();
-
-            uint256 validatorId = slashData[0].toUint();
-            _updateRewards(validatorId);
-
-            uint256 _amount = slashData[1].toUint();
-            totalAmount = totalAmount.add(_amount);
-
-            address delegationContract = validators[validatorId].contractAddress;
-            if (delegationContract != address(0x0)) {
-                uint256 delSlashedAmount =
-                    IValidatorShare(delegationContract).slash(
-                        validators[validatorId].amount,
-                        validators[validatorId].delegatedAmount,
-                        _amount
-                    );
-                _amount = _amount.sub(delSlashedAmount);
-            }
-
-            uint256 validatorStakeSlashed = validators[validatorId].amount.sub(_amount);
-            validators[validatorId].amount = validatorStakeSlashed;
-
-            if (validatorStakeSlashed == 0) {
-                _unstake(validatorId, currentEpoch);
-            } else if (slashData[2].toBoolean()) {
-                jailedAmount = jailedAmount.add(_jail(validatorId, 1));
-                valJailed++;
-            }
-        }
-
-        //update timeline
-        updateTimeline(-int256(totalAmount.add(jailedAmount)), -valJailed, 0);
-
-        return totalAmount;
     }
 
     function unjail(uint256 validatorId) public onlyStaker(validatorId) {
@@ -985,7 +781,7 @@ contract StakeManager is
         }
     }
 
-    function _updateRewards(uint256 validatorId) private {
+    function _updateRewards(uint256 validatorId) internal {
         _updateRewardsAndCommit(validatorId, rewardPerStake, rewardPerStake);
     }
 
@@ -1078,7 +874,6 @@ contract StakeManager is
         return validators[validatorId].amount.add(validators[validatorId].delegatedAmount);
     }
 
-    // TODO subscribe
     function _stakeFor(
         address user,
         uint256 amount,
@@ -1126,37 +921,6 @@ contract StakeManager is
         return validatorId;
     }
 
-    // TODO unsubscribe
-    function _unstake(uint256 validatorId, uint256 exitEpoch) internal {
-        // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
-        // ^ liquidating rewards only on onFinalizeUnsubscribe, slash should update validators[id].amount
-
-        // must think how to handle it correctly
-        _updateRewards(validatorId);
-
-        uint256 amount = validators[validatorId].amount;
-        address validator = ownerOf(validatorId);
-
-        validators[validatorId].deactivationEpoch = exitEpoch;
-
-        // unbond all delegators in future
-        int256 delegationAmount = int256(validators[validatorId].delegatedAmount);
-
-        address delegationContract = validators[validatorId].contractAddress;
-        if (delegationContract != address(0)) {
-            IValidatorShare(delegationContract).lock();
-        }
-
-        _removeSigner(validators[validatorId].signer);
-        // @todo note: call liquidate on locker at onFinalizeUnsubscribe
-        // _liquidateRewards(validatorId, validator);
-
-        uint256 targetEpoch = exitEpoch <= currentEpoch ? 0 : exitEpoch;
-        updateTimeline(-(int256(amount) + delegationAmount), -1, targetEpoch);
-
-        logger.logUnstakeInit(validator, validatorId, exitEpoch, amount);
-    }
-
     function _finalizeCommit() internal {
         uint256 _currentEpoch = currentEpoch;
         uint256 nextEpoch = _currentEpoch.add(1);
@@ -1167,14 +931,6 @@ contract StakeManager is
         delete validatorStateChanges[_currentEpoch];
 
         currentEpoch = nextEpoch;
-    }
-
-    function _liquidateRewards(uint256 validatorId, address validatorUser) internal {
-        uint256 reward = validators[validatorId].reward.sub(INITIALIZED_AMOUNT);
-        totalRewardsLiquidated = totalRewardsLiquidated.add(reward);
-        validators[validatorId].reward = INITIALIZED_AMOUNT;
-        _transferToken(validatorUser, reward);
-        logger.logClaimRewards(validatorId, reward, totalRewardsLiquidated);
     }
 
     function _transferToken(address destination, uint256 amount) internal {
@@ -1193,23 +949,12 @@ contract StakeManager is
         require(token.transferFrom(from, destination, amount), "transfer from failed");
     }
 
-    function _transferAndTopUp(
-        address user,
-        address from,
-        uint256 fee,
-        uint256 additionalAmount
-    ) private {
-        require(fee >= minHeimdallFee, "fee too small");
-        _transferTokenFrom(from, address(this), fee.add(additionalAmount));
-        _topUpFee(user, fee);
-    }
-
     function _topUpFee(address user, uint256 fee) internal {
         totalHeimdallFee = totalHeimdallFee.add(fee);
         logger.logTopUpFee(user, fee);
     }
 
-    function _claimFee(address user, uint256 amount) private {
+    function _claimFee(address user, uint256 amount) internal {
         totalHeimdallFee = totalHeimdallFee.sub(amount);
         logger.logClaimFee(user, amount);
     }
