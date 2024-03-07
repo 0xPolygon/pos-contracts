@@ -10,6 +10,9 @@ import {IStakingHub} from "../../hub/IStakingHub.sol";
 import {SafeERC20} from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import {IStakingNFT} from "./IStakingNFT.sol";
 
+interface IPolygonMigration {
+    function migrate(uint256 amount) external;
+}
 
 /// @title ServicePoS
 /// @author Polygon Labs
@@ -42,6 +45,7 @@ contract ServicePoS is StakeManager, IService {
         ISlasher _slasher,
         ILocker _polLocker,
         IERC20 _polToken,
+        address _polMigration,
         address _newNFTContract,
         address _serviceMigration
     ) external onlyGovernance {
@@ -53,6 +57,10 @@ contract ServicePoS is StakeManager, IService {
         old_NFTContract = IStakingNFT(address(NFTContract));
         NFTContract = StakingNFT(_newNFTContract);
         serviceMigration = _serviceMigration;
+
+        uint256 maticBalance = token.balanceOf(address(this));
+        token.approve(_polMigration, maticBalance);
+        IPolygonMigration(_polMigration).migrate(maticBalance);
     }
 
     modifier onlyStakingHub() {
@@ -60,7 +68,56 @@ contract ServicePoS is StakeManager, IService {
         _;
     }
 
+    // @notice registers staker params
+    // @dev has to be called by staker, before subscribing to the service
+    function registeOrModifyStakerParams(RegisterParams calldata params) external onlyWhenUnlocked {
+        // validate params
+        require(params.initalStake >= minDeposit, "Invalid stake");
+        require(params.signerPubKey.length == 64, "not pub");
+        address signer = address(uint160(uint256(keccak256(params.signerPubKey))));
+        require(signer != address(0) && signerToValidator[signer] == 0, "Invalid signer");
+
+        require(params.heimdallFee >= minHeimdallFee, "fee too small");
+
+        registerParams[msg.sender] = params;
+    }
+
+    function pullSelfStake(uint256 validatorId) external returns (uint256 amount, address staker) {
+        require(msg.sender == serviceMigration, "not allowed");
+        staker = old_NFTContract.ownerOf(validatorId);
+        require(staker != address(0) && validators[validatorId].deactivationEpoch == 0, "validator migrated");
+        amount = validators[validatorId].amount;
+        polToken.safeTransfer(msg.sender, amount);
+    }
+
+    function migrateValidator(uint256 validatorId) external {
+        require(msg.sender == serviceMigration, "not allowed");
+        address staker = old_NFTContract.ownerOf(validatorId); // reverts if address(0), ie migrated
+        NFTContract.mint(staker, validatorId);
+    }
+
     function onSubscribe(address staker, uint256 /*lockingInUntil*/) public onlyStakingHub onlyWhenUnlocked {
+        // existing validator
+        if (old_NFTContract.balanceOf(staker) == 1) {
+            uint256 validatorId = old_NFTContract.tokenOfOwnerByIndex(staker, 0);
+            address target = address(NFTContract);
+            assembly {
+                mstore(0x40, 0x6352211e) // 'ownerOf(uint256)' signature, stored left padded
+                mstore(0x60, validatorId)
+                let success := staticcall(gas(), target, 0x5c, 0x24, 0x80, 0x20)
+                // if call doesn't revert, `validatorId` is already migrated
+                if eq(success, 1) {
+                    mstore(0, 0x616c7265616479206d69677261746564) // 'already migrated', len 0x10
+                    revert(0x10, 0x20) // 0x10 is the offset of the error message
+                }
+            }
+            NFTContract.mint(staker, validatorId);
+            require(
+                polLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >= validators[validatorId].amount,
+                "Insufficient funds (re)staked on locker"
+            );
+            return;
+        }
         RegisterParams memory params = registerParams[staker];
         delete registerParams[staker];
 
@@ -122,39 +179,6 @@ contract ServicePoS is StakeManager, IService {
         logger.logUnstaked(msg.sender, validatorId, amount, newTotalStaked);
     }
 
-    // @notice registers staker params
-    // @dev has to be called by staker, before subscribing to the service
-    function registeOrModifyStakerParams(RegisterParams calldata params) external onlyWhenUnlocked {
-        // validate params
-        require(params.initalStake >= minDeposit, "Invalid stake");
-        require(params.signerPubKey.length == 64, "not pub");
-        address signer = address(uint160(uint256(keccak256(params.signerPubKey))));
-        require(signer != address(0) && signerToValidator[signer] == 0, "Invalid signer");
-
-        require(params.heimdallFee >= minHeimdallFee, "fee too small");
-
-        registerParams[msg.sender] = params;
-    }
-
-    function pullSelfStake(uint256 validatorId) external returns(uint256 amount, address staker) {
-        require(msg.sender == serviceMigration, "not allowed");
-        staker = old_NFTContract.ownerOf(validatorId);
-        require(staker != address(0) && validators[validatorId].deactivationEpoch == 0, "validator migrated");
-        amount = validators[validatorId].amount;
-        polToken.safeTransfer(msg.sender, amount);
-    }
-
-    function migrateValidator(uint256 validatorId) external {
-        require(msg.sender == serviceMigration, "not allowed");
-
-        address staker = old_NFTContract.ownerOf(validatorId);
-        NFTContract.mint(staker, validatorId);
-        old_NFTContract.burn(validatorId);
-
-        uint256 selfStake = validators[validatorId].amount;
-        require(polLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >= selfStake, "Insufficient funds (re)staked on locker");
-    }
-
     function topUpForFee(address user, uint256 heimdallFee) external onlyWhenUnlocked {
         polToken.safeTransferFrom(user, address(this), heimdallFee);
         _topUpFee(user, heimdallFee);
@@ -198,7 +222,11 @@ contract ServicePoS is StakeManager, IService {
 
         logger.logStakeUpdate(validatorId);
         logger.logRestaked(validatorId, newAmount, newTotalStaked);
-        polLocker.depositAndApproveFor(NFTContract.ownerOf(validatorId), stakingHub.serviceId(address(this)), newAmount);
+        polLocker.depositAndApproveFor(
+            NFTContract.ownerOf(validatorId),
+            stakingHub.serviceId(address(this)),
+            newAmount
+        );
     }
 
     function transferFunds(uint256 validatorId, uint256 amount, address delegator) external returns (bool) {

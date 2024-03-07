@@ -36,15 +36,13 @@ contract ServiceMigrator {
         serviceId = stakingHub.serviceId(address(posService));
     }
 
-    function migrate(uint256 validatorId) external {
+    function migrateStake(uint256 validatorId) external {
         // all matic is migrated to pol, pull pol
         (uint256 amount, address staker) = posService.pullSelfStake(validatorId);
 
         // deposit in locker
         polToken.safeApprove(address(polLocker), amount);
         polLocker.depositAndApproveFor(staker, serviceId, amount);
-
-        // subscribe to posService
 
         // migrateValidator
         posService.migrateValidator(validatorId);
