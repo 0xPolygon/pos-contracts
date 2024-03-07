@@ -94,6 +94,7 @@ contract ServicePoS is StakeManager, IService {
         require(msg.sender == serviceMigration, "not allowed");
         address staker = old_NFTContract.ownerOf(validatorId); // reverts if address(0), ie migrated
         NFTContract.mint(staker, validatorId);
+        old_NFTContract.burn(validatorId);
     }
 
     function onSubscribe(address staker, uint256 /*lockingInUntil*/) public onlyStakingHub onlyWhenUnlocked {
