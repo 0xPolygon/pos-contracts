@@ -105,14 +105,14 @@ contract ServicePoS is StakeManager, IService {
                 let m := mload(0x40) // cache fmp
                 mstore(0x40, 0x6352211e) // 'ownerOf(uint256)' signature, stored left padded
                 mstore(0x60, validatorId)
-                let success := staticcall(gas(), target, 0x5c, 0x24, 0x80, 0x20)
                 // if call doesn't revert, `validatorId` is already migrated
-                if eq(success, 1) {
+                if eq(staticcall(gas(), target, 0x5c, 0x24, 0x80, 0x20), 1) {
                     mstore(0, 0x616c7265616479206d69677261746564) // 'already migrated', len 0x10
                     revert(0x10, 0x20)
                 }
-                mstore(0x40, m) // restore fmp
-                mstore(0x60, 0) // reset slot
+                // restore memory state
+                mstore(0x40, m)
+                mstore(0x60, 0)
             }
             NFTContract.mint(staker, validatorId);
             require(
