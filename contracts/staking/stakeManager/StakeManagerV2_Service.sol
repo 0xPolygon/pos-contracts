@@ -2,12 +2,14 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import {StakeManager, IERC20, IValidatorShare, Registry} from "./StakeManagerV2.sol";
+import {StakeManager, IERC20, IValidatorShare, Registry, StakingNFT} from "./StakeManagerV2.sol";
 import {IService} from "../../hub/IService.sol";
 import {ISlasher} from "../../hub/ISlasher.sol";
 import {ILocker} from "../../hub/ILocker.sol";
 import {IStakingHub} from "../../hub/IStakingHub.sol";
 import {SafeERC20} from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import {IStakingNFT} from "./IStakingNFT.sol";
+
 
 /// @title ServicePoS
 /// @author Polygon Labs
@@ -20,6 +22,10 @@ contract ServicePoS is StakeManager, IService {
     ISlasher public slasher;
     ILocker public polLocker;
     IERC20 public polToken;
+    IStakingNFT public old_NFTContract;
+    address public serviceMigration;
+
+    event ValidatorMigration(uint256 indexed validatorId, address indexed staker);
 
     struct RegisterParams {
         uint256 initalStake;
@@ -35,13 +41,18 @@ contract ServicePoS is StakeManager, IService {
         uint40 _unsubNotice,
         ISlasher _slasher,
         ILocker _polLocker,
-        IERC20 _polToken
+        IERC20 _polToken,
+        address _newNFTContract,
+        address _serviceMigration
     ) external onlyGovernance {
         stakingHub = _stakingHub;
         stakingHub.registerService(_lockerSettings, _unsubNotice, address(_slasher));
         slasher = _slasher;
         polLocker = _polLocker;
         polToken = _polToken;
+        old_NFTContract = IStakingNFT(address(NFTContract));
+        NFTContract = StakingNFT(_newNFTContract);
+        serviceMigration = _serviceMigration;
     }
 
     modifier onlyStakingHub() {
@@ -125,6 +136,25 @@ contract ServicePoS is StakeManager, IService {
         registerParams[msg.sender] = params;
     }
 
+    function pullSelfStake(uint256 validatorId) external returns(uint256 amount, address staker) {
+        require(msg.sender == serviceMigration, "not allowed");
+        staker = old_NFTContract.ownerOf(validatorId);
+        require(staker != address(0) && validators[validatorId].deactivationEpoch == 0, "validator migrated");
+        amount = validators[validatorId].amount;
+        polToken.safeTransfer(msg.sender, amount);
+    }
+
+    function migrateValidator(uint256 validatorId) external {
+        require(msg.sender == serviceMigration, "not allowed");
+
+        address staker = old_NFTContract.ownerOf(validatorId);
+        NFTContract.mint(staker, validatorId);
+        old_NFTContract.burn(validatorId);
+
+        uint256 selfStake = validators[validatorId].amount;
+        require(polLocker.balanceOf(staker, stakingHub.serviceId(address(this))) >= selfStake, "Insufficient funds (re)staked on locker");
+    }
+
     function topUpForFee(address user, uint256 heimdallFee) external onlyWhenUnlocked {
         polToken.safeTransferFrom(user, address(this), heimdallFee);
         _topUpFee(user, heimdallFee);
@@ -188,25 +218,6 @@ contract ServicePoS is StakeManager, IService {
         return polToken.transferFrom(delegator, address(this), amount);
     }
 
-    function dethroneAndStake(
-        address auctionUser,
-        uint256 heimdallFee,
-        uint256 validatorId,
-        uint256 auctionAmount,
-        bool acceptDelegation,
-        bytes calldata signerPubkey
-    ) external {
-        require(msg.sender == address(this), "not allowed");
-        // dethrone
-        require(heimdallFee >= minHeimdallFee, "fee too small");
-        polToken.safeTransferFrom(auctionUser, auctionUser, heimdallFee);
-        _topUpFee(auctionUser, heimdallFee);
-        _unstake(validatorId, currentEpoch);
-
-        uint256 newValidatorId = _stakeFor(auctionUser, auctionAmount, acceptDelegation, signerPubkey);
-        logger.logConfirmAuction(newValidatorId, validatorId, auctionAmount);
-    }
-
     function _liquidateRewards(uint256 validatorId, address validatorUser) internal {
         uint256 reward = validators[validatorId].reward.sub(INITIALIZED_AMOUNT);
         totalRewardsLiquidated = totalRewardsLiquidated.add(reward);
@@ -249,5 +260,4 @@ contract ServicePoS is StakeManager, IService {
     function drain(address _token, address _destination, uint256 _amount) external onlyGovernance {
         IERC20(_token).safeTransfer(_destination, _amount);
     }
-
 }
