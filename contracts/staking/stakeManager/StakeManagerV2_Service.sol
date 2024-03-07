@@ -102,14 +102,17 @@ contract ServicePoS is StakeManager, IService {
             uint256 validatorId = old_NFTContract.tokenOfOwnerByIndex(staker, 0);
             address target = address(NFTContract);
             assembly {
+                let m := mload(0x40) // cache fmp
                 mstore(0x40, 0x6352211e) // 'ownerOf(uint256)' signature, stored left padded
                 mstore(0x60, validatorId)
                 let success := staticcall(gas(), target, 0x5c, 0x24, 0x80, 0x20)
                 // if call doesn't revert, `validatorId` is already migrated
                 if eq(success, 1) {
                     mstore(0, 0x616c7265616479206d69677261746564) // 'already migrated', len 0x10
-                    revert(0x10, 0x20) // 0x10 is the offset of the error message
+                    revert(0x10, 0x20)
                 }
+                mstore(0x40, m) // restore fmp
+                mstore(0x60, 0) // reset slot
             }
             NFTContract.mint(staker, validatorId);
             require(
