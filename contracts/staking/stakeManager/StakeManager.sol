@@ -313,19 +313,9 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
         _transferAndTopUp(user, msg.sender, heimdallFee, 0, false);
     }
 
-    // @note
-    function topUpForFeeLegacy(address user, uint256 heimdallFee) public onlyWhenUnlocked {
-        _transferAndTopUp(user, msg.sender, heimdallFee, 0, true);
-    }
-
     // @note claimFee
     function claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) public {
         _claimFee(accumFeeAmount, index, proof, false);
-    }
-
-    // @note
-    function claimFeeLegacy(uint256 accumFeeAmount, uint256 index, bytes memory proof) public {
-        _claimFee(accumFeeAmount, index, proof, true);
     }
 
     // @note
