@@ -1131,10 +1131,11 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
     }
 
     // @note _transferTokenFrom
+    // Do not use this function to transfer from self.
     function _transferTokenFrom(address from, address destination, uint256 amount, bool legacy) private {
         IERC20 token_ = _getToken(legacy);
         require(token_.transferFrom(from, destination, amount), "transfer from failed");
-        if (legacy) _convertMaticToPol(amount);
+        if (legacy && destination == address(this)) _convertMaticToPol(amount);
     }
 
     // @note
