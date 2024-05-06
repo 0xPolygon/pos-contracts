@@ -110,8 +110,7 @@ contract MRC20 is BaseERC20NoSig {
         internal
     {
         require(recipient != address(this), "can't send to MRC20");
-        (bool success, ) = address(uint160(recipient)).call.value(amount)("");
-        require(success, "Transfer failed");
+        address(uint160(recipient)).transfer(amount);
         emit Transfer(sender, recipient, amount);
     }
 }
