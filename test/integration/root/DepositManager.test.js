@@ -78,23 +78,27 @@ describe('DepositManager @skip-on-coverage', async function (accounts) {
       })
 
       it('deposit to reverting non EOA', async function () {
-        const scwReceiver = await contractFactories.NativeTokenReceiver_Reverts.deploy()
-        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver.address), 0)
+        const scwReceiver_Reverts = await contractFactories.NativeTokenReceiver_Reverts.deploy()
+        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver_Reverts.address), 0)
         const newDepositBlockEvent = await utils.depositOnRoot(
           depositManager,
           maticE20.rootERC20,
-          scwReceiver.address,
+          scwReceiver_Reverts.address,
           amount.toString(),
           {
             rootDeposit: true,
             erc20: true
           }
         )
-        const depositBlockId = newDepositBlockEvent.args.depositBlockId
         try {
           const tx = await childContracts.childChain.onStateReceive(
-            '0xa' /* dummy id */,
-            utils.encodeDepositStateSync(scwReceiver.address, maticE20.rootERC20.address, amount, depositBlockId)
+            '0xf' /* dummy id */,
+            utils.encodeDepositStateSync(
+              scwReceiver_Reverts.address,
+              maticE20.rootERC20.address,
+              amount,
+              newDepositBlockEvent.args.depositBlockId
+            )
           )
           await tx.wait()
         } catch (error) {
@@ -102,34 +106,37 @@ describe('DepositManager @skip-on-coverage', async function (accounts) {
           chai.assert(error.message.includes('transaction failed'), 'Transaction should have failed')
         }
         // assert deposit did not happen on child chain
-        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver.address), 0)
+        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver_Reverts.address), 0)
       })
 
       it('deposit to reverting with OOG', async function () {
-        const scwReceiver = await contractFactories.NativeTokenReceiver_OOG.deploy()
-        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver.address), 0)
+        const scwReceiver_OOG = await contractFactories.NativeTokenReceiver_OOG.deploy()
+        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver_OOG.address), 0)
         const newDepositBlockEvent = await utils.depositOnRoot(
           depositManager,
           maticE20.rootERC20,
-          scwReceiver.address,
+          scwReceiver_OOG.address,
           amount.toString(),
           {
             rootDeposit: true,
             erc20: true
           }
         )
-        const depositBlockId = newDepositBlockEvent.args.depositBlockId
         try {
           const tx = await childContracts.childChain.onStateReceive(
-            '0xa' /* dummy id */,
-            utils.encodeDepositStateSync(scwReceiver.address, maticE20.rootERC20.address, amount, depositBlockId)
+            '0xb' /* dummy id */,
+            utils.encodeDepositStateSync(
+              scwReceiver_OOG.address,
+              maticE20.rootERC20.address,
+              amount,
+              newDepositBlockEvent.args.depositBlockId
+            )
           )
           await tx.wait()
         } catch (error) {
           chai.assert(error.message.includes('transaction failed'), 'Transaction should have failed')
         }
-        // assert deposit did not happen on child chain
-        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver.address), 0)
+        utils.assertBigNumberEquality(await maticE20.childToken.balanceOf(scwReceiver_OOG.address), 0)
       })
     })
   })
