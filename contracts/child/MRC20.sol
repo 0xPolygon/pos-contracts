@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity 0.5.17;
 
 import "./BaseERC20NoSig.sol";
 
@@ -38,12 +38,18 @@ contract MRC20 is BaseERC20NoSig {
 
         // input balance
         uint256 input1 = balanceOf(user);
+        currentSupply = currentSupply.add(amount);
 
         // transfer amount to user
-        address payable _user = address(uint160(user));
-        _user.transfer(amount);
-
-        currentSupply = currentSupply.add(amount);
+        uint256 txGasLimit = 5000;
+        assembly {
+            // not reenterant since this method is only called by commitState on StateReceiver which is onlySystem
+            let success := call(txGasLimit, user, amount, 0, 0, 0, 0)
+            if iszero(success) {
+                returndatacopy(0, 0, returndatasize()) // bubble up revert
+                revert(0, returndatasize())
+            }
+        }
 
         // deposit events
         emit Deposit(token, user, amount, input1, balanceOf(user));
@@ -104,7 +110,8 @@ contract MRC20 is BaseERC20NoSig {
         internal
     {
         require(recipient != address(this), "can't send to MRC20");
-        address(uint160(recipient)).transfer(amount);
+        (bool success, ) = address(uint160(recipient)).call.value(amount)("");
+        require(success, "Transfer failed");
         emit Transfer(sender, recipient, amount);
     }
 }

@@ -69,3 +69,7 @@ export const ChildERC721Proxified = await ethers.getContractFactory('ChildERC721
 export const ChildERC721Mintable = await ethers.getContractFactory('ChildERC721Mintable', childSigner)
 export const MRC20 = await ethers.getContractFactory('MRC20', childSigner)
 export const TestMRC20 = await ethers.getContractFactory('TestMRC20', childSigner)
+
+export const NativeTokenReceiver_Reverts = await ethers.getContractFactory('NativeTokenReceiver_Reverts', childSigner)
+export const NativeTokenReceiver_OOG = await ethers.getContractFactory('NativeTokenReceiver_OOG', childSigner)
+export const NativeTokenReceiver = await ethers.getContractFactory('NativeTokenReceiver', childSigner)
