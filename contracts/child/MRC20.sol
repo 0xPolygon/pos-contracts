@@ -14,6 +14,14 @@ contract MRC20 is BaseERC20NoSig {
     uint8 private constant DECIMALS = 18;
     bool isInitialized;
 
+    uint256 locked = 1; // append to storage layout
+    modifier nonReentrant() {
+        require(locked == 1, "reentrancy");
+        locked = 2;
+        _;
+        locked = 1;
+    }
+
     constructor() public {}
 
     function initialize(address _childChain, address _token) public {
@@ -29,7 +37,7 @@ contract MRC20 is BaseERC20NoSig {
         revert("Disabled feature");
     }
 
-    function deposit(address user, uint256 amount) public onlyOwner {
+    function deposit(address user, uint256 amount) public onlyOwner nonReentrant {
         // check for amount and user
         require(
             amount > 0 && user != address(0x0),
