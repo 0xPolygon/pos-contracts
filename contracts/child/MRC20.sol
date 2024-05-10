@@ -49,15 +49,8 @@ contract MRC20 is BaseERC20NoSig {
         currentSupply = currentSupply.add(amount);
 
         // transfer amount to user
-        uint256 txGasLimit = 5000;
-        assembly {
-            // not reenterant since this method is only called by commitState on StateReceiver which is onlySystem
-            let success := call(txGasLimit, user, amount, 0, 0, 0, 0)
-            if iszero(success) {
-                returndatacopy(0, 0, returndatasize()) // bubble up revert
-                revert(0, returndatasize())
-            }
-        }
+        // not reenterant since this method is only called by commitState on StateReceiver which is onlySystem
+        _nativeTransfer(user, amount);
 
         // deposit events
         emit Deposit(token, user, amount, input1, balanceOf(user));
@@ -118,7 +111,22 @@ contract MRC20 is BaseERC20NoSig {
         internal
     {
         require(recipient != address(this), "can't send to MRC20");
-        address(uint160(recipient)).transfer(amount);
+        _nativeTransfer(recipient, amount);
         emit Transfer(sender, recipient, amount);
+    }
+
+    // @notice method to transfer native asset to receiver
+    // @dev 5000 gas is forwarded in the call to receiver
+    // @dev msg.value checks (if req), emitting logs are handled seperately
+    // @param receiver address to transfer native token to
+    // @param amount amount of native token to transfer
+    function _nativeTransfer(address receiver, uint256 amount) internal {
+        uint256 txGasLimit = 5000;
+        (bool success, bytes memory ret) = receiver.call.value(amount).gas(txGasLimit)("");
+        if (!success) {
+            assembly {
+                revert(add(ret, 0x20), mload(ret)) // bubble up revert
+            }
+        }
     }
 }
