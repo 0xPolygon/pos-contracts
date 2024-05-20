@@ -37,7 +37,7 @@ contract MRC20 is BaseERC20NoSig {
         revert("Disabled feature");
     }
 
-    function deposit(address user, uint256 amount) public onlyOwner nonReentrant {
+    function deposit(address user, uint256 amount) public onlyOwner {
         // check for amount and user
         require(
             amount > 0 && user != address(0x0),
@@ -115,12 +115,12 @@ contract MRC20 is BaseERC20NoSig {
         emit Transfer(sender, recipient, amount);
     }
 
-    // @notice method to transfer native asset to receiver
+    // @notice method to transfer native asset to receiver (nonReentrant)
     // @dev 5000 gas is forwarded in the call to receiver
     // @dev msg.value checks (if req), emitting logs are handled seperately
     // @param receiver address to transfer native token to
     // @param amount amount of native token to transfer
-    function _nativeTransfer(address receiver, uint256 amount) internal {
+    function _nativeTransfer(address receiver, uint256 amount) internal nonReentrant {
         uint256 txGasLimit = 5000;
         (bool success, bytes memory ret) = receiver.call.value(amount).gas(txGasLimit)("");
         if (!success) {
