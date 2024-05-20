@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity 0.5.17;
 
 import "./BaseERC20NoSig.sol";
 
@@ -13,6 +13,14 @@ contract MRC20 is BaseERC20NoSig {
     uint256 public currentSupply = 0;
     uint8 private constant DECIMALS = 18;
     bool isInitialized;
+
+    uint256 locked = 1; // append to storage layout
+    modifier nonReentrant() {
+        require(locked == 1, "reentrancy");
+        locked = 2;
+        _;
+        locked = 1;
+    }
 
     constructor() public {}
 
@@ -38,12 +46,11 @@ contract MRC20 is BaseERC20NoSig {
 
         // input balance
         uint256 input1 = balanceOf(user);
+        currentSupply = currentSupply.add(amount);
 
         // transfer amount to user
-        address payable _user = address(uint160(user));
-        _user.transfer(amount);
-
-        currentSupply = currentSupply.add(amount);
+        // not reenterant since this method is only called by commitState on StateReceiver which is onlySystem
+        _nativeTransfer(user, amount);
 
         // deposit events
         emit Deposit(token, user, amount, input1, balanceOf(user));
@@ -104,7 +111,22 @@ contract MRC20 is BaseERC20NoSig {
         internal
     {
         require(recipient != address(this), "can't send to MRC20");
-        address(uint160(recipient)).transfer(amount);
+        _nativeTransfer(recipient, amount);
         emit Transfer(sender, recipient, amount);
+    }
+
+    // @notice method to transfer native asset to receiver (nonReentrant)
+    // @dev 5000 gas is forwarded in the call to receiver
+    // @dev msg.value checks (if req), emitting logs are handled seperately
+    // @param receiver address to transfer native token to
+    // @param amount amount of native token to transfer
+    function _nativeTransfer(address receiver, uint256 amount) internal nonReentrant {
+        uint256 txGasLimit = 5000;
+        (bool success, bytes memory ret) = receiver.call.value(amount).gas(txGasLimit)("");
+        if (!success) {
+            assembly {
+                revert(add(ret, 0x20), mload(ret)) // bubble up revert
+            }
+        }
     }
 }
