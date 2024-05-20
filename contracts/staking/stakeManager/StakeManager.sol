@@ -1075,6 +1075,7 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
         return validatorId;
     }
 
+    // @note _unstake
     function _unstake(uint256 validatorId, uint256 exitEpoch, bool legacy) internal {
         // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
         // must think how to handle it correctly
