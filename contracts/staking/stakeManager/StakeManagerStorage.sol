@@ -8,6 +8,7 @@ import {RootChainable} from "../../common/mixin/RootChainable.sol";
 import {StakingInfo} from "../StakingInfo.sol";
 import {StakingNFT} from "./StakingNFT.sol";
 import {ValidatorShareFactory} from "../validatorShare/ValidatorShareFactory.sol";
+import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 
 contract StakeManagerStorage is GovernanceLockable, RootChainable {
     enum Status {Inactive, Active, Locked, Unstaked}
@@ -93,4 +94,8 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
     mapping(uint256 => uint256) public latestSignerUpdateEpoch;
 
     uint256 public totalHeimdallFee;
+
+    // @note does this conflict with StakeManagerStorageExtension?
+    IERC20 public tokenLegacy; // TODO Set MATIC and POL on reinitialization (setStakingToken).
+    IPolygonMigration migration;
 }

@@ -22,6 +22,7 @@ import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
 import {IGovernance} from "../../common/governance/IGovernance.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {StakeManagerExtension} from "./StakeManagerExtension.sol";
+import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 
 contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, DelegateProxyForwarder, StakeManagerStorageExtension {
     using SafeMath for uint256;
@@ -72,7 +73,9 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
         address _validatorShareFactory,
         address _governance,
         address _owner,
-        address _extensionCode
+        address _extensionCode,
+        address _tokenLegacy,
+        address _migration
     ) external initializer {
         require(isContract(_extensionCode), "auction impl incorrect");
         extensionCode = _extensionCode;
@@ -80,6 +83,8 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
         registry = _registry;
         rootChain = _rootchain;
         token = IERC20(_token);
+        tokenLegacy = IERC20(_tokenLegacy);
+        migration = IPolygonMigration(_migration);
         NFTContract = StakingNFT(_NFTContract);
         logger = StakingInfo(_stakingLogger);
         validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
@@ -201,6 +206,18 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
     function setStakingToken(address _token) public onlyGovernance {
         require(_token != address(0x0));
         token = IERC20(_token);
+    }
+
+    // @note
+    function setLegacyToken(address _token) public onlyGovernance {
+        require(_token != address(0x0));
+        tokenLegacy = IERC20(_token);
+    }
+
+    // @note
+    function setMigration(address _migration) public onlyGovernance {
+        require(_migration != address(0x0));
+        migration = IPolygonMigration(_migration);
     }
 
     /**
@@ -343,10 +360,10 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
     }
 
     function confirmAuctionBid(uint256 validatorId, uint256 heimdallFee)
+        external
         /**
          * for new validator
          */
-        external
         onlyWhenUnlocked
     {
         delegatedFwd(
@@ -851,7 +868,7 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
         if (fullIntervals > 0 && fullIntervals != prevBlockInterval) {
             if (prevBlockInterval != 0) {
                 // give more reward for faster and less for slower checkpoint
-                uint256 delta = (ckpReward * checkpointRewardDelta / CHK_REWARD_PRECISION);
+                uint256 delta = ((ckpReward * checkpointRewardDelta) / CHK_REWARD_PRECISION);
 
                 if (prevBlockInterval > fullIntervals) {
                     // checkpoint is faster
@@ -872,7 +889,7 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
 
             // calculate reward for full intervals
             reward = ckpReward.mul(fullIntervals).sub(
-                ckpReward.mul(((fullIntervals - 1) * fullIntervals / 2).mul(_rewardDecreasePerCheckpoint)).div(CHK_REWARD_PRECISION)
+                ckpReward.mul((((fullIntervals - 1) * fullIntervals) / 2).mul(_rewardDecreasePerCheckpoint)).div(CHK_REWARD_PRECISION)
             );
             // adjust block interval, in case last interval is not full
             blockInterval = blockInterval.sub(fullIntervals.mul(targetBlockInterval));
@@ -1191,9 +1208,6 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
     // @note MATIC <=> POL CONVERSION
     // ------------------------------------------------------------------------
 
-    IERC20 public tokenLegacy; // TODO Set MATIC and POL on reinitialization (setStakingToken).
-    IPolygonMigration migration;
-
     // NOTE Convert all.
     function convertMaticToPol(uint256 amount) external onlyGovernance {
         _convertMaticToPol(amount);
@@ -1214,9 +1228,4 @@ contract StakeManager is StakeManagerStorage, Initializable, IStakeManager, Dele
     function _getToken(bool legacy) internal view returns (IERC20 token_) {
         token_ = !legacy ? token : tokenLegacy;
     }
-}
-
-interface IPolygonMigration {
-    function migrate(uint256 amount) external;
-    function unmigrate(uint256 amount) external;
 }
