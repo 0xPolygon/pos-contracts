@@ -483,7 +483,8 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     }
 
     // @note _transfer
-    function _transfer(address from, address to, uint256 value, bool legacy) internal {
+    function _transfer(address from, address to, uint256 value) internal {
+        bool legacy = false;
         // get rewards for recipient
         _withdrawAndTransferReward(to, legacy);
         // convert rewards to shares
