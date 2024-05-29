@@ -24,6 +24,9 @@ class Deployer {
     this.eventsHub = await this.deployEventsHub(this.registry.address)
     this.validatorShareFactory = await contractFactories.ValidatorShareFactory.deploy()
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'ST')
+    this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
+    this.migration = await contractFactories.Migration.deploy(this.stakeToken.address, this.legacyToken.address)
+
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.slashingManager = await contractFactories.SlashingManager.deploy(
       this.registry.address,
@@ -47,7 +50,9 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         owner,
-        auctionImpl.address
+        auctionImpl.address,
+        this.legacyToken.address,
+        this.migration.address
       ])
     )
 
@@ -93,6 +98,9 @@ class Deployer {
     this.rootChain = await this.deployRootChain()
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
+    this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
+    this.migration = await contractFactories.Migration.deploy(this.stakeToken.address, this.legacyToken.address)
+  
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
     let stakeManager = await contractFactories.StakeManagerTestable.deploy()
@@ -110,7 +118,9 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         wallets[0].getAddressString(),
-        auctionImpl.address
+        auctionImpl.address,
+        this.legacyToken.address,
+        this.migration.address
       ])
     )
 
@@ -136,7 +146,9 @@ class Deployer {
       governance: this.governance,
       stakingNFT: this.stakingNFT,
       stakeManagerProxy: proxy,
-      stakeManagerImpl: stakeManager
+      stakeManagerImpl: stakeManager,
+      legacyToken: this.legacyToken,
+      migration: this.migration
     }
     return _contracts
   }

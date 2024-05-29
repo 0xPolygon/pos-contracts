@@ -90,6 +90,8 @@ describe('StakeManager', async function (accounts) {
             ZeroAddr,
             ZeroAddr,
             ZeroAddr,
+            ZeroAddr,
+            ZeroAddr,
             ZeroAddr
           ),
           'already inited'

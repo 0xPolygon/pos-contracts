@@ -49,6 +49,7 @@ export const ExitNFT = await ethers.getContractFactory('ExitNFT')
 export const GnosisSafeProxy = await ethers.getContractFactory('GnosisSafeProxy')
 export const GnosisSafe = await ethers.getContractFactory('GnosisSafe')
 export const PolygonMigrationTest = await ethers.getContractFactory('PolygonMigrationTest')
+export const Migration = await ethers.getContractFactory('PolygonMigration')
 
 // child chain
 const borProvider = new ethers.providers.JsonRpcProvider(
