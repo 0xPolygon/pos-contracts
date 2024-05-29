@@ -64,14 +64,16 @@ function testCheckpointing(
 
 const ZeroAddr = '0x0000000000000000000000000000000000000000'
 
-describe('StakeManager', async function (accounts) {
-  accounts = await ethers.getSigners()
-  accounts = accounts.map((account) => {
+describe('StakeManager', function (accounts) {
+  let owner
+  before(async ()=>{
+    accounts = await ethers.getSigners()
+    accounts = accounts.map((account) => {
     return account.address
   })
-
-  let owner = accounts[0]
-
+    owner = accounts[0]
+  }) 
+  
   describe('initialize', function () {
     describe('when called directly on implementation', function () {
       before(freshDeploy)
@@ -944,7 +946,7 @@ describe('StakeManager', async function (accounts) {
         this.index = 0
       }
 
-      describe('Deploying and staking with 4 validators...', async function () {
+      describe('Deploying and staking with 4 validators...', function () {
         const AliceValidatorId = 1
         const firstFeeToClaim = new BN(web3.utils.toWei('25'))
 
@@ -1711,7 +1713,7 @@ describe('StakeManager', async function (accounts) {
       })
     }
 
-    describe('when Alice topups once and claims 2 times', async function () {
+    describe('when Alice topups once and claims 2 times',  function () {
       const AliceValidatorId = 1
       const totalFee = new BN(web3.utils.toWei('100')).toString()
       const firstFeeToClaim = new BN(web3.utils.toWei('25'))
@@ -2226,7 +2228,7 @@ describe('StakeManager', async function (accounts) {
     })
   })
 
-  describe('auction with delegator, 3 validators initially', async function () {
+  describe('auction with delegator, 3 validators initially',  function () {
     const initialStakers = [wallets[1], wallets[2]]
     const delegatedValidatorId = '3'
     const delegator = wallets[3].getChecksumAddressString()
@@ -2534,7 +2536,7 @@ describe('StakeManager', async function (accounts) {
       })
     })
 
-    describe('when Chad delegates to Alice then migrates partialy to Bob', async function () {
+    describe('when Chad delegates to Alice then migrates partialy to Bob',  function () {
       const aliceId = '2'
       const bobId = '8'
       const delegator = wallets[9].getChecksumAddressString()
@@ -2549,7 +2551,7 @@ describe('StakeManager', async function (accounts) {
         aliceContract = await ValidatorShare.attach(aliceValidator.contractAddress)
       })
 
-      describe('Chad delegates to Alice', async function () {
+      describe('Chad delegates to Alice',  function () {
         it('Should delegate', async function () {
           this.receipt = await (await buyVoucher(aliceContract, delegationAmount, delegator)).wait()
         })
@@ -2584,7 +2586,7 @@ describe('StakeManager', async function (accounts) {
         })
       })
 
-      describe('Chad migrates delegation to Bob', async function () {
+      describe('Chad migrates delegation to Bob',  function () {
         it('Should migrate', async function () {
           this.receipt = await (await stakeManager9.migrateDelegation(aliceId, bobId, migrationAmount)).wait()
         })
@@ -2692,7 +2694,7 @@ describe('StakeManager', async function (accounts) {
       })
     })
 
-    describe('when Chad migrates with more tokens than his delegation amount', async function () {
+    describe('when Chad migrates with more tokens than his delegation amount', function () {
       const aliceId = '2'
       const bobId = '8'
       const delegator = wallets[9].getChecksumAddressString()
