@@ -37,6 +37,7 @@ export const walletAmounts = {
 export async function freshDeploy() {
   let contracts = await deployer.deployStakeManager(wallets)
   this.stakeToken = contracts.stakeToken
+  this.legacyToken = contracts.legacyToken
   this.stakeManager = contracts.stakeManager
   this.nftContract = contracts.stakingNFT
   this.rootChainOwner = contracts.rootChainOwner
@@ -44,6 +45,7 @@ export async function freshDeploy() {
   this.governance = contracts.governance
   this.validatorShare = deployer.validatorShare
   this.slashingManager = contracts.slashingManager
+  this.migration = contracts.migration
 
   await this.governance.update(
     this.stakeManager.address,
@@ -55,10 +57,12 @@ export async function freshDeploy() {
   )
 
   for (const walletAddr in walletAmounts) {
+    await this.legacyToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
     await this.stakeToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
   }
 
   await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+  await this.legacyToken.mint(this.stakeManager.address, web3.utils.toWei('20000000'))
 
   this.defaultHeimdallFee = new BN(web3.utils.toWei('1'))
 }
@@ -70,32 +74,52 @@ export async function approveAndStake({
   acceptDelegation = false,
   heimdallFee,
   noMinting = false,
-  signer
+  signer,
+  legacy = false
 }) {
   const fee = heimdallFee || this.defaultHeimdallFee
 
   const mintAmount = new BN(approveAmount || stakeAmount).add(new BN(fee))
 
-  if (noMinting) {
-    // check if allowance covers fee
-    const balance = await this.stakeToken.balanceOf(wallet.getAddressString())
-    if (balance.lt(mintAmount.toString())) {
-      // mint more
-      await this.stakeToken.mint(wallet.getAddressString(), mintAmount.sub(balance).toString())
-    }
+  let token
+  if (legacy) {
+    token = this.legacyToken
   } else {
-    await this.stakeToken.mint(wallet.getAddressString(), mintAmount.toString())
+    token = this.stakeToken
   }
 
-  const stakeTokenWallet = this.stakeToken.connect(this.stakeToken.provider.getSigner(wallet.getAddressString()))
-  await stakeTokenWallet.approve(this.stakeManager.address, mintAmount.toString())
+  if (noMinting) {
+    // check if allowance covers fee
+    const balance = await token.balanceOf(wallet.getAddressString())
+    if (balance.lt(mintAmount.toString())) {
+      // mint more
+      await token.mint(wallet.getAddressString(), mintAmount.sub(balance).toString())
+    }
+  } else {
+    await token.mint(wallet.getAddressString(), mintAmount.toString())
+  }
+
+  const tokenWallet = token.connect(token.provider.getSigner(wallet.getAddressString()))
+  await tokenWallet.approve(this.stakeManager.address, mintAmount.toString())
 
   const stakeManagerWallet = this.stakeManager.connect(this.stakeManager.provider.getSigner(wallet.getAddressString()))
-  await stakeManagerWallet.stakeFor(
-    wallet.getAddressString(),
-    stakeAmount.toString(),
-    fee.toString(),
-    acceptDelegation,
-    signer || wallet.getPublicKeyString()
-  )
+
+  if (legacy) {
+    await stakeManagerWallet.stakeForLegacy(
+      wallet.getAddressString(),
+      stakeAmount.toString(),
+      fee.toString(),
+      acceptDelegation,
+      signer || wallet.getPublicKeyString()
+    )
+  } else {
+    await stakeManagerWallet.stakeFor(
+      wallet.getAddressString(),
+      stakeAmount.toString(),
+      fee.toString(),
+      acceptDelegation,
+      signer || wallet.getPublicKeyString()
+    )
+  }
+
 }
