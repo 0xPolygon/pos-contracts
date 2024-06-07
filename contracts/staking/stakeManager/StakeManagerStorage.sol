@@ -94,8 +94,4 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
     mapping(uint256 => uint256) public latestSignerUpdateEpoch;
 
     uint256 public totalHeimdallFee;
-
-    // @note does this conflict with StakeManagerStorageExtension?
-    IERC20 public tokenLegacy; // TODO Set MATIC and POL on reinitialization (setStakingToken).
-    IPolygonMigration public migration;
 }
