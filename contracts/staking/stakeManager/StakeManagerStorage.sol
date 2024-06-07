@@ -97,5 +97,5 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
 
     // @note does this conflict with StakeManagerStorageExtension?
     IERC20 public tokenLegacy; // TODO Set MATIC and POL on reinitialization (setStakingToken).
-    IPolygonMigration migration;
+    IPolygonMigration public migration;
 }

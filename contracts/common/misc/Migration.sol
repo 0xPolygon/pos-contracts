@@ -19,12 +19,12 @@ contract PolygonMigration is IPolygonMigration {
     bool public unmigrationLocked;
 
     modifier onlyUnmigrationUnlocked() {
-        require(unmigrationLocked, "UnmigrationLocked");
+        require(!unmigrationLocked, "UnmigrationLocked");
         _;
     }
 
      modifier onlyOwner() {
-        require(unmigrationLocked, "UnmigrationLocked");
+        require(msg.sender == owner, "Only owner");
         _;
     }
 
