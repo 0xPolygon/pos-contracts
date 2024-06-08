@@ -8,7 +8,6 @@ import {RootChainable} from "../../common/mixin/RootChainable.sol";
 import {StakingInfo} from "../StakingInfo.sol";
 import {StakingNFT} from "./StakingNFT.sol";
 import {ValidatorShareFactory} from "../validatorShare/ValidatorShareFactory.sol";
-import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 
 contract StakeManagerStorage is GovernanceLockable, RootChainable {
     enum Status {Inactive, Active, Locked, Unstaked}
