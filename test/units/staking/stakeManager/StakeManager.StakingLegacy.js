@@ -43,7 +43,7 @@ export function doUnstake(wallet) {
 
 export function prepareForTest(dynastyValue, validatorThreshold) {
   return async function () {
-    await freshDeploy.call(this)
+    await freshDeploy.call(this, true)
 
     await this.governance.update(
       this.stakeManager.address,
@@ -58,13 +58,75 @@ export function prepareForTest(dynastyValue, validatorThreshold) {
 }
 
 describe('migrate matic', function (){
+  describe('initializeLegacy', function(){
+    before('Setup migration scenario', async function() {
+      await freshDeploy.call(this)
+    })
+
+    describe('must revert with legacy functions', function(){
+      let stakeTokenUser, user, stakeManagerUser, amount, userPubkey
+      before('', async function(){
+        userPubkey = wallets[1].getPublicKeyString(),
+        user = wallets[1].getChecksumAddressString()
+        amount = web3.utils.toWei('10')
+
+        stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(user))
+        stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
+      })  
+
+      it('on stake token', async function () {
+        await stakeTokenUser.approve(this.stakeManager.address, amount.toString())
+        await expect(stakeManagerUser.stakeForLegacy(user, amount.toString(), web3.utils.toWei('1'), false, userPubkey))
+          .to.be.rejectedWith('function call to a non-contract account')
+      })
+    })  
+
+    describe('run initializeLegacy', function(){
+      let oldStakeToken, newStakeToken, migrationAmount
+      before('gov update', async function(){
+        migrationAmount =  web3.utils.toWei('20000000')
+
+        oldStakeToken = await TestToken.deploy('MATIC', 'MAT')
+        await this.governance.update(
+            this.stakeManager.address,
+            this.stakeManager.interface.encodeFunctionData('setStakingToken', [oldStakeToken.address])
+          )
+        await oldStakeToken.mint(this.stakeManager.address, migrationAmount)
+
+        newStakeToken = await TestToken.deploy('POL', 'POL')
+       
+        this.migration = await Migration.deploy(oldStakeToken.address, newStakeToken.address)
+
+        await oldStakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+        await newStakeToken.mint(this.migration.address,  web3.utils.toWei('50000000'))
+      })
+
+      it('must initLegacy', async function () {
+        await this.governance.update(
+          this.stakeManager.address,
+          this.stakeManager.interface.encodeFunctionData('initializeLegacy', [newStakeToken.address, this.migration.address])
+        )
+      })
+
+      it('stakemanager must have correct legacy balance', async function () {
+        let legacyBalance = await oldStakeToken.balanceOf(this.stakeManager.address)
+        assertBigNumberEquality(BN(0), legacyBalance)
+      })
+
+      it('stakemanager must have correct stake balance', async function () {
+        let stakeBalance = await newStakeToken.balanceOf(this.stakeManager.address)
+        assertBigNumberEquality(migrationAmount, stakeBalance)
+      })
+    })   
+  }) 
+
   describe('successful migration', function(){
     const migrationAmount = new BN('100000000000000')
     const initalLegacyAmount = new BN('100000000000000')
     const initalStakeAmount = new BN(0)
 
     before('Setup migration scenario', async function() {
-      await freshDeploy.call(this)
+      await freshDeploy.call(this, true)
   
       this.stakeToken = await TestToken.deploy('POL', 'POL')
       this.legacyToken = await TestToken.deploy('MATIC', 'MATIC')
@@ -273,7 +335,9 @@ describe('stake Legacy', function () {
   }
 
   describe('double stake', async function () {
-    before(freshDeploy)
+    before('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
 
     describe('when stakes first time', function () {
       const amounts = walletAmounts[wallets[1].getAddressString()]
@@ -297,7 +361,9 @@ describe('stake Legacy', function () {
   })
 
   describe('stake and restake following by another stake', function () {
-    before(freshDeploy)
+    before('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
 
     const amounts = walletAmounts[wallets[2].getAddressString()]
     before('Stake', doStake(wallets[2]))
@@ -369,7 +435,9 @@ describe('stake Legacy', function () {
   })
 
   describe('consecutive stakes', function () {
-    before(freshDeploy)
+    before('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
 
     it('validatorId must increment 1 by 1', async function () {
       const _wallets = [wallets[1], wallets[2], wallets[3]]
@@ -387,7 +455,9 @@ describe('stake Legacy', function () {
   })
 
   describe('stake with heimdall fee', function () {
-    before(freshDeploy)
+    before('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
 
     testStake(
       wallets[0].getChecksumAddressString(),
@@ -403,7 +473,9 @@ describe('stake Legacy', function () {
     const AliceWallet = wallets[1]
     const newSigner = wallets[2].getPublicKeyString()
 
-    before(freshDeploy)
+    before('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
     before(doStake(AliceWallet))
     before('Change signer', async function () {
       const signerUpdateLimit = await this.stakeManager.signerUpdateLimit()
@@ -430,7 +502,9 @@ describe('unstake Legacy', function () {
     const AliceNewWallet = wallets[2]
     let stakeManagerAlice
 
-    before(freshDeploy)
+    before('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
     before(doStake(AliceWallet))
     before(doStake(BobWallet))
     before('Change signer', async function () {
@@ -611,7 +685,9 @@ describe('unstake Legacy', function () {
   })
 
   describe('reverts', function () {
-    beforeEach('Fresh Deploy', freshDeploy)
+    beforeEach('deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
     const user = wallets[2].getChecksumAddressString()
     let stakeManagerUser
 
@@ -626,7 +702,6 @@ describe('unstake Legacy', function () {
     it('when user is not staker', async function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
       const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-
       await expectRevert.unspecified(stakeManager3.unstakeLegacy(validatorId))
     })
 
