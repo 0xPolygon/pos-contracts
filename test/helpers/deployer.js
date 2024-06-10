@@ -17,16 +17,23 @@ class Deployer {
     return contractFactories.EventsHub.attach(proxy.address)
   }
 
-  async freshDeploy(owner) {
+  async freshDeploy(owner, legacy = false) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
 
     this.eventsHub = await this.deployEventsHub(this.registry.address)
     this.validatorShareFactory = await contractFactories.ValidatorShareFactory.deploy()
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'ST')
-    this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
-    this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
-
+    if (legacy){
+      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
+      this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)  
+    } else {
+      this.legacyToken = {}
+      this.migration = {}
+      this.legacyToken.address = '0x0000000000000000000000000000000000000000'
+      this.migration.address = '0x0000000000000000000000000000000000000000'
+    }
+   
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.slashingManager = await contractFactories.SlashingManager.deploy(
       this.registry.address,
@@ -88,7 +95,7 @@ class Deployer {
     return _contracts
   }
 
-  async deployStakeManager(wallets) {
+  async deployStakeManager(wallets, legacy = false) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
 
@@ -98,12 +105,19 @@ class Deployer {
     this.rootChain = await this.deployRootChain()
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
-    this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
-    this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
-  
-    // Mint token into migration, so we can actually migrate
-    await this.stakeToken.mint(this.migration.address, web3.utils.toWei('1000000'))
-    await this.legacyToken.mint(this.migration.address, web3.utils.toWei('1000000'))
+
+    if (legacy) {
+      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
+      this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
+       // Mint token into migration, so we can actually migrate
+      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('1000000'))
+      await this.legacyToken.mint(this.migration.address, web3.utils.toWei('1000000'))
+    } else {
+      this.legacyToken = {}
+      this.migration = {}
+      this.legacyToken.address = '0x0000000000000000000000000000000000000000'
+      this.migration.address = '0x0000000000000000000000000000000000000000'
+    }
 
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
