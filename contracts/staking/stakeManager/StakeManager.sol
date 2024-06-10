@@ -354,6 +354,18 @@ contract StakeManager is
         validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
     }
 
+    function initializeLegacy(
+        address _tokenNew,
+        address _migration
+    ) external onlyGovernance {
+        migration = IPolygonMigration(_migration);
+        tokenLegacy = IERC20(token);
+        token = IERC20(_tokenNew);
+        uint256 _amount = tokenLegacy.balanceOf(address(this));
+        tokenLegacy.approve(_migration, _amount);
+        migration.migrate(_amount);
+    }
+
     /**
         Public Methods
      */

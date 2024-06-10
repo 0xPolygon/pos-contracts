@@ -31,26 +31,20 @@ describe('ValidatorShareLegacy', function () {
 
     this.migration = await Migration.deploy(this.legacyToken.address, this.stakeToken.address)
 
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.stakeToken.address])
-    )
-
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('setLegacyToken', [this.legacyToken.address])
-    )
-
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('setMigration', [this.migration.address])
-    )
-
-    await this.stakeToken.mint(this.stakeManager.address, toWei('10000000'))
-    await this.legacyToken.mint(this.stakeManager.address, toWei('10000000'))
-
     await this.stakeToken.mint(this.migration.address, toWei('30000000'))
     await this.legacyToken.mint(this.migration.address, toWei('40000000'))
+
+    await this.governance.update(
+      this.stakeManager.address,
+      this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.legacyToken.address])
+    )
+
+    await this.legacyToken.mint(this.stakeManager.address, toWei('10000000'))
+
+    await this.governance.update(
+      this.stakeManager.address,
+      this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
+    )
 
     this.validatorId = '8'
     this.validatorUser = wallets[0]
