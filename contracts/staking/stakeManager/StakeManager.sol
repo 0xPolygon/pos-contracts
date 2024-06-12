@@ -369,12 +369,12 @@ contract StakeManager is
     /**
         Public Methods
      */
-    // @note topUpForFee
+    // @note Doesn't need a legacy version
     function topUpForFee(address user, uint256 heimdallFee) public onlyWhenUnlocked {
         _transferAndTopUp(user, msg.sender, heimdallFee, 0, false);
     }
 
-    // @note claimFee
+    // @note Doesn't need a legacy version
     function claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) public {
         _claimFee(accumFeeAmount, index, proof, false);
     }
@@ -438,35 +438,10 @@ contract StakeManager is
         bool acceptDelegation,
         bytes calldata signerPubkey
     ) external {
-        _dethroneAndStake(auctionUser, heimdallFee, validatorId, auctionAmount, acceptDelegation, signerPubkey, false);
-    }
-
-    // @note
-    function dethroneAndStakeLegacy(
-        address auctionUser,
-        uint256 heimdallFee,
-        uint256 validatorId,
-        uint256 auctionAmount,
-        bool acceptDelegation,
-        bytes calldata signerPubkey
-    ) external {
-        _dethroneAndStake(auctionUser, heimdallFee, validatorId, auctionAmount, acceptDelegation, signerPubkey, true);
-    }
-
-    // @note
-    function _dethroneAndStake(
-        address auctionUser,
-        uint256 heimdallFee,
-        uint256 validatorId,
-        uint256 auctionAmount,
-        bool acceptDelegation,
-        bytes memory signerPubkey,
-        bool legacy
-    ) internal {
         require(msg.sender == address(this), "not allowed");
         // dethrone
-        _transferAndTopUp(auctionUser, auctionUser, heimdallFee, 0, legacy);
-        _unstake(validatorId, currentEpoch, legacy);
+        _transferAndTopUp(auctionUser, auctionUser, heimdallFee, 0, false);
+        _unstake(validatorId, currentEpoch, false);
 
         uint256 newValidatorId = _stakeFor(auctionUser, auctionAmount, acceptDelegation, signerPubkey);
         logger.logConfirmAuction(newValidatorId, validatorId, auctionAmount);
@@ -1301,6 +1276,7 @@ contract StakeManager is
     // @note _transferTokenFrom
     // Do not use this function to transfer from self.
     function _transferTokenFrom(address from, address destination, uint256 amount, bool legacy) private {
+        //require(address(this) != from, "No transfer from self");
         IERC20 token_ = _getToken(legacy);
         require(token_.transferFrom(from, destination, amount), "transfer from failed");
         if (legacy && destination == address(this)) _convertMaticToPol(amount);
