@@ -37,6 +37,7 @@ export const walletAmounts = {
 export async function freshDeploy(legacy = false) {
   let contracts = await deployer.deployStakeManager(wallets, legacy)
   this.stakeToken = contracts.stakeToken
+  this.legacyToken = contracts.legacyToken
   this.stakeManager = contracts.stakeManager
   this.nftContract = contracts.stakingNFT
   this.rootChainOwner = contracts.rootChainOwner
@@ -44,13 +45,6 @@ export async function freshDeploy(legacy = false) {
   this.governance = contracts.governance
   this.validatorShare = deployer.validatorShare
   this.slashingManager = contracts.slashingManager
-  if (legacy) {
-    this.legacyToken = contracts.legacyToken
-    this.migration = contracts.migration
-  } else {
-    this.legacyToken = {}
-    this.migration = {}
-  }
 
   await this.governance.update(
     this.stakeManager.address,
@@ -62,15 +56,10 @@ export async function freshDeploy(legacy = false) {
   )
 
   for (const walletAddr in walletAmounts) {
+    await this.stakeToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
     if (legacy) {
       await this.legacyToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
     }
-    await this.stakeToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
-  }
-
-  await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
-  if (legacy) {
-    await this.legacyToken.mint(this.stakeManager.address, web3.utils.toWei('20000000'))
   }
 
   this.defaultHeimdallFee = new BN(web3.utils.toWei('1'))

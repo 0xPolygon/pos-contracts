@@ -79,9 +79,7 @@ contract StakeManager is
         address _validatorShareFactory,
         address _governance,
         address _owner,
-        address _extensionCode,
-        address _tokenLegacy,
-        address _migration
+        address _extensionCode
     ) external initializer {
         require(isContract(_extensionCode), "auction impl incorrect");
         extensionCode = _extensionCode;
@@ -89,8 +87,6 @@ contract StakeManager is
         registry = _registry;
         rootChain = _rootchain;
         token = IERC20(_token);
-        tokenLegacy = IERC20(_tokenLegacy);
-        migration = IPolygonMigration(_migration);
         NFTContract = StakingNFT(_NFTContract);
         logger = StakingInfo(_stakingLogger);
         validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
@@ -220,18 +216,6 @@ contract StakeManager is
     function setStakingToken(address _token) public onlyGovernance {
         require(_token != address(0x0));
         token = IERC20(_token);
-    }
-
-    // @note
-    function setLegacyToken(address _token) public onlyGovernance {
-        require(_token != address(0x0));
-        tokenLegacy = IERC20(_token);
-    }
-
-    // @note
-    function setMigration(address _migration) public onlyGovernance {
-        require(_migration != address(0x0));
-        migration = IPolygonMigration(_migration);
     }
 
     /**
@@ -381,7 +365,7 @@ contract StakeManager is
 
     // @note
     function _claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) internal {
-        //Ignoring other params because rewards' distribution is on chain
+        //Ignoring other params because rewards distribution is on chain
         require(keccak256(abi.encode(msg.sender, accumFeeAmount)).checkMembership(index, accountStateRoot, proof), "Wrong acc proof");
         uint256 withdrawAmount = accumFeeAmount.sub(userFeeExit[msg.sender]);
         _claimFee(msg.sender, withdrawAmount);
