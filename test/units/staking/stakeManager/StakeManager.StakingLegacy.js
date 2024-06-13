@@ -126,7 +126,7 @@ describe('migrate matic', function (){
     const initalStakeAmount = new BN(0)
 
     before('Setup migration scenario', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
   
       this.stakeToken = await TestToken.deploy('POL', 'POL')
       this.legacyToken = await TestToken.deploy('MATIC', 'MATIC')
@@ -135,17 +135,12 @@ describe('migrate matic', function (){
   
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.stakeToken.address])
+        this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.legacyToken.address])
       )
-  
+
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setLegacyToken', [this.legacyToken.address])
-      )
-  
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setMigration', [this.migration.address])
+        this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
       )
   
       await this.stakeToken.mint(this.stakeManager.address, initalStakeAmount.toString())

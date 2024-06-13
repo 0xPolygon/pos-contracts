@@ -17,22 +17,13 @@ class Deployer {
     return contractFactories.EventsHub.attach(proxy.address)
   }
 
-  async freshDeploy(owner, legacy = false) {
+  async freshDeploy(owner) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
 
     this.eventsHub = await this.deployEventsHub(this.registry.address)
     this.validatorShareFactory = await contractFactories.ValidatorShareFactory.deploy()
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'ST')
-    if (legacy){
-      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
-      this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)  
-    } else {
-      this.legacyToken = {}
-      this.migration = {}
-      this.legacyToken.address = '0x0000000000000000000000000000000000000000'
-      this.migration.address = '0x0000000000000000000000000000000000000000'
-    }
    
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.slashingManager = await contractFactories.SlashingManager.deploy(
@@ -57,9 +48,7 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         owner,
-        auctionImpl.address,
-        this.legacyToken.address,
-        this.migration.address
+        auctionImpl.address
       ])
     )
 
@@ -104,19 +93,14 @@ class Deployer {
     this.validatorShare = await contractFactories.ValidatorShare.deploy()
     this.rootChain = await this.deployRootChain()
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
-    this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
-
-    if (legacy) {
-      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LT')
-      this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
-       // Mint token into migration, so we can actually migrate
-      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('1000000'))
-      await this.legacyToken.mint(this.migration.address, web3.utils.toWei('1000000'))
+   
+    let token 
+    if (legacy){
+      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LEG')
+      token = this.legacyToken
     } else {
-      this.legacyToken = {}
-      this.migration = {}
-      this.legacyToken.address = '0x0000000000000000000000000000000000000000'
-      this.migration.address = '0x0000000000000000000000000000000000000000'
+      this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
+      token = this.stakeToken
     }
 
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
@@ -130,15 +114,13 @@ class Deployer {
       stakeManager.interface.encodeFunctionData('initialize', [
         this.registry.address,
         rootChainOwner.getAddressString(),
-        this.stakeToken.address,
+        token.address,
         this.stakingNFT.address,
         this.stakingInfo.address,
         this.validatorShareFactory.address,
         this.governance.address,
         wallets[0].getAddressString(),
-        auctionImpl.address,
-        this.legacyToken.address,
-        this.migration.address
+        auctionImpl.address
       ])
     )
 
@@ -148,6 +130,22 @@ class Deployer {
       this.stakingInfo.address,
       'heimdall-P5rXwg'
     )
+
+    await token.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+
+    if (legacy){
+      this.stakeToken = await contractFactories.TestToken.deploy('POL', 'POL')
+  
+      this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
+  
+      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+      await this.legacyToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+  
+      await this.governance.update(
+          this.stakeManager.address,
+          this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
+        )
+    }
 
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
@@ -159,14 +157,13 @@ class Deployer {
       rootChain: this.rootChain,
       stakeManager: this.stakeManager,
       stakeToken: this.stakeToken,
+      legacyToken: this.legacyToken,
       slashingManager: this.slashingManager,
       stakingInfo: this.stakingInfo,
       governance: this.governance,
       stakingNFT: this.stakingNFT,
       stakeManagerProxy: proxy,
-      stakeManagerImpl: stakeManager,
-      legacyToken: this.legacyToken,
-      migration: this.migration
+      stakeManagerImpl: stakeManager
     }
     return _contracts
   }
