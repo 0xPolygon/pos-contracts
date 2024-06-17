@@ -1026,7 +1026,7 @@ contract StakeManager is
 
         uint256 initialRewardPerStake = validators[validatorId].initialRewardPerStake;
 
-        // attempt to save gas in case if rewards were updated previosuly
+        // attempt to save gas in case if rewards were updated previously
         if (initialRewardPerStake < currentRewardPerStake) {
             uint256 validatorsStake = validators[validatorId].amount;
             uint256 delegatedAmount = validators[validatorId].delegatedAmount;
