@@ -345,9 +345,7 @@ contract StakeManager is
         migration = IPolygonMigration(_migration);
         tokenLegacy = IERC20(token);
         token = IERC20(_tokenNew);
-        uint256 _amount = tokenLegacy.balanceOf(address(this));
-        tokenLegacy.approve(_migration, _amount);
-        migration.migrate(_amount);
+        _convertMaticToPol(tokenLegacy.balanceOf(address(this)));
     }
 
     /**
@@ -368,7 +366,9 @@ contract StakeManager is
         //Ignoring other params because rewards distribution is on chain
         require(keccak256(abi.encode(msg.sender, accumFeeAmount)).checkMembership(index, accountStateRoot, proof), "Wrong acc proof");
         uint256 withdrawAmount = accumFeeAmount.sub(userFeeExit[msg.sender]);
-        _claimFee(msg.sender, withdrawAmount);
+        totalHeimdallFee = totalHeimdallFee.sub(withdrawAmount);
+        logger.logClaimFee(msg.sender, withdrawAmount);
+       // _claimFee(msg.sender, withdrawAmount);
         userFeeExit[msg.sender] = accumFeeAmount;
         _transferToken(msg.sender, withdrawAmount, false);
     }
@@ -1232,10 +1232,10 @@ contract StakeManager is
         logger.logTopUpFee(user, fee);
     }
 
-    function _claimFee(address user, uint256 amount) private {
-        totalHeimdallFee = totalHeimdallFee.sub(amount);
-        logger.logClaimFee(user, amount);
-    }
+    // function _claimFee(address user, uint256 amount) private {
+    //     totalHeimdallFee = totalHeimdallFee.sub(amount);
+    //     logger.logClaimFee(user, amount);
+    // }
 
     function _insertSigner(address newSigner) internal {
         signers.push(newSigner);
@@ -1282,13 +1282,13 @@ contract StakeManager is
     }
 
     function _convertMaticToPol(uint256 amount) internal {
-        require(tokenLegacy.balanceOf(address(this)) >= amount, "Insufficient MATIC balance");
+        require(tokenLegacy.balanceOf(address(this)) >= amount, "Lacking MATIC");
         tokenLegacy.approve(address(migration), amount);
         migration.migrate(amount);
     }
 
     function _convertPolToMatic(uint256 amount) internal {
-        require(token.balanceOf(address(this)) >= amount, "Insufficient POL balance");
+        require(token.balanceOf(address(this)) >= amount, "Lacking POL");
         token.approve(address(migration), amount);
         migration.unmigrate(amount);
     }
