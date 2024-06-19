@@ -131,9 +131,9 @@ class Deployer {
       'heimdall-P5rXwg'
     )
 
-    await token.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
-
     if (legacy){
+      await token.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+
       this.stakeToken = await contractFactories.TestToken.deploy('POL', 'POL')
   
       this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
