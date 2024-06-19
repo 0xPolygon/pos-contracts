@@ -62,6 +62,10 @@ export async function freshDeploy(legacy = false) {
     }
   }
 
+  if (!legacy) {
+    await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+  }
+
   this.defaultHeimdallFee = new BN(web3.utils.toWei('1'))
 }
 
