@@ -358,17 +358,10 @@ contract StakeManager is
 
     // @note Doesn't need a legacy version
     function claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) public {
-        _claimFee(accumFeeAmount, index, proof);
-    }
-
-    // @note
-    function _claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) internal {
-        //Ignoring other params because rewards distribution is on chain
         require(keccak256(abi.encode(msg.sender, accumFeeAmount)).checkMembership(index, accountStateRoot, proof), "Wrong acc proof");
         uint256 withdrawAmount = accumFeeAmount.sub(userFeeExit[msg.sender]);
         totalHeimdallFee = totalHeimdallFee.sub(withdrawAmount);
         logger.logClaimFee(msg.sender, withdrawAmount);
-       // _claimFee(msg.sender, withdrawAmount);
         userFeeExit[msg.sender] = accumFeeAmount;
         _transferToken(msg.sender, withdrawAmount, false);
     }
