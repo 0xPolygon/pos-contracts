@@ -1,4 +1,4 @@
-import { StakingInfo, TestToken, Migration, ValidatorShare } from '../../../helpers/artifacts.js'
+import { StakingInfo, TestToken, PolygonMigration, ValidatorShare } from '../../../helpers/artifacts.js'
 
 import { checkPoint, assertBigNumberEquality, assertBigNumbergt } from '../../../helpers/utils.js'
 import testHelpers from '@openzeppelin/test-helpers'
@@ -95,7 +95,7 @@ describe('migrate matic', function (){
 
         newStakeToken = await TestToken.deploy('POL', 'POL')
        
-        this.migration = await Migration.deploy(oldStakeToken.address, newStakeToken.address)
+        this.migration = await PolygonMigration.deploy(oldStakeToken.address, newStakeToken.address)
 
         await oldStakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
         await newStakeToken.mint(this.migration.address,  web3.utils.toWei('50000000'))
@@ -131,7 +131,7 @@ describe('migrate matic', function (){
       this.stakeToken = await TestToken.deploy('POL', 'POL')
       this.legacyToken = await TestToken.deploy('MATIC', 'MATIC')
   
-      this.migration = await Migration.deploy(this.legacyToken.address, this.stakeToken.address)
+      this.migration = await PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
   
       await this.governance.update(
         this.stakeManager.address,

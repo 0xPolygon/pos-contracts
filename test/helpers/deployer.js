@@ -136,7 +136,7 @@ class Deployer {
 
       this.stakeToken = await contractFactories.TestToken.deploy('POL', 'POL')
   
-      this.migration = await contractFactories.Migration.deploy(this.legacyToken.address, this.stakeToken.address)
+      this.migration = await contractFactories.PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
   
       await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
       await this.legacyToken.mint(this.migration.address, web3.utils.toWei('50000000'))
