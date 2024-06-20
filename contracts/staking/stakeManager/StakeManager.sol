@@ -1092,19 +1092,6 @@ contract StakeManager is
             );
     }
 
-    // function _jail(uint256 validatorId, uint256 jailCheckpoints) internal returns (uint256) {
-    //     address delegationContract = validators[validatorId].contractAddress;
-    //     if (delegationContract != address(0x0)) {
-    //         IValidatorShare(delegationContract).lock();
-    //     }
-
-    //     uint256 _currentEpoch = currentEpoch;
-    //     validators[validatorId].jailTime = _currentEpoch.add(jailCheckpoints);
-    //     validators[validatorId].status = Status.Locked;
-    //     logger.logJailed(validatorId, _currentEpoch, validators[validatorId].signer);
-    //     return validators[validatorId].amount.add(validators[validatorId].delegatedAmount);
-    // }
-
     function _stakeFor(
         address user,
         uint256 amount,
@@ -1211,7 +1198,6 @@ contract StakeManager is
     // @note _transferTokenFrom
     // Do not use this function to transfer from self.
     function _transferTokenFrom(address from, address destination, uint256 amount, bool legacy) private {
-        //require(address(this) != from, "No transfer from self");
         IERC20 token_ = _getToken(legacy);
         require(token_.transferFrom(from, destination, amount), "transfer from failed");
         if (legacy && destination == address(this)) _convertMaticToPol(amount);
@@ -1224,11 +1210,6 @@ contract StakeManager is
         totalHeimdallFee = totalHeimdallFee.add(fee);
         logger.logTopUpFee(user, fee);
     }
-
-    // function _claimFee(address user, uint256 amount) private {
-    //     totalHeimdallFee = totalHeimdallFee.sub(amount);
-    //     logger.logClaimFee(user, amount);
-    // }
 
     function _insertSigner(address newSigner) internal {
         signers.push(newSigner);
