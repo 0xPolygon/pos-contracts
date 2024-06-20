@@ -198,13 +198,11 @@ contract StakeManager is
         delegationEnabled = enabled;
     }
 
-    // @note forceUnstake
     // Housekeeping function. @todo remove later
     function forceUnstake(uint256 validatorId) external onlyGovernance {
         _unstake(validatorId, currentEpoch, false);
     }
 
-    // @note
     function forceUnstakeLegacy(uint256 validatorId) external onlyGovernance {
         _unstake(validatorId, currentEpoch, true);
     }
@@ -319,7 +317,6 @@ contract StakeManager is
         IValidatorShare(contractAddr).drain(tokenAddr, destination, amount);
     }
 
-    // @note drain
     function drain(address destination, uint256 amount) external onlyGovernance {
         _transferToken(destination, amount, false);
     }
@@ -351,12 +348,10 @@ contract StakeManager is
     /**
         Public Methods
      */
-    // @note Doesn't need a legacy version
     function topUpForFee(address user, uint256 heimdallFee) public onlyWhenUnlocked {
         _transferAndTopUp(user, msg.sender, heimdallFee, 0, false);
     }
 
-    // @note Doesn't need a legacy version
     function claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) public {
         require(keccak256(abi.encode(msg.sender, accumFeeAmount)).checkMembership(index, accountStateRoot, proof), "Wrong acc proof");
         uint256 withdrawAmount = accumFeeAmount.sub(userFeeExit[msg.sender]);
@@ -406,7 +401,6 @@ contract StakeManager is
         );
     }
 
-    // @note dethroneAndStake
     function dethroneAndStake(
         address auctionUser,
         uint256 heimdallFee,
@@ -424,17 +418,14 @@ contract StakeManager is
         logger.logConfirmAuction(newValidatorId, validatorId, auctionAmount);
     }
 
-    // @note unstake
     function unstake(uint256 validatorId) external onlyStaker(validatorId) {
         _unstake(validatorId, false);
     }
 
-    // @note
     function unstakeLegacy(uint256 validatorId) external onlyStaker(validatorId) {
         _unstake(validatorId, true);
     }
 
-    // @note
     function _unstake(uint256 validatorId, bool legacy) internal {
         require(validatorAuction[validatorId].amount == 0);
 
@@ -449,17 +440,14 @@ contract StakeManager is
         _unstake(validatorId, exitEpoch, legacy);
     }
 
-    // @note transferFunds
     function transferFunds(uint256 validatorId, uint256 amount, address delegator) external returns (bool) {
         return _transferFunds(validatorId, amount, delegator, false);
     }
 
-    // @note
     function transferFundsLegacy(uint256 validatorId, uint256 amount, address delegator) external returns (bool) {
         return _transferFunds(validatorId, amount, delegator, true);
     }
 
-    // @note
     function _transferFunds(uint256 validatorId, uint256 amount, address delegator, bool legacy) internal returns (bool) {
         require(validators[validatorId].contractAddress == msg.sender || Registry(registry).getSlashingManagerAddress() == msg.sender, "not allowed");
         if (legacy) _convertPolToMatic(amount);
@@ -467,17 +455,14 @@ contract StakeManager is
         return token_.transfer(delegator, amount);
     }
 
-    // @note delegationDeposit
     function delegationDeposit(uint256 validatorId, uint256 amount, address delegator) external onlyDelegation(validatorId) returns (bool) {
         return _delegationDeposit(amount, delegator, false);
     }
 
-    // @note
     function delegationDepositLegacy(uint256 validatorId, uint256 amount, address delegator) external onlyDelegation(validatorId) returns (bool) {
         return _delegationDeposit(amount, delegator, true);
     }
 
-    // @note
     function _delegationDeposit(uint256 amount, address delegator, bool legacy) internal returns (bool) {
         IERC20 token_ = _getToken(legacy);
         token_.transferFrom(delegator, address(this), amount);
@@ -485,17 +470,14 @@ contract StakeManager is
         return true;
     }
 
-    // @note stakeFor
     function stakeFor(address user, uint256 amount, uint256 heimdallFee, bool acceptDelegation, bytes memory signerPubkey) public onlyWhenUnlocked {
         _stakeFor(user, amount, heimdallFee, acceptDelegation, signerPubkey, false);
     }
 
-    // @note
     function stakeForLegacy(address user, uint256 amount, uint256 heimdallFee, bool acceptDelegation, bytes memory signerPubkey) public onlyWhenUnlocked {
         _stakeFor(user, amount, heimdallFee, acceptDelegation, signerPubkey, true);
     }
 
-    // @note
     function _stakeFor(address user, uint256 amount, uint256 heimdallFee, bool acceptDelegation, bytes memory signerPubkey, bool legacy) internal {
         require(currentValidatorSetSize() < validatorThreshold, "no more slots");
         require(amount >= minDeposit, "not enough deposit");
@@ -503,17 +485,14 @@ contract StakeManager is
         _stakeFor(user, amount, acceptDelegation, signerPubkey);
     }
 
-    // @note unstakeClaim
     function unstakeClaim(uint256 validatorId) public onlyStaker(validatorId) {
         _unstakeClaim(validatorId, false);
     }
 
-    // @note
     function unstakeClaimLegacy(uint256 validatorId) public onlyStaker(validatorId) {
         _unstakeClaim(validatorId, true);
     }
 
-    // @note
     function _unstakeClaim(uint256 validatorId, bool legacy) internal {
         uint256 deactivationEpoch = validators[validatorId].deactivationEpoch;
         // can only claim stake back after WITHDRAWAL_DELAY
@@ -543,17 +522,14 @@ contract StakeManager is
         logger.logUnstaked(msg.sender, validatorId, amount, newTotalStaked);
     }
 
-    // @note restake
     function restake(uint256 validatorId, uint256 amount, bool stakeRewards) public onlyWhenUnlocked onlyStaker(validatorId) {
         _restake(validatorId, amount, stakeRewards, false);
     }
 
-    // @note
     function restakeLegacy(uint256 validatorId, uint256 amount, bool stakeRewards) public onlyWhenUnlocked onlyStaker(validatorId) {
         _restake(validatorId, amount, stakeRewards, true);
     }
 
-    // @note
     function _restake(uint256 validatorId, uint256 amount, bool stakeRewards, bool legacy) internal {
         require(validators[validatorId].deactivationEpoch == 0, "No restaking");
 
@@ -578,17 +554,14 @@ contract StakeManager is
         logger.logRestaked(validatorId, validators[validatorId].amount, newTotalStaked);
     }
 
-    // @note withdrawRewards
     function withdrawRewards(uint256 validatorId) public onlyStaker(validatorId) {
         _withdrawRewards(validatorId, false);
     }
 
-    // @note
     function withdrawRewardsLegacy(uint256 validatorId) public onlyStaker(validatorId) {
         _withdrawRewards(validatorId, true);
     }
 
-    // @note
     function _withdrawRewards(uint256 validatorId, bool legacy) internal {
         _updateRewards(validatorId);
         _liquidateRewards(validatorId, msg.sender, legacy);
@@ -755,7 +728,6 @@ contract StakeManager is
         return totalReward;
     }
 
-    // @note slash
     function slash(bytes calldata _slashingInfoList) external returns (uint256) {
         revert();
     }
@@ -1139,7 +1111,6 @@ contract StakeManager is
         return validatorId;
     }
 
-    // @note _unstake
     function _unstake(uint256 validatorId, uint256 exitEpoch, bool legacy) internal {
         // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
         // must think how to handle it correctly
@@ -1179,7 +1150,6 @@ contract StakeManager is
         currentEpoch = nextEpoch;
     }
 
-    // @note _liquidateRewards
     function _liquidateRewards(uint256 validatorId, address validatorUser, bool legacy) private {
         uint256 reward = validators[validatorId].reward.sub(INITIALIZED_AMOUNT);
         totalRewardsLiquidated = totalRewardsLiquidated.add(reward);
@@ -1188,14 +1158,12 @@ contract StakeManager is
         logger.logClaimRewards(validatorId, reward, totalRewardsLiquidated);
     }
 
-    // @note _transferToken
     function _transferToken(address destination, uint256 amount, bool legacy) private {
         if (legacy) _convertPolToMatic(amount);
         IERC20 token_ = _getToken(legacy);
         require(token_.transfer(destination, amount), "transfer failed");
     }
 
-    // @note _transferTokenFrom
     // Do not use this function to transfer from self.
     function _transferTokenFrom(address from, address destination, uint256 amount, bool legacy) private {
         IERC20 token_ = _getToken(legacy);
@@ -1203,7 +1171,6 @@ contract StakeManager is
         if (legacy && destination == address(this)) _convertMaticToPol(amount);
     }
 
-    // @note
     function _transferAndTopUp(address user, address from, uint256 fee, uint256 additionalAmount, bool legacy) private {
         require(fee >= minHeimdallFee, "fee too small");
         _transferTokenFrom(from, address(this), fee.add(additionalAmount), legacy);
@@ -1246,11 +1213,6 @@ contract StakeManager is
         signers.length = totalSigners - 1;
     }
 
-    // ------------------------------------------------------------------------
-    // @note MATIC <=> POL CONVERSION
-    // ------------------------------------------------------------------------
-
-    // NOTE Convert all.
     function convertMaticToPol(uint256 amount) external onlyGovernance {
         _convertMaticToPol(amount);
     }

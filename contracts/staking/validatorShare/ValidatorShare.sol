@@ -108,17 +108,14 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     /**
         Public Methods
      */
-    // @note buyVoucher
     function buyVoucher(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, false);
     }
 
-    // @note
     function buyVoucherLegacy(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, true);
     }
 
-    // @note
     function _buyVoucher(uint256 _amount, uint256 _minSharesToMint, bool legacy) internal returns (uint256 amountToDeposit) {
         _withdrawAndTransferReward(msg.sender, legacy);
 
@@ -133,17 +130,14 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return amountToDeposit;
     }
 
-    // @note restake
     function restake() public returns (uint256, uint256) {
         return _restake(false);
     }
 
-    // @note
     function restakeLegacy() public returns (uint256, uint256) {
         return _restake(true);
     }
 
-    // @note
     function _restake(bool legacy) public returns (uint256, uint256) {
         address user = msg.sender;
         uint256 liquidReward = _withdrawReward(user);
@@ -172,17 +166,14 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return (amountRestaked, liquidReward);
     }
 
-    // @note sellVoucher
     function sellVoucher(uint256 claimAmount, uint256 maximumSharesToBurn) public {
         __sellVoucher(claimAmount, maximumSharesToBurn, false);
     }
 
-    // @note
     function sellVoucherLegacy(uint256 claimAmount, uint256 maximumSharesToBurn) public {
         __sellVoucher(claimAmount, maximumSharesToBurn, true);
     }
 
-    // @note
     function __sellVoucher(uint256 claimAmount, uint256 maximumSharesToBurn, bool legacy) internal {
         (uint256 shares, uint256 _withdrawPoolShare) = _sellVoucher(claimAmount, maximumSharesToBurn, legacy);
 
@@ -197,23 +188,19 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         logger.logStakeUpdate(validatorId);
     }
 
-    // @note withdrawRewards
     function withdrawRewards() public {
         _withdrawRewards(false);
     }
 
-    // @note
     function withdrawRewardsLegacy() public {
         _withdrawRewards(true);
     }
 
-    // @note
     function _withdrawRewards(bool legacy) internal {
         uint256 rewards = _withdrawAndTransferReward(msg.sender, legacy);
         require(rewards >= minAmount, "Too small rewards amount");
     }
 
-    // @note migrateOut
     function migrateOut(address user, uint256 amount) external onlyOwner {
         _withdrawAndTransferReward(user, false);
         (uint256 totalStaked, uint256 rate) = getTotalStake(user);
@@ -231,23 +218,19 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         stakingLogger.logDelegatorUnstaked(validatorId, user, amount);
     }
 
-    // @note migrateIn
     function migrateIn(address user, uint256 amount) external onlyOwner {
         _withdrawAndTransferReward(user, false);
         _buyShares(amount, 0, user);
     } 
 
-    // @note unstakeClaimTokens
     function unstakeClaimTokens() public {
         _unstakeClaimTokens(false);
     }
 
-    // @note
     function unstakeClaimTokensLegacy() public {
         _unstakeClaimTokens(true);
     }
 
-    // @note
     function _unstakeClaimTokens(bool legacy) internal {
         DelegatorUnbond memory unbond = unbonds[msg.sender];
         uint256 amount = _unstakeClaimTokens(unbond, legacy);
@@ -297,17 +280,14 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     /**
         New shares exit API
      */
-    // @note sellVoucher_new
     function sellVoucher_new(uint256 claimAmount, uint256 maximumSharesToBurn) public {
         _sellVoucher_new(claimAmount, maximumSharesToBurn, false);
     }
 
-    // @note
     function sellVoucher_newLegacy(uint256 claimAmount, uint256 maximumSharesToBurn) public {
         _sellVoucher_new(claimAmount, maximumSharesToBurn, true);
     }
 
-    // @note
     function _sellVoucher_new(uint256 claimAmount, uint256 maximumSharesToBurn, bool legacy) public {
         (uint256 shares, uint256 _withdrawPoolShare) = _sellVoucher(claimAmount, maximumSharesToBurn, legacy);
 
@@ -324,17 +304,14 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         stakingLogger.logStakeUpdate(validatorId);
     }
 
-    // @note unstakeClaimTokens
     function unstakeClaimTokens_new(uint256 unbondNonce) public {
         _unstakeClaimTokens_new(unbondNonce, false);
     }
 
-    // @note
     function unstakeClaimTokens_newLegacy(uint256 unbondNonce) public {
         _unstakeClaimTokens_new(unbondNonce, true);
     }
 
-    // @note
     function _unstakeClaimTokens_new(uint256 unbondNonce, bool legacy) internal {
         DelegatorUnbond memory unbond = unbonds_new[msg.sender][unbondNonce];
         uint256 amount = _unstakeClaimTokens(unbond, legacy);
@@ -355,7 +332,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _eventsHub;
     }
 
-    // note
     function _sellVoucher(uint256 claimAmount, uint256 maximumSharesToBurn, bool legacy) private returns (uint256, uint256) {
         // first get how much staked in total and compare to target unstake amount
         (uint256 totalStaked, uint256 rate) = getTotalStake(msg.sender);
@@ -379,7 +355,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return (shares, _withdrawPoolShare);
     }
 
-    // @note _unstakeClaimTokens
     function _unstakeClaimTokens(DelegatorUnbond memory unbond, bool legacy) private returns (uint256) {
         uint256 shares = unbond.shares;
         require(
@@ -447,7 +422,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return liquidRewards;
     }
 
-    // @note _withdrawAndTransferReward
     function _withdrawAndTransferReward(address user, bool legacy) private returns (uint256) {
         uint256 liquidRewards = _withdrawReward(user);
         if (liquidRewards != 0) {
@@ -488,7 +462,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _amount;
     }
 
-    // @note _transfer
     function _transfer(address from, address to, uint256 value) internal {
         bool legacy = false;
         // get rewards for recipient
