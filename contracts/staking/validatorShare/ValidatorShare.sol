@@ -215,11 +215,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
 
     // @note migrateOut
     function migrateOut(address user, uint256 amount) external onlyOwner {
-        _migrateOut(user, amount);
-    }
-
-    // @note
-    function _migrateOut(address user, uint256 amount) internal {
         _withdrawAndTransferReward(user, false);
         (uint256 totalStaked, uint256 rate) = getTotalStake(user);
         require(totalStaked >= amount, "Migrating too much");
@@ -238,14 +233,9 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
 
     // @note migrateIn
     function migrateIn(address user, uint256 amount) external onlyOwner {
-        _migrateIn(user, amount);
-    }  
-
-    // @note
-    function _migrateIn(address user, uint256 amount) internal {
         _withdrawAndTransferReward(user, false);
         _buyShares(amount, 0, user);
-    }
+    } 
 
     // @note unstakeClaimTokens
     function unstakeClaimTokens() public {
