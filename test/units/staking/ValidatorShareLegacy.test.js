@@ -1,4 +1,4 @@
-import {Migration, TestToken, ValidatorShare, StakingInfo, EventsHub } from '../../helpers/artifacts.js'
+import {PolygonMigration, TestToken, ValidatorShare, StakingInfo, EventsHub } from '../../helpers/artifacts.js'
 import testHelpers from '@openzeppelin/test-helpers'
 import { checkPoint, assertBigNumberEquality, updateSlashedAmounts, assertInTransaction } from '../../helpers/utils.js'
 import { wallets, freshDeploy, approveAndStake } from './deployment.js'
@@ -29,7 +29,7 @@ describe('ValidatorShareLegacy', function () {
     this.stakeToken = await TestToken.deploy('POL', 'POL')
     this.legacyToken = await TestToken.deploy('MATIC', 'MATIC')
 
-    this.migration = await Migration.deploy(this.legacyToken.address, this.stakeToken.address)
+    this.migration = await PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
 
     await this.stakeToken.mint(this.migration.address, toWei('30000000'))
     await this.legacyToken.mint(this.migration.address, toWei('40000000'))
