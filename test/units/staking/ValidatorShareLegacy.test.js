@@ -14,15 +14,6 @@ const ValidatorDefaultStake = new BN(toWei('100'))
 describe('ValidatorShareLegacy', function () {
   const wei100 = toWei('100')
 
-  async function slash(slashes = [], validators = [], proposer = wallets[1], nonce = 1) {
-    let slashingInfoList = []
-    for (const slash of slashes) {
-      slashingInfoList.push([parseInt(slash.validator), slash.amount, '0x0'])
-    }
-
-    return updateSlashedAmounts(validators, proposer, nonce, slashingInfoList, this.slashingManager)
-  }
-
   async function doDeploy() {
     await freshDeploy.call(this)
 
@@ -897,7 +888,6 @@ describe('ValidatorShareLegacy', function () {
     const Carol = wallets[5].getChecksumAddressString()
 
     let totalDelegatorRewardsReceived
-    let totalSlashed
     let totalStaked
     let totalInitialBalance
     let delegators = []
@@ -925,28 +915,13 @@ describe('ValidatorShareLegacy', function () {
       })
     }
 
-    function testSlash({ amount, nonce }) {
-      describe('Slash', function () {
-        it(`${amount.toString()} wei`, async function () {
-          await slash.call(
-            this,
-            [{ validator: this.validatorId, amount: amount }],
-            [this.validatorUser],
-            this.validatorUser,
-            nonce
-          )
-          totalSlashed = totalSlashed.add(new BN(amount))
-        })
-      })
-    }
-
     function testStake({ user, amount, label, initialBalance = new BN(0) }) {
       describe(`${label} buyVoucher for ${amount.toString()} wei`, function () {
         it(`must purchase voucher`, async function () {
           totalInitialBalance = totalInitialBalance.add(initialBalance)
           totalStaked = totalStaked.add(new BN(amount))
 
-          await this.legacyToken.mint(user, amount.toString())
+          await this.legacyToken.mint(user, initialBalance.add(amount).toString())
           const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(user))
           await legacyTokenUser.approve(this.stakeManager.address, amount.toString())
           await buyVoucherLegacy(this.validatorContract, amount.toString(), user)
@@ -1018,9 +993,7 @@ describe('ValidatorShareLegacy', function () {
           assertBigNumberEquality(
             this.initialStakeTokenBalance
               .add(totalStaked.toString())
-              .sub(totalReceived)
-              .sub(totalInitialBalance.toString())
-              .sub(totalSlashed.toString()),
+              .sub(totalReceived),
             tokensLeft
           )
         })
@@ -1033,15 +1006,12 @@ describe('ValidatorShareLegacy', function () {
         delegators = {}
         totalInitialBalance = new BN(0)
         totalStaked = new BN(0)
-        totalSlashed = new BN(0)
         totalDelegatorRewardsReceived = new BN(0)
         this.initialStakeTokenBalance = await this.stakeToken.balanceOf(this.stakeManager.address)
       })
 
       for (const step of timeline) {
-        if (step.slash) {
-          testSlash(step.slash)
-        } else if (step.stake) {
+        if (step.stake) {
           testStake(step.stake)
         } else if (step.checkpoints) {
           testCheckpoint(step.checkpoints)
@@ -1079,51 +1049,22 @@ describe('ValidatorShareLegacy', function () {
         { checkpoints: 1 },
         { liquidRewards: { user: Alice, label: 'Alice', expectedReward: toWei('4500') } },
         { stake: { user: Bob, label: 'Bob', amount: new BN(toWei('500')) } },
-        { slash: { amount: new BN(toWei('350')) } },
         { checkpoints: 1 },
         { liquidRewards: { user: Alice, label: 'Alice', expectedReward: '5785714285714285714285' } },
         { liquidRewards: { user: Bob, label: 'Bob', expectedReward: '6428571428571428571428' } },
         { stake: { user: Carol, label: 'Carol', amount: new BN(toWei('500')) } },
         { checkpoints: 1 },
-        { liquidRewards: { user: Alice, label: 'Alice', expectedReward: '6315126050420168067226' } },
-        { liquidRewards: { user: Bob, label: 'Bob', expectedReward: '9075630252100840336133' } },
-        { liquidRewards: { user: Carol, label: 'Carol', expectedReward: '5294117647058823529411' } },
-        { slash: { amount: new BN(toWei('167')), nonce: 2 } },
+        { liquidRewards: { user: Alice, label: 'Alice', expectedReward: '6535714285714285714285' } },
+        { liquidRewards: { user: Bob, label: 'Bob', expectedReward: '10178571428571428571428' } },
+        { liquidRewards: { user: Carol, label: 'Carol', expectedReward: '3750000000000000000000' } },
         { stake: { user: Eve, label: 'Eve', amount: new BN(toWei('500')), initialBalance: new BN(1) } },
         { checkpoints: 1 },
-        { withdraw: { user: Alice, label: 'Alice', expectedReward: '6620779672815871910894' } },
-        { withdraw: { user: Bob, label: 'Bob', expectedReward: '10603898364079359554473' } },
-        { withdraw: { user: Carol, label: 'Carol', expectedReward: '8350653871015861966090' } },
-        { withdraw: { user: Eve, label: 'Eve', expectedReward: '3803888419273034657649', initialBalance: new BN(1) } },
-        { allRewards: { validatorReward: '6620779672815871910888', totalExpectedRewards: '35999999999999999999994' } }
+        { withdraw: { user: Alice, label: 'Alice', expectedReward: '7065126050420168067226' } },
+        { withdraw: { user: Bob, label: 'Bob', expectedReward: '12825630252100840336133' } },
+        { withdraw: { user: Carol, label: 'Carol', expectedReward: '6397058823529411764705' } },
+        { withdraw: { user: Eve, label: 'Eve', expectedReward: '2647058823529411764705', initialBalance: new BN(1) } },
+        { allRewards: { validatorReward: '7065126050420168067226', totalExpectedRewards: '35999999999999999999995' } }
       ])
-    })
-
-    describe('Alice, Bob, Eve and Carol stake #2', function () {
-      runWithdrawRewardsTest([
-        { stake: { user: Alice, label: 'Alice', amount: new BN(toWei('100')) } },
-        { checkpoints: 1 },
-        { liquidRewards: { user: Alice, label: 'Alice', expectedReward: toWei('4500') } },
-        { stake: { user: Bob, label: 'Bob', amount: new BN(toWei('500')) } },
-        { slash: { amount: new BN(toWei('350')) } },
-        { checkpoints: 1 },
-        { liquidRewards: { user: Alice, label: 'Alice', expectedReward: '5785714285714285714285' } },
-        { liquidRewards: { user: Bob, label: 'Bob', expectedReward: '6428571428571428571428' } },
-        { stake: { user: Carol, label: 'Carol', amount: new BN(toWei('500')) } },
-        { slash: { amount: new BN(toWei('425')), nonce: 2 } },
-        { checkpoints: 1 },
-        { liquidRewards: { user: Alice, label: 'Alice', expectedReward: '6315126050420168067226' } },
-        { liquidRewards: { user: Bob, label: 'Bob', expectedReward: '9075630252100840336133' } },
-        { liquidRewards: { user: Carol, label: 'Carol', expectedReward: '5294117647058823529411' } },
-        { slash: { amount: new BN(toWei('215')), nonce: 3 } },
-        { stake: { user: Eve, label: 'Eve', amount: new BN(toWei('500')), initialBalance: new BN(1) } },
-        { checkpoints: 1 },
-        { withdraw: { user: Alice, label: 'Alice', expectedReward: '6471712628713457213871' } },
-        { withdraw: { user: Bob, label: 'Bob', expectedReward: '9858563143567286069357' } },
-        { withdraw: { user: Carol, label: 'Carol', expectedReward: '6859983429991714995859' } },
-        { withdraw: { user: Eve, label: 'Eve', expectedReward: '6338028169014084507041', initialBalance: new BN(1) } },
-        { allRewards: { validatorReward: '6471712628713457213867', totalExpectedRewards: '35999999999999999999995' } }
-       ])
     })
 
     describe('when not enough rewards', function () {
