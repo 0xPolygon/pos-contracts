@@ -73,4 +73,9 @@ contract IStakeManager {
         bool acceptDelegation,
         bytes calldata signerPubkey
     ) external;
+
+    // @note MATIC POL conversion ⬇️
+
+    function transferFundsLegacy(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
+    function delegationDepositLegacy(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
 }

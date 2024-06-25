@@ -18,7 +18,8 @@ import * as chai from 'chai'
 chai.use(chaiAsPromised).should()
 const assert = chai.assert
 
-describe('Slashing:validator', async function () {
+// Slashing is currently disabled in StakeManager, so all these tests fail.
+describe.skip('Slashing:validator', async function () {
   let stakeToken
   let stakeManager
   let slashingManager
@@ -205,7 +206,7 @@ describe('Slashing:validator', async function () {
     })
   })
 })
-describe('Slashing:delegation', async function () {
+describe.skip('Slashing:delegation', async function () {
   let stakeToken
   let stakeManager
   let slashingManager

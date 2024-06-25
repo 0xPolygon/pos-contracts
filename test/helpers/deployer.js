@@ -24,6 +24,7 @@ class Deployer {
     this.eventsHub = await this.deployEventsHub(this.registry.address)
     this.validatorShareFactory = await contractFactories.ValidatorShareFactory.deploy()
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'ST')
+   
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.slashingManager = await contractFactories.SlashingManager.deploy(
       this.registry.address,
@@ -83,7 +84,7 @@ class Deployer {
     return _contracts
   }
 
-  async deployStakeManager(wallets) {
+  async deployStakeManager(wallets, legacy = false) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
 
@@ -92,7 +93,16 @@ class Deployer {
     this.validatorShare = await contractFactories.ValidatorShare.deploy()
     this.rootChain = await this.deployRootChain()
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
-    this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
+   
+    let token 
+    if (legacy){
+      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LEG')
+      token = this.legacyToken
+    } else {
+      this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
+      token = this.stakeToken
+    }
+
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
     let stakeManager = await contractFactories.StakeManagerTestable.deploy()
@@ -104,7 +114,7 @@ class Deployer {
       stakeManager.interface.encodeFunctionData('initialize', [
         this.registry.address,
         rootChainOwner.getAddressString(),
-        this.stakeToken.address,
+        token.address,
         this.stakingNFT.address,
         this.stakingInfo.address,
         this.validatorShareFactory.address,
@@ -121,6 +131,22 @@ class Deployer {
       'heimdall-P5rXwg'
     )
 
+    if (legacy){
+      await token.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+
+      this.stakeToken = await contractFactories.TestToken.deploy('POL', 'POL')
+  
+      this.migration = await contractFactories.PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
+  
+      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+      await this.legacyToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+  
+      await this.governance.update(
+          this.stakeManager.address,
+          this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
+        )
+    }
+
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('validatorShare'), this.validatorShare.address)
@@ -131,6 +157,7 @@ class Deployer {
       rootChain: this.rootChain,
       stakeManager: this.stakeManager,
       stakeToken: this.stakeToken,
+      legacyToken: this.legacyToken,
       slashingManager: this.slashingManager,
       stakingInfo: this.stakingInfo,
       governance: this.governance,
