@@ -465,9 +465,9 @@ contract StakeManager is
 
     function _delegationDeposit(uint256 amount, address delegator, bool legacy) internal returns (bool) {
         IERC20 token_ = _getToken(legacy);
-        token_.transferFrom(delegator, address(this), amount);
+        bool result = token_.transferFrom(delegator, address(this), amount);
         if (legacy) _convertMaticToPol(amount);
-        return true;
+        return result;
     }
 
     function stakeFor(address user, uint256 amount, uint256 heimdallFee, bool acceptDelegation, bytes memory signerPubkey) public onlyWhenUnlocked {
