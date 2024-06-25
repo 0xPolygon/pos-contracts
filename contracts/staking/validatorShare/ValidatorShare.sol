@@ -9,6 +9,7 @@ import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
 import {IStakeManager} from "../stakeManager/IStakeManager.sol";
 import {IValidatorShare} from "./IValidatorShare.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
+import {IERC20Permit} from "./../../common/misc/IERC20Permit.sol";
 
 contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, Initializable {
     struct DelegatorUnbond {
@@ -110,6 +111,23 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
      */
     function buyVoucher(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, false);
+    }
+
+    // @dev permit only available on pol token
+    // @dev txn fails if frontrun, use buyVoucher instead
+    function buyVoucherWithPermit(
+        uint256 _amount,
+        uint256 _minSharesToMint,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256 amountToDeposit) {
+        IERC20Permit _polToken = _getOrCachePolToken();
+        uint256 nonceBefore = _polToken.nonces(msg.sender);
+        _polToken.permit(msg.sender, address(stakeManager), _amount, deadline, v, r, s);
+        require(_polToken.nonces(msg.sender) == nonceBefore + 1, "Invalid permit");
+        return _buyVoucher(_amount, _minSharesToMint, false); // invokes stakeManager to pull token from msg.sender
     }
 
     function buyVoucherLegacy(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
