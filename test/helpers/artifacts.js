@@ -41,6 +41,7 @@ export const ERC721PredicateBurnOnly = await ethers.getContractFactory('ERC721Pr
 // tokens
 export const MaticWETH = await ethers.getContractFactory('MaticWETH')
 export const TestToken = await ethers.getContractFactory('TestToken')
+export const ERC20Permit = await ethers.getContractFactory('ERC20Permit')
 export const RootERC721 = await ethers.getContractFactory('RootERC721')
 export const ERC721PlasmaMintable = await ethers.getContractFactory('ERC721PlasmaMintable')
 export const ExitNFT = await ethers.getContractFactory('ExitNFT')
