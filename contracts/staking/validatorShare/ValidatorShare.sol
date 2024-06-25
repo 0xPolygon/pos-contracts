@@ -350,7 +350,21 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _eventsHub;
     }
 
-    function _sellVoucher(uint256 claimAmount, uint256 maximumSharesToBurn, bool legacy) private returns (uint256, uint256) {
+    function _getOrCachePolToken() private returns (IERC20Permit) {
+        IERC20Permit _polToken = polToken;
+        if (_polToken == IERC20Permit(0x0)) {
+            _polToken = IERC20Permit(Registry(stakeManager.getRegistry()).contractMap(keccak256("pol")));
+            require(_polToken != IERC20Permit(0x0), "unset");
+            polToken = _polToken;
+        }
+        return _polToken;
+    }
+
+    function _sellVoucher(
+        uint256 claimAmount,
+        uint256 maximumSharesToBurn,
+        bool legacy
+    ) private returns (uint256, uint256) {
         // first get how much staked in total and compare to target unstake amount
         (uint256 totalStaked, uint256 rate) = getTotalStake(msg.sender);
         require(totalStaked != 0 && totalStaked >= claimAmount, "Too much requested");
