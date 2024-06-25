@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, dev]
   pull_request:
+    branches: [main, dev]
 
 jobs:
   build:
@@ -47,6 +47,5 @@ jobs:
         id: build
 
       - name: Run Forge tests
-        run: |
-          forge test -vvv
+        run: if test -d test/foundry && find test/foundry -name '*.sol' | grep -q .; then forge test -vvv; else echo "No .sol files found in test/foundry directory. Skipping Forge tests."; fi
         id: test
