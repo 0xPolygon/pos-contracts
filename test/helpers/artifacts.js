@@ -1,5 +1,5 @@
 import hardhat from 'hardhat'
-const ethers = hardhat.ethers
+export const ethers = hardhat.ethers
 
 export const RootChain = await ethers.getContractFactory('RootChain')
 export const RootChainProxy = await ethers.getContractFactory('RootChainProxy')

@@ -1,8 +1,9 @@
-import { TestToken, ValidatorShare, StakingInfo, EventsHub } from '../../helpers/artifacts.js'
+import ethUtils from 'ethereumjs-util'
+import { TestToken, ERC20Permit, ValidatorShare, StakingInfo, EventsHub, ethers } from '../../helpers/artifacts.js'
 import testHelpers from '@openzeppelin/test-helpers'
 import { checkPoint, assertBigNumberEquality, updateSlashedAmounts, assertInTransaction } from '../../helpers/utils.js'
 import { wallets, freshDeploy, approveAndStake } from './deployment.js'
-import { buyVoucher, sellVoucher, sellVoucherNew } from './ValidatorShareHelper.js'
+import { buyVoucher, buyVoucherWithPermit, sellVoucher, sellVoucherNew } from './ValidatorShareHelper.js'
 const BN = testHelpers.BN
 const expectRevert = testHelpers.expectRevert
 const toWei = web3.utils.toWei
@@ -26,7 +27,7 @@ describe('ValidatorShare', async function () {
   async function doDeploy() {
     await freshDeploy.call(this)
 
-    this.stakeToken = await TestToken.deploy('MATIC', 'MATIC')
+    this.stakeToken = await ERC20Permit.deploy('POL', 'POL', '1.1.0')
 
     await this.governance.update(
       this.stakeManager.address,
@@ -46,6 +47,14 @@ describe('ValidatorShare', async function () {
     await this.governance.update(
       this.stakeManager.address,
       this.stakeManager.interface.encodeFunctionData('updateValidatorThreshold', [8])
+    )
+
+    await this.governance.update(
+      this.registry.address,
+      this.registry.interface.encodeFunctionData('updateContractMap', [
+        ethUtils.keccak256('pol'),
+        this.stakeToken.address
+      ])
     )
 
     // we need to increase validator id beyond foundation id, repeat 7 times
@@ -142,6 +151,161 @@ describe('ValidatorShare', async function () {
       await stakeTokenBob.approve(this.stakeManager.address, mintAmount)
     })
   }
+
+  describe('buyVoucherWithPermit', function () {
+    function testBuyVoucherWithPermit({
+      voucherValue,
+      voucherValueExpected,
+      userTotalStaked,
+      totalStaked,
+      shares,
+      reward,
+      initialBalance
+    }) {
+      it('must buy voucher with permit', async function () {
+        assertBigNumberEquality(await this.stakeToken.allowance(this.user, this.stakeManager.address), 0)
+        this.receipt = await (
+          await buyVoucherWithPermit(
+            this.validatorContract,
+            voucherValue,
+            this.user,
+            shares,
+            this.stakeManager.address,
+            this.stakeToken
+          )
+        ).wait()
+      })
+
+      shouldBuyShares({
+        voucherValueExpected,
+        shares,
+        totalStaked
+      })
+
+      shouldHaveCorrectStakes({
+        userTotalStaked,
+        totalStaked
+      })
+
+      shouldWithdrawReward({
+        initialBalance,
+        reward,
+        validatorId: '8'
+      })
+    }
+
+    describe('when Alice purchases voucher with permit once', function () {
+      deployAliceAndBob()
+
+      before(async function () {
+        this.user = this.alice
+        await this.stakeToken
+          .connect(this.stakeToken.provider.getSigner(this.user))
+          .approve(this.stakeManager.address, 0)
+      })
+
+      testBuyVoucherWithPermit({
+        voucherValue: toWei('100'),
+        voucherValueExpected: toWei('100'),
+        userTotalStaked: toWei('100'),
+        totalStaked: toWei('200'),
+        shares: toWei('100'),
+        reward: '0',
+        initialBalance: toWei('69900')
+      })
+    })
+
+    describe('when alice provides invalid permit signature', function () {
+      deployAliceAndBob()
+
+      before(async function () {
+        this.user = this.alice
+        await this.stakeToken
+          .connect(this.stakeToken.provider.getSigner(this.user))
+          .approve(this.stakeManager.address, 0)
+      })
+
+      it('reverts with incorrect spender', async function () {
+        assertBigNumberEquality(await this.stakeToken.allowance(this.user, this.stakeManager.address), 0)
+
+        await expectRevert(
+          buyVoucherWithPermit(
+            this.validatorContract,
+            toWei('1000'),
+            this.user,
+            toWei('1000'),
+            this.validatorContract.address /* spender, tokens are pulled from stakeManager */,
+            this.stakeToken
+          ),
+          'ERC2612InvalidSigner'
+        )
+      })
+
+      it('reverts with incorrect deadline', async function () {
+        assertBigNumberEquality(await this.stakeToken.allowance(this.user, this.stakeManager.address), 0)
+
+        await expectRevert(
+          buyVoucherWithPermit(
+            this.validatorContract,
+            toWei('1000'),
+            this.user,
+            toWei('1000'),
+            this.stakeManager.address,
+            this.stakeToken,
+            (await this.validatorContract.provider.getBlock('latest')).timestamp - 60
+          ),
+          'ERC2612ExpiredSignature'
+        )
+      })
+    })
+
+    describe('when locked', function () {
+      deployAliceAndBob()
+
+      before(async function () {
+        await this.stakeManager.testLockShareContract(this.validatorId, true)
+      })
+
+      it('reverts', async function () {
+        await expectRevert(
+          buyVoucherWithPermit(
+            this.validatorContract,
+            toWei('100'),
+            this.alice,
+            toWei('100'),
+            this.stakeManager.address,
+            this.stakeToken
+          ),
+          'locked'
+        )
+      })
+    })
+
+    describe('when validator unstaked', function () {
+      deployAliceAndBob()
+      before(async function () {
+        const stakeManagerValidator = this.stakeManager.connect(
+          this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
+        )
+        await stakeManagerValidator.unstake(this.validatorId)
+        await this.stakeManager.advanceEpoch(Dynasty)
+      })
+
+      it('reverts', async function () {
+        await expectRevert(
+          buyVoucherWithPermit(
+            this.validatorContract,
+            toWei('100'),
+            this.alice,
+            toWei('100'),
+            this.stakeManager.address,
+            this.stakeToken
+          ),
+          'locked'
+        )
+      })
+    })
+  })
 
   describe('buyVoucher', function () {
     function testBuyVoucher({
