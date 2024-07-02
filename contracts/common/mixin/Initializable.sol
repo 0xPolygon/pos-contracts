@@ -6,7 +6,10 @@ contract Initializable {
     modifier initializer() {
         require(!inited, "already inited");
         inited = true;
-        
         _;
+    }
+
+    function _disableInitializer() internal {
+        inited = true;
     }
 }
