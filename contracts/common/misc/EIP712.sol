@@ -20,6 +20,7 @@ contract EIP712 {
     bytes32 private _HASHED_VERSION;
     bytes32 private _TYPE_HASH;
 
+    string private _VERSION;
     /* solhint-enable var-name-mixedcase */
 
     /**
@@ -45,6 +46,10 @@ contract EIP712 {
         _CACHED_CHAIN_ID = _chainId();
         _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(typeHash, hashedName, hashedVersion);
         _TYPE_HASH = typeHash;
+    }
+
+    function version() external view returns (string memory) {
+        return _VERSION;
     }
 
     function _chainId() internal pure returns (uint chainId) {
