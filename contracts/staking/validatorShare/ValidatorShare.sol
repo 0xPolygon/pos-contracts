@@ -51,6 +51,10 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
 
     IERC20Permit public polToken;
 
+    constructor() public {
+        _disableInitializer();
+    }
+
     // onlyOwner will prevent this contract from initializing, since it's owner is going to be 0x0 address
     function initialize(
         uint256 _validatorId,
