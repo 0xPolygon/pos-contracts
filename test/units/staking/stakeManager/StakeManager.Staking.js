@@ -42,7 +42,7 @@ export function doUnstake(wallet) {
 
 export function prepareForTest(dynastyValue, validatorThreshold) {
   return async function () {
-    await freshDeploy.call(this)
+    await freshDeploy.call(this, true)
 
     await this.governance.update(
       this.stakeManager.address,
@@ -208,7 +208,9 @@ describe('stake', function () {
   }
 
   describe('double stake', async function () {
-    before(freshDeploy)
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
 
     describe('when stakes first time', function () {
       const amounts = walletAmounts[wallets[1].getAddressString()]
@@ -232,7 +234,9 @@ describe('stake', function () {
   })
 
   describe('stake and restake following by another stake', function () {
-    before(freshDeploy)
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
 
     const amounts = walletAmounts[wallets[2].getAddressString()]
     before('Stake', doStake(wallets[2]))
@@ -259,12 +263,12 @@ describe('stake', function () {
       it('when auction is active', async function () {
         let auctionBid = web3.utils.toWei('10000')
         const auctionUser = wallets[4].getAddressString()
-        await this.stakeToken.mint(auctionUser, auctionBid)
+        await this.polToken.mint(auctionUser, auctionBid)
 
-        const stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(auctionUser))
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
         const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
 
-        await stakeTokenUser.approve(this.stakeManager.address, auctionBid)
+        await polTokenUser.approve(this.stakeManager.address, auctionBid)
         const validatorId = await this.stakeManager.getValidatorId(wallets[2].getChecksumAddressString())
         await stakeManagerUser.startAuction(validatorId, auctionBid, false, wallets[4].getPublicKeyString())
         testRestake(
@@ -304,7 +308,9 @@ describe('stake', function () {
   })
 
   describe('consecutive stakes', function () {
-    before(freshDeploy)
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
 
     it('validatorId must increment 1 by 1', async function () {
       const _wallets = [wallets[1], wallets[2], wallets[3]]
@@ -322,7 +328,9 @@ describe('stake', function () {
   })
 
   describe('stake with heimdall fee', function () {
-    before(freshDeploy)
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
 
     testStake(
       wallets[0].getChecksumAddressString(),
@@ -338,7 +346,9 @@ describe('stake', function () {
     const AliceWallet = wallets[1]
     const newSigner = wallets[2].getPublicKeyString()
 
-    before(freshDeploy)
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
     before(doStake(AliceWallet))
     before('Change signer', async function () {
       const signerUpdateLimit = await this.stakeManager.signerUpdateLimit()
@@ -365,7 +375,9 @@ describe('unstake', function () {
     const AliceNewWallet = wallets[2]
     let stakeManagerAlice
 
-    before(freshDeploy)
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
     before(doStake(AliceWallet))
     before(doStake(BobWallet))
     before('Change signer', async function () {
@@ -546,7 +558,9 @@ describe('unstake', function () {
   })
 
   describe('reverts', function () {
-    beforeEach('Fresh Deploy', freshDeploy)
+    beforeEach('Fresh Deploy', async function() {
+      await freshDeploy.call(this, true)
+    })
     const user = wallets[2].getChecksumAddressString()
     let stakeManagerUser
 
@@ -575,12 +589,12 @@ describe('unstake', function () {
     it('when unstakes during auction', async function () {
       const amount = web3.utils.toWei('1200').toString()
       const auctionUser = wallets[4].getAddressString()
-      await this.stakeToken.mint(auctionUser, amount)
+      await this.polToken.mint(auctionUser, amount)
 
-      const stakeTokenAuctionUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(auctionUser))
+      const polTokenAuctionUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
       const stakeManagerAuctionUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
 
-      await stakeTokenAuctionUser.approve(this.stakeManager.address, amount)
+      await polTokenAuctionUser.approve(this.stakeManager.address, amount)
       const validatorId = await this.stakeManager.getValidatorId(user)
       await stakeManagerAuctionUser.startAuction(validatorId, amount, false, wallets[4].getPublicKeyString())
       await expectRevert.unspecified(stakeManagerUser.unstake(validatorId))

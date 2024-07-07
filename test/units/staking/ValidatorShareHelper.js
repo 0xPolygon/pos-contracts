@@ -55,12 +55,12 @@ export async function sellVoucherNew(validatorContract, delegator, minClaimAmoun
   return validatorContract_Delegator.sellVoucher_new(minClaimAmount.toString(), maxShares)
 }
 
-export async function buyVoucherLegacy(validatorContract, amount, delegator, minSharesToMint) {
+export async function buyVoucherPOL(validatorContract, amount, delegator, minSharesToMint) {
   const validatorContract_Delegator = validatorContract.connect(validatorContract.provider.getSigner(delegator))
-  return validatorContract_Delegator.buyVoucherLegacy(amount.toString(), minSharesToMint || 0)
+  return validatorContract_Delegator.buyVoucherPOL(amount.toString(), minSharesToMint || 0)
 }
 
-export async function sellVoucherLegacy(validatorContract, delegator, minClaimAmount, maxShares) {
+export async function sellVoucherPOL(validatorContract, delegator, minClaimAmount, maxShares) {
   if (maxShares === undefined) {
     maxShares = await validatorContract.balanceOf(delegator)
   }
@@ -71,10 +71,10 @@ export async function sellVoucherLegacy(validatorContract, delegator, minClaimAm
 
   const validatorContract_Delegator = validatorContract.connect(validatorContract.provider.getSigner(delegator))
 
-  return validatorContract_Delegator.sellVoucherLegacy(minClaimAmount, maxShares)
+  return validatorContract_Delegator.sellVoucherPOL(minClaimAmount, maxShares)
 }
 
-export async function sellVoucherNewLegacy(validatorContract, delegator, minClaimAmount, maxShares) {
+export async function sellVoucherNewPOL(validatorContract, delegator, minClaimAmount, maxShares) {
   if (maxShares === undefined) {
     maxShares = await validatorContract.balanceOf(delegator)
   }
@@ -84,5 +84,5 @@ export async function sellVoucherNewLegacy(validatorContract, delegator, minClai
   }
   const validatorContract_Delegator = validatorContract.connect(validatorContract.provider.getSigner(delegator))
 
-  return validatorContract_Delegator.sellVoucher_newLegacy(minClaimAmount.toString(), maxShares)
+  return validatorContract_Delegator.sellVoucher_newPOL(minClaimAmount.toString(), maxShares)
 }
