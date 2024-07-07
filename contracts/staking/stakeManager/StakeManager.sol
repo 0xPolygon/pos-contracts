@@ -349,7 +349,7 @@ contract StakeManager is
         Public Methods
      */
     function topUpForFee(address user, uint256 heimdallFee) public onlyWhenUnlocked {
-        _transferAndTopUp(user, msg.sender, heimdallFee, 0, false);
+        _transferAndTopUp(user, msg.sender, heimdallFee, 0, true);
     }
 
     function claimFee(uint256 accumFeeAmount, uint256 index, bytes memory proof) public {
