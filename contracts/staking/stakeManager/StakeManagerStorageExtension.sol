@@ -18,6 +18,6 @@ contract StakeManagerStorageExtension {
     // increase / decrease value for faster or slower checkpoints, 0 - 100%
     uint256 public checkpointRewardDelta;
 
-    IERC20 public tokenLegacy;
+    IERC20 public tokenMatic;
     IPolygonMigration public migration;
 }   
