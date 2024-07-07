@@ -17,17 +17,39 @@ contract IStakeManager {
         address delegator
     ) external returns (bool);
 
+    function transferFundsPOL(
+        uint256 validatorId, 
+        uint256 amount, 
+        address delegator
+    ) external returns (bool);
+
     function delegationDeposit(
         uint256 validatorId,
         uint256 amount,
         address delegator
     ) external returns (bool);
 
+    function delegationDepositPOL(
+        uint256 validatorId, 
+        uint256 amount, 
+        address delegator
+    ) external returns (bool);
+
     function unstake(uint256 validatorId) external;
+
+    function unstakePOL(uint256 validatorId) external;
 
     function totalStakedFor(address addr) external view returns (uint256);
 
     function stakeFor(
+        address user,
+        uint256 amount,
+        uint256 heimdallFee,
+        bool acceptDelegation,
+        bytes memory signerPubkey
+    ) public;
+
+    function stakeForPOL(
         address user,
         uint256 amount,
         uint256 heimdallFee,
@@ -73,9 +95,4 @@ contract IStakeManager {
         bool acceptDelegation,
         bytes calldata signerPubkey
     ) external;
-
-    // @note MATIC POL conversion ⬇️
-
-    function transferFundsLegacy(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
-    function delegationDepositLegacy(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
 }

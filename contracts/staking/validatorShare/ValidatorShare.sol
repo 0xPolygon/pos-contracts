@@ -129,24 +129,24 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         bytes32 r,
         bytes32 s
     ) public returns (uint256 amountToDeposit) {
-        IERC20Permit _polToken = _getOrCachePolToken();
+        IERC20Permit _polToken = _getOrCachePOLToken();
         uint256 nonceBefore = _polToken.nonces(msg.sender);
         _polToken.permit(msg.sender, address(stakeManager), _amount, deadline, v, r, s);
         require(_polToken.nonces(msg.sender) == nonceBefore + 1, "Invalid permit");
-        return _buyVoucher(_amount, _minSharesToMint, false); // invokes stakeManager to pull token from msg.sender
+        return _buyVoucher(_amount, _minSharesToMint, true); // invokes stakeManager to pull token from msg.sender
     }
 
-    function buyVoucherLegacy(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
+    function buyVoucherPOL(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, true);
     }
 
-    function _buyVoucher(uint256 _amount, uint256 _minSharesToMint, bool legacy) internal returns (uint256 amountToDeposit) {
-        _withdrawAndTransferReward(msg.sender, legacy);
+    function _buyVoucher(uint256 _amount, uint256 _minSharesToMint, bool pol) internal returns (uint256 amountToDeposit) {
+        _withdrawAndTransferReward(msg.sender, pol);
 
         amountToDeposit = _buyShares(_amount, _minSharesToMint, msg.sender);
         require(
-            legacy
-                ? stakeManager.delegationDepositLegacy(validatorId, amountToDeposit, msg.sender)
+            pol
+                ? stakeManager.delegationDepositPOL(validatorId, amountToDeposit, msg.sender)
                 : stakeManager.delegationDeposit(validatorId, amountToDeposit, msg.sender),
             "deposit failed"
         );
@@ -158,11 +158,11 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _restake(false);
     }
 
-    function restakeLegacy() public returns (uint256, uint256) {
+    function restakePOL() public returns (uint256, uint256) {
         return _restake(true);
     }
 
-    function _restake(bool legacy) public returns (uint256, uint256) {
+    function _restake(bool pol) public returns (uint256, uint256) {
         address user = msg.sender;
         uint256 liquidReward = _withdrawReward(user);
         uint256 amountRestaked;
@@ -175,8 +175,8 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
             if (liquidReward > amountRestaked) {
                 // return change to the user
                 require(
-                    legacy
-                        ? stakeManager.transferFundsLegacy(validatorId, liquidReward - amountRestaked, user)
+                    pol
+                        ? stakeManager.transferFundsPOL(validatorId, liquidReward - amountRestaked, user)
                         : stakeManager.transferFunds(validatorId, liquidReward - amountRestaked, user),
                     "Insufficent rewards"
                 );
@@ -194,12 +194,12 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         __sellVoucher(claimAmount, maximumSharesToBurn, false);
     }
 
-    function sellVoucherLegacy(uint256 claimAmount, uint256 maximumSharesToBurn) public {
+    function sellVoucherPOL(uint256 claimAmount, uint256 maximumSharesToBurn) public {
         __sellVoucher(claimAmount, maximumSharesToBurn, true);
     }
 
-    function __sellVoucher(uint256 claimAmount, uint256 maximumSharesToBurn, bool legacy) internal {
-        (uint256 shares, uint256 _withdrawPoolShare) = _sellVoucher(claimAmount, maximumSharesToBurn, legacy);
+    function __sellVoucher(uint256 claimAmount, uint256 maximumSharesToBurn, bool pol) internal {
+        (uint256 shares, uint256 _withdrawPoolShare) = _sellVoucher(claimAmount, maximumSharesToBurn, pol);
 
         DelegatorUnbond memory unbond = unbonds[msg.sender];
         unbond.shares = unbond.shares.add(_withdrawPoolShare);
@@ -216,17 +216,17 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         _withdrawRewards(false);
     }
 
-    function withdrawRewardsLegacy() public {
+    function withdrawRewardsPOL() public {
         _withdrawRewards(true);
     }
 
-    function _withdrawRewards(bool legacy) internal {
-        uint256 rewards = _withdrawAndTransferReward(msg.sender, legacy);
+    function _withdrawRewards(bool pol) internal {
+        uint256 rewards = _withdrawAndTransferReward(msg.sender, pol);
         require(rewards >= minAmount, "Too small rewards amount");
     }
 
     function migrateOut(address user, uint256 amount) external onlyOwner {
-        _withdrawAndTransferReward(user, false);
+        _withdrawAndTransferReward(user, true);
         (uint256 totalStaked, uint256 rate) = getTotalStake(user);
         require(totalStaked >= amount, "Migrating too much");
 
@@ -243,7 +243,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     }
 
     function migrateIn(address user, uint256 amount) external onlyOwner {
-        _withdrawAndTransferReward(user, false);
+        _withdrawAndTransferReward(user, true);
         _buyShares(amount, 0, user);
     } 
 
@@ -251,13 +251,13 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         _unstakeClaimTokens(false);
     }
 
-    function unstakeClaimTokensLegacy() public {
+    function unstakeClaimTokensPOL() public {
         _unstakeClaimTokens(true);
     }
 
-    function _unstakeClaimTokens(bool legacy) internal {
+    function _unstakeClaimTokens(bool pol) internal {
         DelegatorUnbond memory unbond = unbonds[msg.sender];
-        uint256 amount = _unstakeClaimTokens(unbond, legacy);
+        uint256 amount = _unstakeClaimTokens(unbond, pol);
         delete unbonds[msg.sender];
         stakingLogger.logDelegatorUnstaked(validatorId, msg.sender, amount);
     }
@@ -308,12 +308,12 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         _sellVoucher_new(claimAmount, maximumSharesToBurn, false);
     }
 
-    function sellVoucher_newLegacy(uint256 claimAmount, uint256 maximumSharesToBurn) public {
+    function sellVoucher_newPOL(uint256 claimAmount, uint256 maximumSharesToBurn) public {
         _sellVoucher_new(claimAmount, maximumSharesToBurn, true);
     }
 
-    function _sellVoucher_new(uint256 claimAmount, uint256 maximumSharesToBurn, bool legacy) public {
-        (uint256 shares, uint256 _withdrawPoolShare) = _sellVoucher(claimAmount, maximumSharesToBurn, legacy);
+    function _sellVoucher_new(uint256 claimAmount, uint256 maximumSharesToBurn, bool pol) public {
+        (uint256 shares, uint256 _withdrawPoolShare) = _sellVoucher(claimAmount, maximumSharesToBurn, pol);
 
         uint256 unbondNonce = unbondNonces[msg.sender].add(1);
 
@@ -332,13 +332,13 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         _unstakeClaimTokens_new(unbondNonce, false);
     }
 
-    function unstakeClaimTokens_newLegacy(uint256 unbondNonce) public {
+    function unstakeClaimTokens_newPOL(uint256 unbondNonce) public {
         _unstakeClaimTokens_new(unbondNonce, true);
     }
 
-    function _unstakeClaimTokens_new(uint256 unbondNonce, bool legacy) internal {
+    function _unstakeClaimTokens_new(uint256 unbondNonce, bool pol) internal {
         DelegatorUnbond memory unbond = unbonds_new[msg.sender][unbondNonce];
-        uint256 amount = _unstakeClaimTokens(unbond, legacy);
+        uint256 amount = _unstakeClaimTokens(unbond, pol);
         delete unbonds_new[msg.sender][unbondNonce];
         _getOrCacheEventsHub().logDelegatorUnstakedWithId(validatorId, msg.sender, amount, unbondNonce);
     }
@@ -356,7 +356,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _eventsHub;
     }
 
-    function _getOrCachePolToken() private returns (IERC20Permit) {
+    function _getOrCachePOLToken() private returns (IERC20Permit) {
         IERC20Permit _polToken = polToken;
         if (_polToken == IERC20Permit(0x0)) {
             _polToken = IERC20Permit(Registry(stakeManager.getRegistry()).contractMap(keccak256("pol")));
@@ -369,7 +369,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     function _sellVoucher(
         uint256 claimAmount,
         uint256 maximumSharesToBurn,
-        bool legacy
+        bool pol
     ) private returns (uint256, uint256) {
         // first get how much staked in total and compare to target unstake amount
         (uint256 totalStaked, uint256 rate) = getTotalStake(msg.sender);
@@ -380,7 +380,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         uint256 shares = claimAmount.mul(precision).div(rate);
         require(shares <= maximumSharesToBurn, "too much slippage");
 
-        _withdrawAndTransferReward(msg.sender, legacy);
+        _withdrawAndTransferReward(msg.sender, pol);
 
         _burn(msg.sender, shares);
         stakeManager.updateValidatorState(validatorId, -int256(claimAmount));
@@ -393,7 +393,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return (shares, _withdrawPoolShare);
     }
 
-    function _unstakeClaimTokens(DelegatorUnbond memory unbond, bool legacy) private returns (uint256) {
+    function _unstakeClaimTokens(DelegatorUnbond memory unbond, bool pol) private returns (uint256) {
         uint256 shares = unbond.shares;
         require(
             unbond.withdrawEpoch.add(stakeManager.withdrawalDelay()) <= stakeManager.epoch() && shares > 0,
@@ -405,7 +405,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         withdrawPool = withdrawPool.sub(_amount);
 
         require(
-            legacy ? stakeManager.transferFundsLegacy(validatorId, _amount, msg.sender) : stakeManager.transferFunds(validatorId, _amount, msg.sender),
+            pol ? stakeManager.transferFundsPOL(validatorId, _amount, msg.sender) : stakeManager.transferFunds(validatorId, _amount, msg.sender),
             "Insufficent rewards"
         );
 
@@ -460,11 +460,11 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return liquidRewards;
     }
 
-    function _withdrawAndTransferReward(address user, bool legacy) private returns (uint256) {
+    function _withdrawAndTransferReward(address user, bool pol) private returns (uint256) {
         uint256 liquidRewards = _withdrawReward(user);
         if (liquidRewards != 0) {
             require(
-                legacy ? stakeManager.transferFundsLegacy(validatorId, liquidRewards, user) : stakeManager.transferFunds(validatorId, liquidRewards, user),
+                pol ? stakeManager.transferFundsPOL(validatorId, liquidRewards, user) : stakeManager.transferFunds(validatorId, liquidRewards, user),
                 "Insufficent rewards"
             );
             stakingLogger.logDelegatorClaimRewards(validatorId, user, liquidRewards);
@@ -500,12 +500,22 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _amount;
     }
 
-    function _transfer(address from, address to, uint256 value) internal {
-        bool legacy = false;
+    function transferPOL(address to, uint256 value) public returns (bool) {
+        _transfer(to, value, true);
+        return true;
+    }
+
+    function transfer(address to, uint256 value) public returns (bool) {
+        _transfer(to, value, false);
+        return true;
+    }
+
+    function _transfer(address to, uint256 value, bool pol) internal {
+        address from = msg.sender;
         // get rewards for recipient
-        _withdrawAndTransferReward(to, legacy);
+        _withdrawAndTransferReward(to, pol);
         // convert rewards to shares
-        _withdrawAndTransferReward(from, legacy);
+        _withdrawAndTransferReward(from, pol);
         // move shares to recipient
         super._transfer(from, to, value);
         _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
