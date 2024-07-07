@@ -1,7 +1,7 @@
 import ethUtils from 'ethereumjs-util'
 import { TestToken, ERC20Permit, ValidatorShare, StakingInfo, EventsHub, ethers } from '../../helpers/artifacts.js'
 import testHelpers from '@openzeppelin/test-helpers'
-import { checkPoint, assertBigNumberEquality, updateSlashedAmounts, assertInTransaction } from '../../helpers/utils.js'
+import { checkPoint, assertBigNumberEquality, assertInTransaction } from '../../helpers/utils.js'
 import { wallets, freshDeploy, approveAndStake } from './deployment.js'
 import { buyVoucher, buyVoucherWithPermit, sellVoucher, sellVoucherNew } from './ValidatorShareHelper.js'
 const BN = testHelpers.BN
@@ -25,16 +25,7 @@ describe('ValidatorShare', async function () {
   // }
 
   async function doDeploy() {
-    await freshDeploy.call(this)
-
-    this.stakeToken = await ERC20Permit.deploy('POL', 'POL', '1.1.0')
-
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.stakeToken.address])
-    )
-
-    await this.stakeToken.mint(this.stakeManager.address, toWei('10000000'))
+    await freshDeploy.call(this, true)
 
     this.validatorId = '8'
     this.validatorUser = wallets[0]
@@ -47,14 +38,6 @@ describe('ValidatorShare', async function () {
     await this.governance.update(
       this.stakeManager.address,
       this.stakeManager.interface.encodeFunctionData('updateValidatorThreshold', [8])
-    )
-
-    await this.governance.update(
-      this.registry.address,
-      this.registry.interface.encodeFunctionData('updateContractMap', [
-        ethUtils.keccak256('pol'),
-        this.stakeToken.address
-      ])
     )
 
     // we need to increase validator id beyond foundation id, repeat 7 times
@@ -85,7 +68,7 @@ describe('ValidatorShare', async function () {
     await this.stakeManager.forceFinalizeCommit()
 
     let validator = await this.stakeManager.validators(this.validatorId)
-    this.validatorContract = await ValidatorShare.attach(validator.contractAddress)
+    this.validatorContract = ValidatorShare.attach(validator.contractAddress)
   }
 
   describe('locking', function () {
@@ -163,7 +146,7 @@ describe('ValidatorShare', async function () {
       initialBalance
     }) {
       it('must buy voucher with permit', async function () {
-        assertBigNumberEquality(await this.stakeToken.allowance(this.user, this.stakeManager.address), 0)
+        assertBigNumberEquality(await this.polToken.allowance(this.user, this.stakeManager.address), 0)
         this.receipt = await (
           await buyVoucherWithPermit(
             this.validatorContract,
@@ -171,7 +154,7 @@ describe('ValidatorShare', async function () {
             this.user,
             shares,
             this.stakeManager.address,
-            this.stakeToken
+            this.polToken
           )
         ).wait()
       })
@@ -190,7 +173,8 @@ describe('ValidatorShare', async function () {
       shouldWithdrawReward({
         initialBalance,
         reward,
-        validatorId: '8'
+        validatorId: '8',
+        pol: true
       })
     }
 
@@ -199,10 +183,10 @@ describe('ValidatorShare', async function () {
 
       before(async function () {
         this.user = this.alice
-        await this.stakeToken
-          .connect(this.stakeToken.provider.getSigner(this.user))
+        await this.polToken
+          .connect(this.polToken.provider.getSigner(this.user))
           .approve(this.stakeManager.address, 0)
-      })
+        })
 
       testBuyVoucherWithPermit({
         voucherValue: toWei('100'),
@@ -211,7 +195,7 @@ describe('ValidatorShare', async function () {
         totalStaked: toWei('200'),
         shares: toWei('100'),
         reward: '0',
-        initialBalance: toWei('69900')
+        initialBalance: toWei('705')
       })
     })
 
@@ -220,13 +204,13 @@ describe('ValidatorShare', async function () {
 
       before(async function () {
         this.user = this.alice
-        await this.stakeToken
-          .connect(this.stakeToken.provider.getSigner(this.user))
+        await this.polToken
+          .connect(this.polToken.provider.getSigner(this.user))
           .approve(this.stakeManager.address, 0)
       })
 
       it('reverts with incorrect spender', async function () {
-        assertBigNumberEquality(await this.stakeToken.allowance(this.user, this.stakeManager.address), 0)
+        assertBigNumberEquality(await this.polToken.allowance(this.user, this.stakeManager.address), 0)
 
         await expectRevert(
           buyVoucherWithPermit(
@@ -235,14 +219,14 @@ describe('ValidatorShare', async function () {
             this.user,
             toWei('1000'),
             this.validatorContract.address /* spender, tokens are pulled from stakeManager */,
-            this.stakeToken
+            this.polToken
           ),
           'ERC2612InvalidSigner'
         )
       })
 
       it('reverts with incorrect deadline', async function () {
-        assertBigNumberEquality(await this.stakeToken.allowance(this.user, this.stakeManager.address), 0)
+        assertBigNumberEquality(await this.polToken.allowance(this.user, this.stakeManager.address), 0)
 
         await expectRevert(
           buyVoucherWithPermit(
@@ -251,7 +235,7 @@ describe('ValidatorShare', async function () {
             this.user,
             toWei('1000'),
             this.stakeManager.address,
-            this.stakeToken,
+            this.polToken,
             (await this.validatorContract.provider.getBlock('latest')).timestamp - 60
           ),
           'ERC2612ExpiredSignature'
@@ -274,7 +258,7 @@ describe('ValidatorShare', async function () {
             this.alice,
             toWei('100'),
             this.stakeManager.address,
-            this.stakeToken
+            this.polToken
           ),
           'locked'
         )
@@ -299,7 +283,7 @@ describe('ValidatorShare', async function () {
             this.alice,
             toWei('100'),
             this.stakeManager.address,
-            this.stakeToken
+            this.polToken
           ),
           'locked'
         )
@@ -353,7 +337,7 @@ describe('ValidatorShare', async function () {
         totalStaked: toWei('200'),
         shares: toWei('100'),
         reward: '0',
-        initialBalance: toWei('69900')
+        initialBalance: toWei('70705')
       })
     })
 
@@ -371,7 +355,7 @@ describe('ValidatorShare', async function () {
         totalStaked: toWei('200'),
         shares: toWei('100'),
         reward: '0',
-        initialBalance: toWei('69900')
+        initialBalance: toWei('70705')
       })
     })
 
@@ -423,7 +407,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('200'),
           shares: toWei('100'),
           reward: '0',
-          initialBalance: toWei('69900')
+          initialBalance: toWei('70705')
         })
       })
 
@@ -435,7 +419,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('350'),
           shares: toWei('150'),
           reward: '0',
-          initialBalance: toWei('69750')
+          initialBalance: toWei('70555')
         })
       })
 
@@ -447,7 +431,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('600'),
           shares: toWei('250'),
           reward: '0',
-          initialBalance: toWei('69500')
+          initialBalance: toWei('70305')
         })
       })
     })
@@ -475,7 +459,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('200'),
           shares: toWei('100'),
           reward: '0',
-          initialBalance: toWei('69900')
+          initialBalance: toWei('70705')
         })
       })
 
@@ -489,7 +473,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('350'),
           shares: toWei('150'),
           reward: toWei('4500'),
-          initialBalance: toWei('69750')
+          initialBalance: toWei('70555')
         })
       })
 
@@ -501,7 +485,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('600'),
           shares: toWei('250'),
           reward: '6428571428571428571428',
-          initialBalance: toWei('74000')
+          initialBalance: toWei('74805')
         })
       })
     })
@@ -521,7 +505,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('200'),
           shares: toWei('100'),
           reward: '0',
-          initialBalance: toWei('69900')
+          initialBalance: toWei('70705')
         })
       })
 
@@ -537,7 +521,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('300'),
           shares: toWei('100'),
           reward: '0',
-          initialBalance: toWei('69900')
+          initialBalance: toWei('70750')
         })
       })
 
@@ -553,7 +537,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('500'),
           shares: toWei('200'),
           reward: '0',
-          initialBalance: toWei('69700')
+          initialBalance: toWei('70505')
         })
       })
 
@@ -569,7 +553,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('700'),
           shares: toWei('200'),
           reward: '0',
-          initialBalance: toWei('69700')
+          initialBalance: toWei('70550')
         })
       })
     })
@@ -596,7 +580,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('200'),
           shares: toWei('100'),
           reward: '0',
-          initialBalance: toWei('69900')
+          initialBalance: toWei('70705')
         })
       })
 
@@ -613,7 +597,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('300'),
           shares: toWei('100'),
           reward: '0',
-          initialBalance: toWei('69900')
+          initialBalance: toWei('70750')
         })
       })
 
@@ -630,7 +614,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('500'),
           shares: toWei('200'),
           reward: toWei('7500'),
-          initialBalance: toWei('69700')
+          initialBalance: toWei('70505')
         })
       })
 
@@ -646,7 +630,7 @@ describe('ValidatorShare', async function () {
           totalStaked: toWei('700'),
           shares: toWei('200'),
           reward: toWei('4800'),
-          initialBalance: toWei('69700')
+          initialBalance: toWei('70550')
         })
       })
     })
@@ -964,7 +948,7 @@ describe('ValidatorShare', async function () {
       testSellVoucher({
         returnedStake: aliceStake,
         reward: toWei('18000'),
-        initialBalance: new BN(0),
+        initialBalance: toWei('805'),
         validatorId: '8',
         user: Alice,
         userTotalStaked: toWei('0'),
@@ -1033,7 +1017,7 @@ describe('ValidatorShare', async function () {
       testSellVoucher({
         returnedStake: aliceStake,
         reward: toWei('18000'),
-        initialBalance: new BN(0),
+        initialBalance: toWei('805'),
         validatorId: '8',
         user: Alice,
         userTotalStaked: toWei('0'),
@@ -1062,7 +1046,7 @@ describe('ValidatorShare', async function () {
       testSellVoucher({
         returnedStake: aliceStake,
         reward: toWei('18000'),
-        initialBalance: new BN(0),
+        initialBalance: toWei('805'),
         validatorId: '8',
         user: Alice,
         userTotalStaked: toWei('0'),
@@ -1084,7 +1068,7 @@ describe('ValidatorShare', async function () {
       testSellVoucher({
         returnedStake: aliceStake,
         reward: toWei('18000'),
-        initialBalance: new BN(0),
+        initialBalance: toWei('805'),
         validatorId: '8',
         user: Alice,
         userTotalStaked: toWei('0'),
@@ -1102,7 +1086,7 @@ describe('ValidatorShare', async function () {
         testSellVoucher({
           returnedStake: aliceStake,
           reward: toWei('9000'),
-          initialBalance: new BN(0),
+          initialBalance: toWei('805'),
           validatorId: '8',
           user: Alice,
           userTotalStaked: toWei('0'),
@@ -1115,7 +1099,7 @@ describe('ValidatorShare', async function () {
         testSellVoucher({
           returnedStake: bobStake,
           reward: toWei('18000'),
-          initialBalance: new BN(0),
+          initialBalance: toWei('1200'),
           validatorId: '8',
           user: Bob,
           userTotalStaked: toWei('0'),
@@ -1138,7 +1122,7 @@ describe('ValidatorShare', async function () {
               minClaimAmount: halfStake,
               returnedStake: halfStake,
               reward: toWei('18000'),
-              initialBalance: new BN(0),
+              initialBalance: toWei('805'),
               validatorId: '8',
               user: Alice,
               userTotalStaked: halfStake,
@@ -1157,7 +1141,7 @@ describe('ValidatorShare', async function () {
               minClaimAmount: halfStake,
               returnedStake: halfStake,
               reward: '0',
-              initialBalance: new BN(toWei('18000')),
+              initialBalance: new BN(toWei('18805')),
               validatorId: '8',
               user: Alice,
               userTotalStaked: '0',
@@ -1189,7 +1173,7 @@ describe('ValidatorShare', async function () {
               minClaimAmount: halfStake,
               returnedStake: halfStake,
               reward: toWei('18000'),
-              initialBalance: new BN(0),
+              initialBalance: toWei('805'),
               validatorId: '8',
               user: Alice,
               nonce: '1',
@@ -1208,7 +1192,7 @@ describe('ValidatorShare', async function () {
               minClaimAmount: halfStake,
               returnedStake: halfStake,
               reward: '0',
-              initialBalance: new BN(toWei('18000')),
+              initialBalance: new BN(toWei('18805')),
               validatorId: '8',
               user: Alice,
               userTotalStaked: '0',
@@ -1231,7 +1215,7 @@ describe('ValidatorShare', async function () {
               minClaimAmount: halfStake,
               returnedStake: halfStake,
               reward: toWei('18000'),
-              initialBalance: new BN(0),
+              initialBalance: toWei('805'),
               validatorId: '8',
               user: Alice,
               userTotalStaked: halfStake,
@@ -1249,7 +1233,7 @@ describe('ValidatorShare', async function () {
               minClaimAmount: halfStake,
               returnedStake: halfStake,
               reward: '0',
-              initialBalance: new BN(toWei('18000')),
+              initialBalance: new BN(toWei('18805')),
               validatorId: '8',
               user: Alice,
               userTotalStaked: '0',
@@ -1321,10 +1305,10 @@ describe('ValidatorShare', async function () {
   })
 
   describe('withdrawRewards', function () {
-    const Alice = wallets[2].getChecksumAddressString()
-    const Bob = wallets[3].getChecksumAddressString()
-    const Eve = wallets[4].getChecksumAddressString()
-    const Carol = wallets[5].getChecksumAddressString()
+    const Alice = wallets[5].getChecksumAddressString()
+    const Bob = wallets[6].getChecksumAddressString()
+    const Eve = wallets[7].getChecksumAddressString()
+    const Carol = wallets[8].getChecksumAddressString()
 
     let totalDelegatorRewardsReceived
     //let totalSlashed
@@ -1443,7 +1427,7 @@ describe('ValidatorShare', async function () {
           )
           await stakeManagerValidator.withdrawRewards(this.validatorId)
 
-          const tokensLeft = await this.stakeToken.balanceOf(this.stakeManager.address)
+          const tokensLeft = await this.polToken.balanceOf(this.stakeManager.address)
 
           assertBigNumberEquality(
             this.initialStakeTokenBalance
@@ -1464,7 +1448,7 @@ describe('ValidatorShare', async function () {
         totalStaked = new BN(0)
         //totalSlashed = new BN(0)
         totalDelegatorRewardsReceived = new BN(0)
-        this.initialStakeTokenBalance = await this.stakeToken.balanceOf(this.stakeManager.address)
+        this.initialStakeTokenBalance = await this.polToken.balanceOf(this.stakeManager.address)
       })
 
       for (const step of timeline) {
@@ -2146,7 +2130,7 @@ function shouldBuyShares({ shares, voucherValueExpected, totalStaked }) {
   })
 }
 
-function shouldWithdrawReward({ initialBalance, validatorId, user, reward, checkBalance = true }) {
+function shouldWithdrawReward({ initialBalance, validatorId, user, reward, checkBalance = true, pol = false }) {
   if (reward > 0) {
     it('must emit Transfer', async function () {
       assertInTransaction(this.receipt, TestToken, 'Transfer', {
@@ -2166,10 +2150,17 @@ function shouldWithdrawReward({ initialBalance, validatorId, user, reward, check
   }
 
   if (checkBalance) {
-    it('must have updated balance', async function () {
-      const balance = await this.stakeToken.balanceOf(user || this.user)
-      assertBigNumberEquality(balance, new BN(initialBalance).add(new BN(reward)))
-    })
+    if (pol) {
+      it('must have updated balance', async function () {
+        const balance = await this.polToken.balanceOf(user || this.user)
+        assertBigNumberEquality(balance, new BN(initialBalance).add(new BN(reward)))
+      })
+    } else {
+      it('must have updated balance', async function () {
+        const balance = await this.stakeToken.balanceOf(user || this.user)
+        assertBigNumberEquality(balance, new BN(initialBalance).add(new BN(reward)))
+      })
+    }
   }
 
   it('must have liquid rewards == 0', async function () {

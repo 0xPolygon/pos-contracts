@@ -34,10 +34,10 @@ export const walletAmounts = {
   }
 }
 
-export async function freshDeploy(legacy = false) {
-  let contracts = await deployer.deployStakeManager(wallets, legacy)
+export async function freshDeploy(pol = false) {
+  let contracts = await deployer.deployStakeManager(wallets, pol)
   this.stakeToken = contracts.stakeToken
-  this.legacyToken = contracts.legacyToken
+  this.polToken = contracts.polToken
   this.stakeManager = contracts.stakeManager
   this.nftContract = contracts.stakingNFT
   this.rootChainOwner = contracts.rootChainOwner
@@ -57,13 +57,9 @@ export async function freshDeploy(legacy = false) {
 
   for (const walletAddr in walletAmounts) {
     await this.stakeToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
-    if (legacy) {
-      await this.legacyToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
+    if (pol) {
+      await this.polToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
     }
-  }
-
-  if (!legacy) {
-    await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
   }
 
   this.defaultHeimdallFee = new BN(web3.utils.toWei('1'))
@@ -77,15 +73,15 @@ export async function approveAndStake({
   heimdallFee,
   noMinting = false,
   signer,
-  legacy = false
+  pol = false
 }) {
   const fee = heimdallFee || this.defaultHeimdallFee
 
   const mintAmount = new BN(approveAmount || stakeAmount).add(new BN(fee))
 
   let token
-  if (legacy) {
-    token = this.legacyToken
+  if (pol) {
+    token = this.polToken
   } else {
     token = this.stakeToken
   }
@@ -106,8 +102,8 @@ export async function approveAndStake({
 
   const stakeManagerWallet = this.stakeManager.connect(this.stakeManager.provider.getSigner(wallet.getAddressString()))
 
-  if (legacy) {
-    await stakeManagerWallet.stakeForLegacy(
+  if (pol) {
+    await stakeManagerWallet.stakeForPOL(
       wallet.getAddressString(),
       stakeAmount.toString(),
       fee.toString(),
@@ -123,5 +119,4 @@ export async function approveAndStake({
       signer || wallet.getPublicKeyString()
     )
   }
-
 }

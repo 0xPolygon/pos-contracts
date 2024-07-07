@@ -7,9 +7,9 @@ import {
   EventsHub
 } from '../../helpers/artifacts.js'
 import testHelpers from '@openzeppelin/test-helpers'
-import { checkPoint, assertBigNumberEquality, updateSlashedAmounts, assertInTransaction } from '../../helpers/utils.js'
+import { checkPoint, assertBigNumberEquality, assertInTransaction } from '../../helpers/utils.js'
 import { wallets, freshDeploy, approveAndStake } from './deployment.js'
-import { buyVoucherLegacy, sellVoucherLegacy, sellVoucherNewLegacy } from './ValidatorShareHelper.js'
+import { buyVoucherPOL, sellVoucherPOL, sellVoucherNewPOL } from './ValidatorShareHelper.js'
 const BN = testHelpers.BN
 const expectRevert = testHelpers.expectRevert
 const toWei = web3.utils.toWei
@@ -18,30 +18,30 @@ const ExchangeRatePrecision = new BN('100000000000000000000000000000')
 const Dynasty = 8
 const ValidatorDefaultStake = new BN(toWei('100'))
 
-describe('ValidatorShareLegacy', function () {
+describe('ValidatorSharePOL', function () {
   const wei100 = toWei('100')
 
   async function doDeploy() {
     await freshDeploy.call(this)
 
-    this.stakeToken = await ERC20Permit.deploy('POL', 'POL', '1.1.0')
-    this.legacyToken = await TestToken.deploy('MATIC', 'MATIC')
+    this.polToken = await ERC20Permit.deploy('POL', 'POL', '1.1.0')
+    this.stakeToken = await TestToken.deploy('MATIC', 'MATIC')
 
-    this.migration = await PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
+    this.migration = await PolygonMigration.deploy(this.stakeToken.address, this.polToken.address)
 
     await this.stakeToken.mint(this.migration.address, toWei('30000000'))
-    await this.legacyToken.mint(this.migration.address, toWei('40000000'))
+    await this.polToken.mint(this.migration.address, toWei('40000000'))
 
     await this.governance.update(
       this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.legacyToken.address])
+      this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.stakeToken.address])
     )
 
-    await this.legacyToken.mint(this.stakeManager.address, toWei('10000000'))
+    await this.stakeToken.mint(this.stakeManager.address, toWei('10000000'))
 
     await this.governance.update(
       this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
+      this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
     )
 
     this.validatorId = '8'
@@ -63,19 +63,19 @@ describe('ValidatorShareLegacy', function () {
         wallet: this.validatorUser,
         stakeAmount: this.stakeAmount,
         acceptDelegation: true,
-        legacy: true
+        pol: true
       })
 
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('forceUnstakeLegacy', [i + 1])
+        this.stakeManager.interface.encodeFunctionData('forceUnstakePOL', [i + 1])
       )
       await this.stakeManager.forceFinalizeCommit()
       await this.stakeManager.advanceEpoch(Dynasty)
       const stakeManagerValidator = this.stakeManager.connect(
         this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
       )
-      await stakeManagerValidator.unstakeClaimLegacy(i + 1)
+      await stakeManagerValidator.unstakeClaimPOL(i + 1)
       await this.stakeManager.resetSignerUsed(this.validatorUser.getChecksumAddressString())
     }
 
@@ -83,7 +83,7 @@ describe('ValidatorShareLegacy', function () {
       wallet: this.validatorUser,
       stakeAmount: this.stakeAmount,
       acceptDelegation: true,
-      legacy: true
+      pol: true
     })
     await this.stakeManager.forceFinalizeCommit()
 
@@ -101,20 +101,18 @@ describe('ValidatorShareLegacy', function () {
 
       const mintAmount = new BN(toWei('70000')).toString()
 
-      await this.legacyToken.mint(this.alice, mintAmount)
+      await this.polToken.mint(this.alice, mintAmount)
+      const polTokenAlice = this.polToken.connect(this.polToken.provider.getSigner(this.alice))
+      await polTokenAlice.approve(this.stakeManager.address, mintAmount)
 
-      const legacyTokenAlice = this.legacyToken.connect(this.legacyToken.provider.getSigner(this.alice))
-      await legacyTokenAlice.approve(this.stakeManager.address, mintAmount)
-
-      await this.legacyToken.mint(this.bob, mintAmount)
-
-      const legacyTokenBob = this.legacyToken.connect(this.legacyToken.provider.getSigner(this.bob))
-      await legacyTokenBob.approve(this.stakeManager.address, mintAmount)
+      await this.polToken.mint(this.bob, mintAmount)
+      const polTokenBob = this.polToken.connect(this.polToken.provider.getSigner(this.bob))
+      await polTokenBob.approve(this.stakeManager.address, mintAmount)
     })
   }
 
   describe('buyVoucher', function () {
-    function testbuyVoucherLegacy({
+    function testbuyVoucherPOL({
       voucherValue,
       voucherValueExpected,
       userTotalStaked,
@@ -124,7 +122,7 @@ describe('ValidatorShareLegacy', function () {
       initialBalance
     }) {
       it('must buy voucher', async function () {
-        this.receipt = await (await buyVoucherLegacy(this.validatorContract, voucherValue, this.user, shares)).wait()
+        this.receipt = await (await buyVoucherPOL(this.validatorContract, voucherValue, this.user, shares)).wait()
       })
 
       shouldBuyShares({
@@ -152,7 +150,7 @@ describe('ValidatorShareLegacy', function () {
         this.user = this.alice
       })
 
-      testbuyVoucherLegacy({
+      testbuyVoucherPOL({
         voucherValue: toWei('100'),
         voucherValueExpected: toWei('100'),
         userTotalStaked: toWei('100'),
@@ -170,7 +168,7 @@ describe('ValidatorShareLegacy', function () {
         this.user = this.alice
       })
 
-      testbuyVoucherLegacy({
+      testbuyVoucherPOL({
         voucherValue: toWei('100'),
         voucherValueExpected: toWei('100'),
         userTotalStaked: toWei('100'),
@@ -192,7 +190,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       it('reverts', async function () {
-        await expectRevert(buyVoucherLegacy(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
+        await expectRevert(buyVoucherPOL(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
       })
     })
 
@@ -208,7 +206,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('reverts', async function () {
         await expectRevert(
-          buyVoucherLegacy(this.validatorContract, web3.utils.toWei('150'), this.alice),
+          buyVoucherPOL(this.validatorContract, web3.utils.toWei('150'), this.alice),
           'Delegation is disabled'
         )
       })
@@ -222,7 +220,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       describe('1st purchase', async function () {
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
@@ -234,7 +232,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       describe('2nd purchase', async function () {
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('150'),
           voucherValueExpected: toWei('150'),
           userTotalStaked: toWei('250'),
@@ -246,7 +244,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       describe('3rd purchase', async function () {
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('250'),
           voucherValueExpected: toWei('250'),
           userTotalStaked: toWei('500'),
@@ -274,7 +272,7 @@ describe('ValidatorShareLegacy', function () {
       describe('1st purchase', async function () {
         advanceCheckpointAfter()
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
@@ -288,7 +286,7 @@ describe('ValidatorShareLegacy', function () {
       describe('2nd purchase', async function () {
         advanceCheckpointAfter()
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('150'),
           voucherValueExpected: toWei('150'),
           userTotalStaked: toWei('250'),
@@ -300,7 +298,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       describe('3rd purchase', async function () {
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('250'),
           voucherValueExpected: toWei('250'),
           userTotalStaked: toWei('500'),
@@ -320,7 +318,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.alice
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
@@ -336,7 +334,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.bob
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
@@ -352,7 +350,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.alice
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
           userTotalStaked: toWei('300'),
@@ -368,7 +366,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.bob
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
           userTotalStaked: toWei('300'),
@@ -395,7 +393,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.alice
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
@@ -412,7 +410,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.bob
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
@@ -429,7 +427,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.alice
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
           userTotalStaked: toWei('300'),
@@ -445,7 +443,7 @@ describe('ValidatorShareLegacy', function () {
           this.user = this.bob
         })
 
-        testbuyVoucherLegacy({
+        testbuyVoucherPOL({
           voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
           userTotalStaked: toWei('300'),
@@ -465,7 +463,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       it('reverts', async function () {
-        await expectRevert(buyVoucherLegacy(this.validatorContract, toWei('100'), this.alice, toWei('100')), 'locked')
+        await expectRevert(buyVoucherPOL(this.validatorContract, toWei('100'), this.alice, toWei('100')), 'locked')
       })
     })
 
@@ -480,7 +478,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       it('reverts', async function () {
-        await expectRevert(buyVoucherLegacy(this.validatorContract, new BN(toWei('100')), this.alice), 'locked')
+        await expectRevert(buyVoucherPOL(this.validatorContract, new BN(toWei('100')), this.alice), 'locked')
       })
     })
   })
@@ -494,16 +492,16 @@ describe('ValidatorShareLegacy', function () {
         this.totalStaked = new BN(0)
 
         const voucherAmount = new BN(toWei('70000')).toString()
-        await this.legacyToken.mint(this.user, voucherAmount)
-        const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(this.user))
-        await legacyTokenUser.approve(this.stakeManager.address, voucherAmount)
+        await this.polToken.mint(this.user, voucherAmount)
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(this.user))
+        await polTokenUser.approve(this.stakeManager.address, voucherAmount)
       })
 
       it('must buy voucher', async function () {
         const voucherValue = toWei('100')
         this.totalStaked = this.totalStaked.add(new BN(voucherValue))
 
-        await buyVoucherLegacy(this.validatorContract, voucherValue, this.user)
+        await buyVoucherPOL(this.validatorContract, voucherValue, this.user)
       })
 
       it('exchange rate must be correct', async function () {
@@ -515,7 +513,7 @@ describe('ValidatorShareLegacy', function () {
 
         const voucherValue = toWei('5000')
         this.totalStaked = this.totalStaked.add(new BN(voucherValue))
-        await buyVoucherLegacy(this.validatorContract, voucherValue, this.user)
+        await buyVoucherPOL(this.validatorContract, voucherValue, this.user)
       })
 
       it('exchange rate must be correct', async function () {
@@ -527,19 +525,19 @@ describe('ValidatorShareLegacy', function () {
       before(doDeploy)
       before(async function () {
         this.user = wallets[2].getAddressString()
-        await this.legacyToken.mint(this.user, toWei('250'))
+        await this.polToken.mint(this.user, toWei('250'))
 
         this.beforeExchangeRate = await this.validatorContract.exchangeRate()
-        const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(this.user))
-        await legacyTokenUser.approve(this.stakeManager.address, toWei('250'))
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(this.user))
+        await polTokenUser.approve(this.stakeManager.address, toWei('250'))
       })
 
       it('must purchase voucher', async function () {
-        await buyVoucherLegacy(this.validatorContract, toWei('100'), this.user)
+        await buyVoucherPOL(this.validatorContract, toWei('100'), this.user)
       })
 
       it('must sell voucher', async function () {
-        await sellVoucherLegacy(this.validatorContract, this.user)
+        await sellVoucherPOL(this.validatorContract, this.user)
       })
 
       it('must have initial exchange rate', async function () {
@@ -559,10 +557,10 @@ describe('ValidatorShareLegacy', function () {
       await doDeploy.call(this)
 
       const stake = async ({ user, stake }) => {
-        await this.legacyToken.mint(user, stake)
-        const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(user))
-        await legacyTokenUser.approve(this.stakeManager.address, stake)
-        await buyVoucherLegacy(this.validatorContract, stake, user)
+        await this.polToken.mint(user, stake)
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
+        await polTokenUser.approve(this.stakeManager.address, stake)
+        await buyVoucherPOL(this.validatorContract, stake, user)
       }
 
       await stake({ user: Alice, stake: aliceStake.toString() })
@@ -576,7 +574,7 @@ describe('ValidatorShareLegacy', function () {
       }
     }
 
-    function testSellVoucherLegacyNew({
+    function testsellVoucherPOLNew({
       returnedStake,
       reward,
       initialBalance,
@@ -591,11 +589,11 @@ describe('ValidatorShareLegacy', function () {
     }) {
       if (minClaimAmount) {
         it('must sell voucher with slippage', async function () {
-          this.receipt = await (await sellVoucherNewLegacy(this.validatorContract, user, minClaimAmount)).wait()
+          this.receipt = await (await sellVoucherNewPOL(this.validatorContract, user, minClaimAmount)).wait()
         })
       } else {
         it('must sell voucher', async function () {
-          this.receipt = await (await sellVoucherNewLegacy(this.validatorContract, user)).wait()
+          this.receipt = await (await sellVoucherNewPOL(this.validatorContract, user)).wait()
         })
       }
 
@@ -634,7 +632,7 @@ describe('ValidatorShareLegacy', function () {
       })
     }
 
-    function testSellVoucherLegacy({
+    function testsellVoucherPOL({
       returnedStake,
       reward,
       initialBalance,
@@ -648,11 +646,11 @@ describe('ValidatorShareLegacy', function () {
     }) {
       if (minClaimAmount) {
         it('must sell voucher with slippage', async function () {
-          this.receipt = await (await sellVoucherLegacy(this.validatorContract, user, minClaimAmount.toString())).wait()
+          this.receipt = await (await sellVoucherPOL(this.validatorContract, user, minClaimAmount.toString())).wait()
         })
       } else {
         it('must sell voucher', async function () {
-          this.receipt = await (await sellVoucherLegacy(this.validatorContract, user)).wait()
+          this.receipt = await (await sellVoucherPOL(this.validatorContract, user)).wait()
         })
       }
 
@@ -682,7 +680,7 @@ describe('ValidatorShareLegacy', function () {
     describe('when Alice sells voucher', function () {
       before(doDeployAndBuyVoucherForAliceAndBob)
 
-      testSellVoucherLegacy({
+      testsellVoucherPOL({
         returnedStake: aliceStake,
         reward: toWei('18000'),
         initialBalance: new BN(0),
@@ -703,7 +701,7 @@ describe('ValidatorShareLegacy', function () {
         )
       })
 
-      testSellVoucherLegacy({
+      testsellVoucherPOL({
         returnedStake: aliceStake,
         reward: toWei('18000'),
         initialBalance: new BN(0),
@@ -721,7 +719,7 @@ describe('ValidatorShareLegacy', function () {
       it('reverts', async function () {
         const maxShares = await this.validatorContract.balanceOf(Alice)
         const validatorAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(Alice))
-        await expectRevert(validatorAlice.sellVoucherLegacy(toWei('100.00001'), maxShares), 'Too much requested')
+        await expectRevert(validatorAlice.sellVoucherPOL(toWei('100.00001'), maxShares), 'Too much requested')
       })
     })
 
@@ -732,7 +730,7 @@ describe('ValidatorShareLegacy', function () {
         await this.stakeManager.testLockShareContract(this.validatorId, true)
       })
 
-      testSellVoucherLegacy({
+      testsellVoucherPOL({
         returnedStake: aliceStake,
         reward: toWei('18000'),
         initialBalance: new BN(0),
@@ -754,7 +752,7 @@ describe('ValidatorShareLegacy', function () {
         await this.stakeManager.advanceEpoch(Dynasty)
       })
 
-      testSellVoucherLegacy({
+      testsellVoucherPOL({
         returnedStake: aliceStake,
         reward: toWei('18000'),
         initialBalance: new BN(0),
@@ -772,7 +770,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       describe('when Alice sells', function () {
-        testSellVoucherLegacy({
+        testsellVoucherPOL({
           returnedStake: aliceStake,
           reward: toWei('9000'),
           initialBalance: new BN(0),
@@ -785,7 +783,7 @@ describe('ValidatorShareLegacy', function () {
       })
 
       describe('when Bob sells', function () {
-        testSellVoucherLegacy({
+        testsellVoucherPOL({
           returnedStake: bobStake,
           reward: toWei('18000'),
           initialBalance: new BN(0),
@@ -806,7 +804,7 @@ describe('ValidatorShareLegacy', function () {
           const halfStake = aliceStake.div(new BN('2'))
 
           describe('when Alice sells 50%', function () {
-            testSellVoucherLegacyNew({
+            testsellVoucherPOLNew({
               shares: new BN(toWei('50')),
               minClaimAmount: halfStake,
               returnedStake: halfStake,
@@ -825,7 +823,7 @@ describe('ValidatorShareLegacy', function () {
               await this.stakeManager.advanceEpoch(1)
             })
 
-            testSellVoucherLegacyNew({
+            testsellVoucherPOLNew({
               shares: new BN(toWei('50')),
               minClaimAmount: halfStake,
               returnedStake: halfStake,
@@ -848,7 +846,7 @@ describe('ValidatorShareLegacy', function () {
           const halfStake = aliceStake.div(new BN('2'))
 
           describe('when Alice sells 50%', function () {
-            testSellVoucherLegacy({
+            testsellVoucherPOL({
               shares: new BN(toWei('50')).toString(),
               minClaimAmount: halfStake,
               returnedStake: halfStake,
@@ -866,7 +864,7 @@ describe('ValidatorShareLegacy', function () {
               await this.stakeManager.advanceEpoch(1)
             })
 
-            testSellVoucherLegacy({
+            testsellVoucherPOL({
               shares: new BN(toWei('50')),
               minClaimAmount: halfStake,
               returnedStake: halfStake,
@@ -904,12 +902,12 @@ describe('ValidatorShareLegacy', function () {
         if (expectedReward.toString() === '0') {
           it('reverts', async function () {
             const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(user))
-            await expectRevert(validatorUser.withdrawRewardsLegacy(), 'Too small rewards amount')
+            await expectRevert(validatorUser.withdrawRewardsPOL(), 'Too small rewards amount')
           })
         } else {
           it('must withdraw rewards', async function () {
             const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(user))
-            this.receipt = await (await validatorUser.withdrawRewardsLegacy()).wait()
+            this.receipt = await (await validatorUser.withdrawRewardsPOL()).wait()
           })
 
           shouldWithdrawReward({
@@ -928,10 +926,10 @@ describe('ValidatorShareLegacy', function () {
           totalInitialBalance = totalInitialBalance.add(initialBalance)
           totalStaked = totalStaked.add(new BN(amount))
 
-          await this.legacyToken.mint(user, initialBalance.add(amount).toString())
-          const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(user))
-          await legacyTokenUser.approve(this.stakeManager.address, amount.toString())
-          await buyVoucherLegacy(this.validatorContract, amount.toString(), user)
+          await this.polToken.mint(user, initialBalance.add(amount).toString())
+          const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
+          await polTokenUser.approve(this.stakeManager.address, amount.toString())
+          await buyVoucherPOL(this.validatorContract, amount.toString(), user)
           delegators[user] = delegators[user] || {
             rewards: new BN(0)
           }
@@ -993,12 +991,12 @@ describe('ValidatorShareLegacy', function () {
           const stakeManagerValidator = this.stakeManager.connect(
             this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
           )
-          await stakeManagerValidator.withdrawRewardsLegacy(this.validatorId)
+          await stakeManagerValidator.withdrawRewardsPOL(this.validatorId)
 
-          const tokensLeft = await this.stakeToken.balanceOf(this.stakeManager.address)
+          const tokensLeft = await this.polToken.balanceOf(this.stakeManager.address)
 
           assertBigNumberEquality(
-            this.initialStakeTokenBalance
+            this.initialPolTokenBalance
               .add(totalStaked.toString())
               .sub(totalReceived),
             tokensLeft
@@ -1014,7 +1012,7 @@ describe('ValidatorShareLegacy', function () {
         totalInitialBalance = new BN(0)
         totalStaked = new BN(0)
         totalDelegatorRewardsReceived = new BN(0)
-        this.initialStakeTokenBalance = await this.stakeToken.balanceOf(this.stakeManager.address)
+        this.initialPolTokenBalance = await this.polToken.balanceOf(this.stakeManager.address)
       })
 
       for (const step of timeline) {
@@ -1079,7 +1077,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('reverts', async function () {
         const validatorContractAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(Alice))
-        await expectRevert(validatorContractAlice.withdrawRewardsLegacy(), 'Too small rewards amount')
+        await expectRevert(validatorContractAlice.withdrawRewardsPOL(), 'Too small rewards amount')
       })
     })
 
@@ -1097,17 +1095,17 @@ describe('ValidatorShareLegacy', function () {
 
       before(async function () {
         const amount = toWei('100')
-        await this.legacyToken.mint(Alice, amount)
-        const legacyTokenAlice = this.legacyToken.connect(this.legacyToken.provider.getSigner(Alice))
-        await legacyTokenAlice.approve(this.stakeManager.address, amount)
-        await buyVoucherLegacy(this.validatorContract, amount, Alice)
+        await this.polToken.mint(Alice, amount)
+        const polTokenAlice = this.polToken.connect(this.polToken.provider.getSigner(Alice))
+        await polTokenAlice.approve(this.stakeManager.address, amount)
+        await buyVoucherPOL(this.validatorContract, amount, Alice)
         await checkPoint([this.validatorUser], this.rootChainOwner, this.stakeManager)
         await this.stakeManager.testLockShareContract(this.validatorId, true)
       })
 
       it('must withdraw rewards', async function () {
         const validatorContractAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(Alice))
-        this.receipt = await (await validatorContractAlice.withdrawRewardsLegacy()).wait()
+        this.receipt = await (await validatorContractAlice.withdrawRewardsPOL()).wait()
       })
 
       shouldWithdrawReward({
@@ -1122,10 +1120,10 @@ describe('ValidatorShareLegacy', function () {
       before(doDeploy)
       before(async function () {
         const amount = toWei('100')
-        await this.legacyToken.mint(Alice, amount)
-        const legacyTokenAlice = this.legacyToken.connect(this.legacyToken.provider.getSigner(Alice))
-        await legacyTokenAlice.approve(this.stakeManager.address, amount)
-        await buyVoucherLegacy(this.validatorContract, amount, Alice)
+        await this.polToken.mint(Alice, amount)
+        const polTokenAlice = this.polToken.connect(this.polToken.provider.getSigner(Alice))
+        await polTokenAlice.approve(this.stakeManager.address, amount)
+        await buyVoucherPOL(this.validatorContract, amount, Alice)
         await checkPoint([this.validatorUser], this.rootChainOwner, this.stakeManager)
         const stakeManagerAlice = this.stakeManager.connect(
           this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
@@ -1136,7 +1134,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('must withdraw rewards', async function () {
         const validatorContractAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(Alice))
-        this.receipt = await (await validatorContractAlice.withdrawRewardsLegacy()).wait()
+        this.receipt = await (await validatorContractAlice.withdrawRewardsPOL()).wait()
       })
 
       shouldWithdrawReward({
@@ -1154,11 +1152,11 @@ describe('ValidatorShareLegacy', function () {
       before(async function () {
         this.user = wallets[2].getChecksumAddressString()
 
-        await this.legacyToken.mint(this.user, this.stakeAmount.toString())
-        const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(this.user))
-        await legacyTokenUser.approve(this.stakeManager.address, this.stakeAmount.toString())
+        await this.polToken.mint(this.user, this.stakeAmount.toString())
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(this.user))
+        await polTokenUser.approve(this.stakeManager.address, this.stakeAmount.toString())
 
-        await buyVoucherLegacy(this.validatorContract, this.stakeAmount.toString(), this.user)
+        await buyVoucherPOL(this.validatorContract, this.stakeAmount.toString(), this.user)
         this.shares = await this.validatorContract.balanceOf(this.user)
 
         if (!skipCheckpoint) {
@@ -1179,7 +1177,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('must restake', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        this.receipt = await (await validatorUser.restakeLegacy()).wait()
+        this.receipt = await (await validatorUser.restakePOL()).wait()
       })
 
       shouldBuyShares({
@@ -1211,7 +1209,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        await expectRevert(validatorUser.restakeLegacy(), 'Too small rewards to restake')
+        await expectRevert(validatorUser.restakePOL(), 'Too small rewards to restake')
       })
     })
 
@@ -1227,7 +1225,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        await expectRevert(validatorUser.restakeLegacy(), 'Delegation is disabled')
+        await expectRevert(validatorUser.restakePOL(), 'Delegation is disabled')
       })
     })
 
@@ -1242,7 +1240,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        await expectRevert(validatorUser.restakeLegacy(), 'locked')
+        await expectRevert(validatorUser.restakePOL(), 'locked')
       })
     })
 
@@ -1255,7 +1253,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        await expectRevert(validatorUser.restakeLegacy(), 'locked')
+        await expectRevert(validatorUser.restakePOL(), 'locked')
       })
     })
   })
@@ -1266,22 +1264,22 @@ describe('ValidatorShareLegacy', function () {
       before(async function () {
         this.user = wallets[2].getChecksumAddressString()
 
-        await this.legacyToken.mint(this.user, this.stakeAmount.toString())
-        const legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(this.user))
-        await legacyTokenUser.approve(this.stakeManager.address, this.stakeAmount.toString())
+        await this.polToken.mint(this.user, this.stakeAmount.toString())
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(this.user))
+        await polTokenUser.approve(this.stakeManager.address, this.stakeAmount.toString())
 
         this.totalStaked = this.stakeAmount
       })
 
       if (!skipBuy) {
         before('buy', async function () {
-          await buyVoucherLegacy(this.validatorContract, this.stakeAmount.toString(), this.user)
+          await buyVoucherPOL(this.validatorContract, this.stakeAmount.toString(), this.user)
         })
       }
 
       if (!skipSell) {
         before('sell', async function () {
-          await sellVoucherLegacy(this.validatorContract, this.user)
+          await sellVoucherPOL(this.validatorContract, this.user)
         })
       }
     }
@@ -1300,7 +1298,7 @@ describe('ValidatorShareLegacy', function () {
 
       it('must unstake', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        this.receipt = await (await validatorUser.unstakeClaimTokensLegacy()).wait()
+        this.receipt = await (await validatorUser.unstakeClaimTokensPOL()).wait()
       })
 
       it('must emit DelegatorUnstaked', async function () {
@@ -1323,7 +1321,7 @@ describe('ValidatorShareLegacy', function () {
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
         await expectRevert(
-          validatorUser.unstakeClaimTokensLegacy(),
+          validatorUser.unstakeClaimTokensPOL(),
           'Incomplete withdrawal period'
         )
       })
@@ -1335,7 +1333,7 @@ describe('ValidatorShareLegacy', function () {
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
         await expectRevert(
-          validatorUser.unstakeClaimTokensLegacy(),
+          validatorUser.unstakeClaimTokensPOL(),
           'Incomplete withdrawal period'
         )
       })
@@ -1347,7 +1345,7 @@ describe('ValidatorShareLegacy', function () {
       it('reverts', async function () {
         const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
         await expectRevert(
-          validatorUser.unstakeClaimTokensLegacy(),
+          validatorUser.unstakeClaimTokensPOL(),
           'Incomplete withdrawal period'
         )
       })
@@ -1360,9 +1358,9 @@ describe('ValidatorShareLegacy', function () {
         before('sell shares twice', async function () {
           this.claimAmount = this.stakeAmount.div(new BN('2'))
 
-          await sellVoucherNewLegacy(this.validatorContract, this.user, this.claimAmount)
+          await sellVoucherNewPOL(this.validatorContract, this.user, this.claimAmount)
           await checkPoint([this.validatorUser], this.rootChainOwner, this.stakeManager)
-          await sellVoucherNewLegacy(this.validatorContract, this.user, this.claimAmount)
+          await sellVoucherNewPOL(this.validatorContract, this.user, this.claimAmount)
         })
 
         before('checkpoint', async function () {
@@ -1376,7 +1374,7 @@ describe('ValidatorShareLegacy', function () {
 
         it('must claim 1st unstake', async function () {
           const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-          this.receipt = await (await validatorUser.unstakeClaimTokens_newLegacy('1')).wait()
+          this.receipt = await (await validatorUser.unstakeClaimTokens_newPOL('1')).wait()
         })
 
         it('must emit DelegatorUnstakeWithId', async function () {
@@ -1390,7 +1388,7 @@ describe('ValidatorShareLegacy', function () {
 
         it('must claim 2nd unstake', async function () {
           const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-          this.receipt = await (await validatorUser.unstakeClaimTokens_newLegacy('2')).wait()
+          this.receipt = await (await validatorUser.unstakeClaimTokens_newPOL('2')).wait()
         })
 
         it('must emit DelegatorUnstakeWithId', async function () {
@@ -1413,11 +1411,11 @@ describe('ValidatorShareLegacy', function () {
     describe('when Alice and Bob buy vouchers (1 checkpoint in-between) and Alice withdraw the rewards', function () {
       deployAliceAndBob()
       before(async function () {
-        await buyVoucherLegacy(this.validatorContract, toWei('100'), this.alice)
+        await buyVoucherPOL(this.validatorContract, toWei('100'), this.alice)
         await checkPoint([this.validatorUser], this.rootChainOwner, this.stakeManager)
-        await buyVoucherLegacy(this.validatorContract, toWei('4600'), this.bob)
+        await buyVoucherPOL(this.validatorContract, toWei('4600'), this.bob)
         const validatorAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.alice))
-        await validatorAlice.withdrawRewardsLegacy()
+        await validatorAlice.withdrawRewardsPOL()
       })
 
       it('Bob must call getLiquidRewards', async function () {
@@ -1433,13 +1431,13 @@ describe('ValidatorShareLegacy', function () {
       let initialSharesBalance
 
       before('Alice purchases voucher', async function () {
-        await buyVoucherLegacy(this.validatorContract, toWei('100'), this.alice)
+        await buyVoucherPOL(this.validatorContract, toWei('100'), this.alice)
         initialSharesBalance = await this.validatorContract.balanceOf(this.alice)
       })
 
       it('must Transfer shares', async function () {
         const validatorAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.alice))
-        await validatorAlice.transfer(this.bob, initialSharesBalance)
+        await validatorAlice.transferPOL(this.bob, initialSharesBalance)
       })
 
       it('Alice must have 0 shares', async function () {
@@ -1457,25 +1455,31 @@ describe('ValidatorShareLegacy', function () {
       let initialAliceSharesBalance
       let initialBobSharesBalance
 
-      let initialAliceMaticBalance
-      let initialBobMaticBalance
+      let initialAlicePolBalance
+      let initialBobPolBalance
+
+      let initialAliceStakeBalance
+      let initialBobStakeBalance
 
       before('Alice and Bob purchases voucher, checkpoint is commited', async function () {
-        await buyVoucherLegacy(this.validatorContract, ValidatorDefaultStake, this.alice)
-        await buyVoucherLegacy(this.validatorContract, ValidatorDefaultStake, this.bob)
+        await buyVoucherPOL(this.validatorContract, ValidatorDefaultStake, this.alice)
+        await buyVoucherPOL(this.validatorContract, ValidatorDefaultStake, this.bob)
 
         initialAliceSharesBalance = await this.validatorContract.balanceOf(this.alice)
         initialBobSharesBalance = await this.validatorContract.balanceOf(this.bob)
 
-        initialAliceMaticBalance = await this.legacyToken.balanceOf(this.alice)
-        initialBobMaticBalance = await this.legacyToken.balanceOf(this.bob)
+        initialAlicePolBalance = await this.polToken.balanceOf(this.alice)
+        initialBobPolBalance = await this.polToken.balanceOf(this.bob)
+
+        initialAliceStakeBalance = await this.stakeToken.balanceOf(this.alice)
+        initialBobStakeBalance = await this.stakeToken.balanceOf(this.bob)
 
         await checkPoint([this.validatorUser], this.rootChainOwner, this.stakeManager)
       })
 
       it('must Transfer shares', async function () {
         const validatorAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.alice))
-        this.receipt = await (await validatorAlice.transfer(this.bob, initialAliceSharesBalance)).wait()
+        this.receipt = await (await validatorAlice.transferPOL(this.bob, initialAliceSharesBalance)).wait()
       })
 
       it('must emit DelegatorClaimedRewards for Alice', async function () {
@@ -1486,17 +1490,18 @@ describe('ValidatorShareLegacy', function () {
         })
       })
 
-      it('Alice must claim 3000 stake', async function () {
+      it('Alice must claim 3000 pol', async function () {
         assertBigNumberEquality(
-          await this.stakeToken.balanceOf(this.alice),
-          toWei('3000')
+          await this.polToken.balanceOf(this.alice),
+          initialAlicePolBalance.add(toWei('3000'))
         )
       })
 
-      it('Alice must have unchanged legacy', async function () {
+      it('Alice must have unchanged matic', async function () {
         assertBigNumberEquality(
-          await this.legacyToken.balanceOf(this.alice),
-          initialAliceMaticBalance)
+          await this.stakeToken.balanceOf(this.alice),
+          initialAliceStakeBalance
+          )
       })
 
       it('Alice must have 0 liquid rewards', async function () {
@@ -1522,17 +1527,17 @@ describe('ValidatorShareLegacy', function () {
         })
       })
 
-      it('Bob must claim 3000 stake', async function () {
+      it('Bob must claim 3000 pol', async function () {
         assertBigNumberEquality(
-          await this.stakeToken.balanceOf(this.bob),
-          toWei('3000')
+          await this.polToken.balanceOf(this.bob),
+          initialBobPolBalance.add(toWei('3000'))
         )
       })
 
-      it('Bob must have unchanged legacy', async function () {
+      it('Bob must have unchanged pol', async function () {
         assertBigNumberEquality(
-          await this.legacyToken.balanceOf(this.bob),
-          initialBobMaticBalance
+          await this.stakeToken.balanceOf(this.bob),
+          initialBobStakeBalance
         )
       })
 
@@ -1549,13 +1554,13 @@ describe('ValidatorShareLegacy', function () {
       before('Alice purchases voucher', async function () {
         initialAliceSharesBalance = await this.validatorContract.balanceOf(this.alice)
 
-        await buyVoucherLegacy(this.validatorContract, ValidatorDefaultStake, this.alice)
+        await buyVoucherPOL(this.validatorContract, ValidatorDefaultStake, this.alice)
       })
 
       it('reverts', async function () {
         const validatorAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.alice))
         await expectRevert.unspecified(
-          validatorAlice.transfer(ZeroAddr, initialAliceSharesBalance)
+          validatorAlice.transferPOL(ZeroAddr, initialAliceSharesBalance)
         )
       })
     })
@@ -1620,7 +1625,7 @@ function shouldWithdrawReward({ initialBalance, validatorId, user, reward, check
 
   if (checkBalance) {
     it('must have updated balance', async function () {
-      const balance = await this.legacyToken.balanceOf(user || this.user)
+      const balance = await this.polToken.balanceOf(user || this.user)
       assertBigNumberEquality(balance, new BN(initialBalance).add(new BN(reward)))
     })
   }

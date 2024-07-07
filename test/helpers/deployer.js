@@ -52,7 +52,7 @@ class Deployer {
       ])
     )
 
-    this.stakeManager = await contractFactories.StakeManager.attach(stakeManagerProxy.address)
+    this.stakeManager = contractFactories.StakeManager.attach(stakeManagerProxy.address)
     // TODO cannot alter functions like we used to here, replace usage with actual impl like below
     // this.buildStakeManagerObject(this.stakeManager, this.governance)
     await this.governance.update(
@@ -84,7 +84,7 @@ class Deployer {
     return _contracts
   }
 
-  async deployStakeManager(wallets, legacy = false) {
+  async deployStakeManager(wallets, pol = false) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
 
@@ -93,15 +93,7 @@ class Deployer {
     this.validatorShare = await contractFactories.ValidatorShare.deploy()
     this.rootChain = await this.deployRootChain()
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
-   
-    let token 
-    if (legacy){
-      this.legacyToken = await contractFactories.TestToken.deploy('Legacy Token', 'LEG')
-      token = this.legacyToken
-    } else {
-      this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
-      token = this.stakeToken
-    }
+    this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
 
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
@@ -114,7 +106,7 @@ class Deployer {
       stakeManager.interface.encodeFunctionData('initialize', [
         this.registry.address,
         rootChainOwner.getAddressString(),
-        token.address,
+        this.stakeToken.address,
         this.stakingNFT.address,
         this.stakingInfo.address,
         this.validatorShareFactory.address,
@@ -124,40 +116,43 @@ class Deployer {
       ])
     )
 
-    this.stakeManager = await contractFactories.StakeManagerTestable.attach(proxy.address)
+    this.stakeManager = contractFactories.StakeManagerTestable.attach(proxy.address)
     this.slashingManager = await contractFactories.SlashingManager.deploy(
       this.registry.address,
       this.stakingInfo.address,
       'heimdall-P5rXwg'
     )
 
-    if (legacy){
-      await token.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
-
-      this.stakeToken = await contractFactories.TestToken.deploy('POL', 'POL')
-  
-      this.migration = await contractFactories.PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
-  
-      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-      await this.legacyToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-  
-      await this.governance.update(
-          this.stakeManager.address,
-          this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
-        )
-    }
-
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('validatorShare'), this.validatorShare.address)
     await this.updateContractMap(ethUtils.keccak256('slashingManager'), this.slashingManager.address)
+
+    await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+
+    if (pol){
+      this.polToken = await contractFactories.ERC20Permit.deploy('POL', 'POL', '1.1.0')
+  
+      this.migration = await contractFactories.PolygonMigration.deploy(this.stakeToken.address, this.polToken.address)
+  
+      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+      await this.polToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+  
+      await this.governance.update(
+          this.stakeManager.address,
+          this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
+        )
+      
+      await this.updateContractMap(ethUtils.keccak256('pol'), this.polToken.address)
+    } 
+    
     let _contracts = {
       rootChainOwner: rootChainOwner,
       registry: this.registry,
       rootChain: this.rootChain,
       stakeManager: this.stakeManager,
       stakeToken: this.stakeToken,
-      legacyToken: this.legacyToken,
+      polToken: this.polToken,
       slashingManager: this.slashingManager,
       stakingInfo: this.stakingInfo,
       governance: this.governance,

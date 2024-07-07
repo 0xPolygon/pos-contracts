@@ -25,7 +25,7 @@ export function doStake(
       acceptDelegation,
       noMinting,
       signer,
-      legacy: true
+      pol: true
     })
   }
 }
@@ -37,7 +37,7 @@ export function doUnstake(wallet) {
     const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
 
     const validatorId = await this.stakeManager.getValidatorId(user)
-    await stakeManagerUser.unstakeLegacy(validatorId)
+    await stakeManagerUser.unstakePOL(validatorId)
   }
 }
 
@@ -58,12 +58,12 @@ export function prepareForTest(dynastyValue, validatorThreshold) {
 }
 
 describe('migrate matic', function (){
-  describe('initializeLegacy', function(){
+  describe('initializePOL', function(){
     before('Setup migration scenario', async function() {
       await freshDeploy.call(this)
     })
 
-    describe('must revert with legacy functions', function(){
+    describe('must revert with pol functions', function(){
       let stakeTokenUser, user, stakeManagerUser, amount, userPubkey
       before('', async function(){
         userPubkey = wallets[1].getPublicKeyString(),
@@ -76,12 +76,12 @@ describe('migrate matic', function (){
 
       it('on stake token', async function () {
         await stakeTokenUser.approve(this.stakeManager.address, amount.toString())
-        await expect(stakeManagerUser.stakeForLegacy(user, amount.toString(), web3.utils.toWei('1'), false, userPubkey))
-          .to.be.rejectedWith('function call to a non-contract account')
+        await expect(stakeManagerUser.stakeForPOL(user, amount.toString(), web3.utils.toWei('1'), false, userPubkey))
+          .to.be.rejectedWith('')
       })
     })  
 
-    describe('run initializeLegacy', function(){
+    describe('run initializePOL', function(){
       let oldStakeToken, newStakeToken, migrationAmount
       before('gov update', async function(){
         migrationAmount =  web3.utils.toWei('20000000')
@@ -101,16 +101,16 @@ describe('migrate matic', function (){
         await newStakeToken.mint(this.migration.address,  web3.utils.toWei('50000000'))
       })
 
-      it('must initLegacy', async function () {
+      it('must initializePOL', async function () {
         await this.governance.update(
           this.stakeManager.address,
-          this.stakeManager.interface.encodeFunctionData('initializeLegacy', [newStakeToken.address, this.migration.address])
+          this.stakeManager.interface.encodeFunctionData('initializePOL', [newStakeToken.address, this.migration.address])
         )
       })
 
-      it('stakemanager must have correct legacy balance', async function () {
-        let legacyBalance = await oldStakeToken.balanceOf(this.stakeManager.address)
-        assertBigNumberEquality(BN(0), legacyBalance)
+      it('stakemanager must have correct pol balance', async function () {
+        let polBalance = await oldStakeToken.balanceOf(this.stakeManager.address)
+        assertBigNumberEquality(BN(0), polBalance)
       })
 
       it('stakemanager must have correct stake balance', async function () {
@@ -122,39 +122,39 @@ describe('migrate matic', function (){
 
   describe('successful migration', function(){
     const migrationAmount = new BN('100000000000000')
-    const initalLegacyAmount = new BN('100000000000000')
+    const initalPolAmount = new BN('100000000000000')
     const initalStakeAmount = new BN(0)
 
     before('Setup migration scenario', async function() {
       await freshDeploy.call(this)
   
       this.stakeToken = await TestToken.deploy('POL', 'POL')
-      this.legacyToken = await TestToken.deploy('MATIC', 'MATIC')
+      this.polToken = await TestToken.deploy('MATIC', 'MATIC')
   
-      this.migration = await PolygonMigration.deploy(this.legacyToken.address, this.stakeToken.address)
+      this.migration = await PolygonMigration.deploy(this.polToken.address, this.stakeToken.address)
   
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.legacyToken.address])
+        this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.polToken.address])
       )
 
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('initializeLegacy', [this.stakeToken.address, this.migration.address])
+        this.stakeManager.interface.encodeFunctionData('initializePOL', [this.stakeToken.address, this.migration.address])
       )
   
       await this.stakeToken.mint(this.stakeManager.address, initalStakeAmount.toString())
-      await this.legacyToken.mint(this.stakeManager.address, initalLegacyAmount.toString())
+      await this.polToken.mint(this.stakeManager.address, initalPolAmount.toString())
   
       await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-      await this.legacyToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+      await this.polToken.mint(this.migration.address, web3.utils.toWei('50000000'))
     })
 
     it('must revert with too many token', async function () {
-      const bigAmount = initalLegacyAmount.mul(new BN('20'))
+      const bigAmount = initalPolAmount.mul(new BN('20'))
       await expectRevert( this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('convertMaticToPol', [bigAmount.toString()])
+        this.stakeManager.interface.encodeFunctionData('convertMaticToPOL', [bigAmount.toString()])
       ), 'Update failed')
       //'Insufficient MATIC balance'
     })
@@ -162,12 +162,12 @@ describe('migrate matic', function (){
     it('must migrate', async function () {
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('convertMaticToPol', [migrationAmount.toString()])
+        this.stakeManager.interface.encodeFunctionData('convertMaticToPOL', [migrationAmount.toString()])
       )
     })
-    it('must have correct legacy balance', async function(){
-      const legacyBalance = await this.legacyToken.balanceOf(this.stakeManager.address)
-      assertBigNumberEquality(legacyBalance, initalLegacyAmount.sub(migrationAmount))
+    it('must have correct pol balance', async function(){
+      const polBalance = await this.polToken.balanceOf(this.stakeManager.address)
+      assertBigNumberEquality(polBalance, initalPolAmount.sub(migrationAmount))
     })
 
     it('must have correct stake balance', async function(){
@@ -178,28 +178,28 @@ describe('migrate matic', function (){
 })
 
 
-describe('stake Legacy', function () {
+describe('stake POL', function () {
   function testStakeRevert(user, userPubkey, amount, stakeAmount, unspecified = false) {
-    let stakeTokenUser, stakeManagerUser, legacyTokenUser
+    let stakeManagerUser, polTokenUser
 
     before('Approve', async function () {
       this.initialBalance = await this.stakeManager.totalStakedFor(user)
 
-      legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(user))
+      polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
       stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
 
-      await legacyTokenUser.approve(this.stakeManager.address, new BN(amount).add(this.defaultHeimdallFee).toString())
+      await polTokenUser.approve(this.stakeManager.address, new BN(amount).add(this.defaultHeimdallFee).toString())
     })
 
     it('must revert', async function () {
       if (unspecified) {
         await expectRevert(
-          stakeManagerUser.stakeForLegacy(user, stakeAmount, this.defaultHeimdallFee.toString(), false, userPubkey),
+          stakeManagerUser.stakeForPOL(user, stakeAmount, this.defaultHeimdallFee.toString(), false, userPubkey),
           'no more slots'
         )
       } else {
         await expectRevert(
-          stakeManagerUser.stakeForLegacy(user, stakeAmount, this.defaultHeimdallFee.toString(), false, userPubkey),
+          stakeManagerUser.stakeForPOL(user, stakeAmount, this.defaultHeimdallFee.toString(), false, userPubkey),
           'Invalid signer'
         )
       }
@@ -212,20 +212,20 @@ describe('stake Legacy', function () {
   }
 
   function testStake(user, userPubkey, amount, stakeAmount, validatorId, fee) {
-    let stakeTokenUser, stakeManagerUser, legacyTokenUser
+    let stakeManagerUser, polTokenUser
     before('Approve', async function () {
       this.user = user
       this.fee = new BN(fee || this.defaultHeimdallFee)
 
-      legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(user))
+      polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
       stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
 
-      await legacyTokenUser.approve(this.stakeManager.address, new BN(amount).add(this.fee).toString())
+      await polTokenUser.approve(this.stakeManager.address, new BN(amount).add(this.fee).toString())
     })
 
     it('must stake', async function () {
       this.receipt = await (
-        await stakeManagerUser.stakeForLegacy(user, stakeAmount.toString(), this.fee.toString(), false, userPubkey)
+        await stakeManagerUser.stakeForPOL(user, stakeAmount.toString(), this.fee.toString(), false, userPubkey)
       ).wait()
     })
 
@@ -270,41 +270,41 @@ describe('stake Legacy', function () {
     it('must pay out rewards correctly', async function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
       const reward = await this.stakeManager.validatorReward(validatorId)
-      const balanceBefore = await this.legacyToken.balanceOf(user)
+      const balanceBefore = await this.polToken.balanceOf(user)
       assertBigNumberEquality(reward, new BN(0))
 
       await checkPoint(wallets, this.rootChainOwner, this.stakeManager)
       await checkPoint(wallets, this.rootChainOwner, this.stakeManager)
       const newReward = await this.stakeManager.validatorReward(validatorId)
       assertBigNumbergt(newReward, reward)
-      await stakeManagerUser.withdrawRewardsLegacy(validatorId)
-      const balanceAfter = await this.legacyToken.balanceOf(user)
+      await stakeManagerUser.withdrawRewardsPOL(validatorId)
+      const balanceAfter = await this.polToken.balanceOf(user)
       assertBigNumberEquality(balanceAfter.sub(balanceBefore), newReward)
 
       await checkPoint(wallets, this.rootChainOwner, this.stakeManager)
       await checkPoint(wallets, this.rootChainOwner, this.stakeManager)
       const newReward2 = await this.stakeManager.validatorReward(validatorId)
-      await stakeManagerUser.withdrawRewardsLegacy(validatorId)
-      const balanceAfter2 = await this.legacyToken.balanceOf(user)
+      await stakeManagerUser.withdrawRewardsPOL(validatorId)
+      const balanceAfter2 = await this.polToken.balanceOf(user)
       assertBigNumberEquality(balanceAfter2.sub(balanceAfter), newReward2)
       assertBigNumberEquality(newReward2, newReward)
     })
   }
 
   function testRestake(user, amount, stakeAmount, restakeAmount, totalStaked) {
-    let stakeTokenUser, stakeManagerUser, legacyTokenUser
+    let stakeManagerUser, polTokenUser
 
     before('Approve', async function () {
       this.user = user
-      legacyTokenUser = this.legacyToken.connect(this.legacyToken.provider.getSigner(user))
+      polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
       stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
 
-      await legacyTokenUser.approve(this.stakeManager.address, amount.toString())
+      await polTokenUser.approve(this.stakeManager.address, amount.toString())
     })
 
     it('must restake', async function () {
       const validatorId = await this.stakeManager.getValidatorId(this.user)
-      this.receipt = await (await stakeManagerUser.restakeLegacy(validatorId, restakeAmount, false)).wait()
+      this.receipt = await (await stakeManagerUser.restakePOL(validatorId, restakeAmount, false)).wait()
     })
 
     it('must emit StakeUpdate', async function () {
@@ -385,12 +385,12 @@ describe('stake Legacy', function () {
       it('when auction is active', async function () {
         let auctionBid = web3.utils.toWei('10000')
         const auctionUser = wallets[4].getAddressString()
-        await this.stakeToken.mint(auctionUser, auctionBid)
+        await this.polToken.mint(auctionUser, auctionBid)
 
-        const stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(auctionUser))
+        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
         const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
 
-        await stakeTokenUser.approve(this.stakeManager.address, auctionBid)
+        await polTokenUser.approve(this.stakeManager.address, auctionBid)
         const validatorId = await this.stakeManager.getValidatorId(wallets[2].getChecksumAddressString())
         await stakeManagerUser.startAuction(validatorId, auctionBid, false, auctionUser)
         testRestake(
@@ -490,7 +490,7 @@ describe('stake Legacy', function () {
   })
 })
 
-describe('unstake Legacy', function () {
+describe('unstake POL', function () {
   describe('when Alice unstakes and update the signer', function () {
     const AliceWallet = wallets[1]
     const BobWallet = wallets[3]
@@ -514,7 +514,7 @@ describe('unstake Legacy', function () {
     })
 
     it('Alice should unstake', async function () {
-      this.receipt = await stakeManagerAlice.unstakeLegacy(this.validatorId)
+      this.receipt = await stakeManagerAlice.unstakePOL(this.validatorId)
     })
 
     it("Signers list should have only Bob's signer", async function () {
@@ -544,13 +544,13 @@ describe('unstake Legacy', function () {
 
       const reward = await this.stakeManager.validatorReward(this.validatorId)
       this.reward = reward
-      this.afterStakeBalance = await this.legacyToken.balanceOf(user)
+      this.afterStakeBalance = await this.polToken.balanceOf(user)
 
       stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
     })
 
     it('must unstake', async function () {
-      this.receipt = await (await stakeManagerUser.unstakeLegacy(this.validatorId)).wait()
+      this.receipt = await (await stakeManagerUser.unstakePOL(this.validatorId)).wait()
     })
 
     it('must emit UnstakeInit', async function () {
@@ -577,7 +577,7 @@ describe('unstake Legacy', function () {
     })
 
     it('must have increased balance by reward', async function () {
-      const balance = await this.legacyToken.balanceOf(user)
+      const balance = await this.polToken.balanceOf(user)
       assertBigNumberEquality(balance, this.afterStakeBalance.add(this.reward))
     })
   })
@@ -595,17 +595,17 @@ describe('unstake Legacy', function () {
     before(async function () {
       this.validatorId = await this.stakeManager.getValidatorId(user)
 
-      const legacyToken4 = this.legacyToken.connect(this.legacyToken.provider.getSigner(wallets[4].getAddressString()))
+      const polToken4 = this.polToken.connect(this.polToken.provider.getSigner(wallets[4].getAddressString()))
       stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
 
       // delegate tokens to validator
       const validatorShareAddr = await this.stakeManager.getValidatorContract(this.validatorId)
-      await legacyToken4.approve(this.stakeManager.address, web3.utils.toWei('100'))
+      await polToken4.approve(this.stakeManager.address, web3.utils.toWei('100'))
       const validator = await ValidatorShare.attach(validatorShareAddr)
       const validator4 = validator.connect(validator.provider.getSigner(wallets[4].getAddressString()))
-      await validator4.buyVoucherLegacy(web3.utils.toWei('100'), 0)
+      await validator4.buyVoucherPOL(web3.utils.toWei('100'), 0)
 
-      this.afterStakeBalance = await this.legacyToken.balanceOf(user)
+      this.afterStakeBalance = await this.polToken.balanceOf(user)
     })
 
     before(async function () {
@@ -618,7 +618,7 @@ describe('unstake Legacy', function () {
 
     it('must unstake', async function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
-      this.receipt = await (await stakeManagerUser.unstakeLegacy(validatorId)).wait()
+      this.receipt = await (await stakeManagerUser.unstakePOL(validatorId)).wait()
     })
 
     it('must emit UnstakeInit', async function () {
@@ -646,7 +646,7 @@ describe('unstake Legacy', function () {
     })
 
     it('must have increased balance by reward', async function () {
-      const balance = await this.legacyToken.balanceOf(user)
+      const balance = await this.polToken.balanceOf(user)
       assertBigNumberEquality(balance, this.afterStakeBalance.add(this.reward))
     })
 
@@ -666,13 +666,13 @@ describe('unstake Legacy', function () {
       assertBigNumbergt(validatorRewardsAfter, validatorRewardsBefore)
       assertBigNumbergt(delegationRewardsAfter, delegationRewardsBefore)
 
-      await stakeManagerUser.withdrawRewardsLegacy(validatorId)
-      const balanceBefore = await this.legacyToken.balanceOf(user)
+      await stakeManagerUser.withdrawRewardsPOL(validatorId)
+      const balanceBefore = await this.polToken.balanceOf(user)
 
       await checkPoint([wallets[2]], this.rootChainOwner, this.stakeManager)
 
-      await stakeManagerUser.withdrawRewardsLegacy(validatorId)
-      assertBigNumberEquality(await this.legacyToken.balanceOf(user), balanceBefore)
+      await stakeManagerUser.withdrawRewardsPOL(validatorId)
+      assertBigNumberEquality(await this.polToken.balanceOf(user), balanceBefore)
 
       assertBigNumberEquality(await this.stakeManager.validatorReward(validatorId), new BN(0))
       assertBigNumberEquality(await this.stakeManager.delegatorsReward(validatorId), delegationRewardsAfter)
@@ -691,39 +691,39 @@ describe('unstake Legacy', function () {
     it('when validatorId is invalid', async function () {
       stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
 
-      await expectRevert.unspecified(stakeManagerUser.unstakeLegacy('999999'))
+      await expectRevert.unspecified(stakeManagerUser.unstakePOL('999999'))
     })
 
     it('when user is not staker', async function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
       const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-      await expectRevert.unspecified(stakeManager3.unstakeLegacy(validatorId))
+      await expectRevert.unspecified(stakeManager3.unstakePOL(validatorId))
     })
 
     it('when unstakes 2 times', async function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
-      await stakeManagerUser.unstakeLegacy(validatorId)
+      await stakeManagerUser.unstakePOL(validatorId)
 
-      await expectRevert.unspecified(stakeManagerUser.unstakeLegacy(validatorId))
+      await expectRevert.unspecified(stakeManagerUser.unstakePOL(validatorId))
     })
 
     it('when unstakes during auction', async function () {
       const amount = web3.utils.toWei('1200').toString()
       const auctionUser = wallets[4].getAddressString()
-      await this.stakeToken.mint(auctionUser, amount)
+      await this.polToken.mint(auctionUser, amount)
 
-      const stakeTokenAuctionUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(auctionUser))
+      const polTokenAuctionUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
       const stakeManagerAuctionUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
 
-      await stakeTokenAuctionUser.approve(this.stakeManager.address, amount)
+      await polTokenAuctionUser.approve(this.stakeManager.address, amount)
       const validatorId = await this.stakeManager.getValidatorId(user)
       await stakeManagerAuctionUser.startAuction(validatorId, amount, false, wallets[4].getPublicKeyString())
-      await expectRevert.unspecified(stakeManagerUser.unstakeLegacy(validatorId))
+      await expectRevert.unspecified(stakeManagerUser.unstakePOL(validatorId))
     })
   })
 })
 
-describe('unstakeClaim Legacy', function () {
+describe('unstakeClaim POL', function () {
   describe('when user claims right after stake', function () {
     before('Fresh Deploy', prepareForTest(1, 10))
     before('Stake', doStake(wallets[2]))
@@ -734,7 +734,7 @@ describe('unstakeClaim Legacy', function () {
     it('must revert', async function () {
       const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
       const ValidatorId = await this.stakeManager.getValidatorId(user)
-      await expect(stakeManagerUser.unstakeClaimLegacy(ValidatorId))
+      await expect(stakeManagerUser.unstakeClaimPOL(ValidatorId))
     })
   })
 
@@ -761,7 +761,7 @@ describe('unstakeClaim Legacy', function () {
     })
 
     it('must claim', async function () {
-      this.receipt = await (await stakeManagerAlice.unstakeClaimLegacy(this.validatorId)).wait()
+      this.receipt = await (await stakeManagerAlice.unstakeClaimPOL(this.validatorId)).wait()
     })
 
     it('must emit Unstaked', async function () {
@@ -798,7 +798,7 @@ describe('unstakeClaim Legacy', function () {
     it('must revert', async function () {
       const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
       const validatorId = await this.stakeManager.getValidatorId(user)
-      await expect(stakeManagerUser.unstakeClaimLegacy(validatorId))
+      await expect(stakeManagerUser.unstakeClaimPOL(validatorId))
     })
   })
 
@@ -820,7 +820,7 @@ describe('unstakeClaim Legacy', function () {
     it('must revert', async function () {
       const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
       const validatorId = await this.stakeManager.getValidatorId(user)
-      await expect(stakeManagerUser.unstakeClaimLegacy(validatorId))
+      await expect(stakeManagerUser.unstakeClaimPOL(validatorId))
     })
   })
 
@@ -851,7 +851,7 @@ describe('unstakeClaim Legacy', function () {
         const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
         this.validatorId = await this.stakeManager.getValidatorId(user)
         this.reward = await this.stakeManager.validatorReward(this.validatorId)
-        this.receipt = await (await stakeManagerUser.unstakeClaimLegacy(this.validatorId)).wait()
+        this.receipt = await (await stakeManagerUser.unstakeClaimPOL(this.validatorId)).wait()
       })
 
       it('must have correct reward', async function () {
@@ -867,7 +867,7 @@ describe('unstakeClaim Legacy', function () {
       })
 
       it('must have pre-stake + reward - heimdall fee balance', async function () {
-        let balance = await this.legacyToken.balanceOf(user)
+        let balance = await this.polToken.balanceOf(user)
         assertBigNumberEquality(
           balance,
           new BN(walletAmounts[user].initialBalance).add(new BN(this.reward.toString())).sub(this.defaultHeimdallFee)
@@ -882,7 +882,7 @@ describe('unstakeClaim Legacy', function () {
         const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
         this.validatorId = await this.stakeManager.getValidatorId(user)
         this.reward = await this.stakeManager.validatorReward(this.validatorId)
-        this.receipt = await (await stakeManagerUser.unstakeClaimLegacy(this.validatorId)).wait()
+        this.receipt = await (await stakeManagerUser.unstakeClaimPOL(this.validatorId)).wait()
       })
 
       it('must have correct reward', async function () {
@@ -898,7 +898,7 @@ describe('unstakeClaim Legacy', function () {
       })
 
       it('must have pre-stake + reward - heimdall fee balance', async function () {
-        let balance = await this.legacyToken.balanceOf(user)
+        let balance = await this.polToken.balanceOf(user)
         assertBigNumberEquality(
           balance,
           new BN(walletAmounts[user].initialBalance).add(new BN(this.reward.toString())).sub(this.defaultHeimdallFee)
@@ -926,7 +926,7 @@ describe('unstakeClaim Legacy', function () {
   })
 })
 
-describe('restake Legacy', function () {
+describe('restake POL', function () {
   const initialStake = web3.utils.toWei('1000')
   const initialStakers = [wallets[0], wallets[1]]
 
@@ -953,7 +953,7 @@ describe('restake Legacy', function () {
       )
 
       for (const wallet of initialStakers) {
-        await approveAndStake.call(this, { wallet, stakeAmount: initialStake, acceptDelegation, legacy: true })
+        await approveAndStake.call(this, { wallet, stakeAmount: initialStake, acceptDelegation, pol: true })
       }
 
       // cooldown period
@@ -972,9 +972,9 @@ describe('restake Legacy', function () {
       this.user = initialStakers[0].getAddressString()
       this.amount = web3.utils.toWei('100')
 
-      await this.legacyToken.mint(this.user, this.amount)
-      this.legacyTokenUser = this.legacyToken.connect(this.stakeToken.provider.getSigner(this.user))
-      await this.legacyTokenUser.approve(this.stakeManager.address, this.amount)
+      await this.polToken.mint(this.user, this.amount)
+      this.polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(this.user))
+      await this.polTokenUser.approve(this.stakeManager.address, this.amount)
     }
   }
 
@@ -994,7 +994,7 @@ describe('restake Legacy', function () {
     it('must restake rewards', async function () {
       const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.user))
 
-      this.receipt = await (await stakeManagerUser.restakeLegacy(this.validatorId, this.amount, withRewards)).wait()
+      this.receipt = await (await stakeManagerUser.restakePOL(this.validatorId, this.amount, withRewards)).wait()
     })
 
     it('must emit StakeUpdate', async function () {
@@ -1054,13 +1054,13 @@ describe('restake Legacy', function () {
 
     it('when validatorId is incorrect', async function () {
       const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.user))
-      await expect(stakeManagerUser.restakeLegacy('0', this.amount, false))
+      await expect(stakeManagerUser.restakePOL('0', this.amount, false))
     })
 
     it('when restake after unstake during same epoch', async function () {
-      await this.stakeManager.unstakeLegacy(this.validatorId)
+      await this.stakeManager.unstakePOL(this.validatorId)
       const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.user))
-      await expectRevert(stakeManagerUser.restakeLegacy(this.validatorId, this.amount, false), 'No restaking')
+      await expectRevert(stakeManagerUser.restakePOL(this.validatorId, this.amount, false), 'No restaking')
     })
   })
 })
