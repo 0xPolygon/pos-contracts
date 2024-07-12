@@ -72,3 +72,7 @@ Run coverage with
 ```
 npm run coverage
 ```
+
+## Contact
+
+For more discussions, please head to the [R&D Discord](https://discord.gg/0xPolygonRnD)
