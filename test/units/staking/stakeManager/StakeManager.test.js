@@ -1498,8 +1498,8 @@ describe('StakeManager', function (accounts) {
 
     function testTopUp(user) {
       it('must top up', async function () {
-        const stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(user))
-        await stakeTokenUser.approve(this.stakeManager.address, fee)
+        const stakeTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
+        await (await stakeTokenUser.approve(this.stakeManager.address, fee)).wait()
 
         const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
         this.receipt = await (await stakeManagerUser.topUpForFee(user, fee)).wait()
@@ -1683,7 +1683,7 @@ describe('StakeManager', function (accounts) {
             )
           }
 
-          const stakeTokenValidatorUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(validatorAddr))
+          const stakeTokenValidatorUser = this.polToken.connect(this.polToken.provider.getSigner(validatorAddr))
           await stakeTokenValidatorUser.approve(this.stakeManager.address, fee.toString())
 
           const stakeManagerValidatorUser = this.stakeManager.connect(
@@ -1741,7 +1741,7 @@ describe('StakeManager', function (accounts) {
       before('top up', async function () {
         this.user = this.validatorsWallets[AliceValidatorId].getChecksumAddressString()
 
-        const stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(this.user))
+        const stakeTokenUser = this.polToken.connect(this.polToken.provider.getSigner(this.user))
         await stakeTokenUser.approve(this.stakeManager.address, totalFee)
 
         const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.user))
