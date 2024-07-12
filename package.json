@@ -9,9 +9,10 @@
     "test": "test"
   },
   "scripts": {
-    "build": "forge build",
+    "build": "forge build --skip test",
     "test:hardhat": "npx hardhat test",
-    "test:foundry": "forge test",
+    "generate-interfaces": "scripts/helpers/generateInterfaces.sh",
+    "test:foundry": "export FOUNDRY_PROFILE=0_8_4 && forge test",
     "test:ci": "scripts/run-test.sh",
     "testrpc": "ganache --chain.hardfork istanbul --wallet.mnemonic 'clock radar mass judge dismiss just intact mind resemble fringe diary casino' -p 8545 --gasLimit 10000000 --gasPrice 0 --chain.allowUnlimitedContractSize --accounts 200",
     "template:process": "node scripts/process-templates.cjs",

@@ -1,10 +1,10 @@
 pragma solidity ^0.8.4;
 
-import { StakeManager } from "../scripts/helpers/interfaces/StakeManager.generated.sol";
-import { StakeManagerProxy } from "../scripts/helpers/interfaces/StakeManagerProxy.generated.sol";
-import { ValidatorShare } from "../scripts/helpers/interfaces/ValidatorShare.generated.sol";
-import { Registry } from "../scripts/helpers/interfaces/Registry.generated.sol";
-import { ERC20 } from "../scripts/helpers/interfaces/ERC20.generated.sol";
+import { StakeManager } from "../../scripts/helpers/interfaces/StakeManager.generated.sol";
+import { StakeManagerProxy } from "../../scripts/helpers/interfaces/StakeManagerProxy.generated.sol";
+import { ValidatorShare } from "../../scripts/helpers/interfaces/ValidatorShare.generated.sol";
+import { Registry } from "../../scripts/helpers/interfaces/Registry.generated.sol";
+import { ERC20 } from "../../scripts/helpers/interfaces/ERC20.generated.sol";
 
 import "forge-std/Test.sol";
 
@@ -12,8 +12,7 @@ contract ForkupgradeStakeManagerTest is Test {
     uint256 mainnetFork;
 
     function setUp() public {
-        string memory MAINNET_RPC_URL = string.concat("https://mainnet.infura.io/v3/", vm.envString("INFURA_TOKEN"));
-        mainnetFork = vm.createFork(MAINNET_RPC_URL);
+        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"));
     }
 
     function test_UpgradeStakeManager() public {

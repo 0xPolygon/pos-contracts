@@ -9,6 +9,7 @@ contractAddresses.json
 contracts/root/predicates/TransferWithSigUtils.sol
 contracts/common/mixin/ChainIdMixin.sol
 test/helpers/marketplaceUtils.js
+scripts/helpers/interfaces
 cache_hardhat/
 forge-cache/
 
