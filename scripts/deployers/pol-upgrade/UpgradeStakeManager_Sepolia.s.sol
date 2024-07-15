@@ -8,9 +8,8 @@ import { StakeManagerProxy } from "../../helpers/interfaces/StakeManagerProxy.ge
 import { ValidatorShare } from "../../helpers/interfaces/ValidatorShare.generated.sol";
 import { Registry } from "../../helpers/interfaces/Registry.generated.sol";
 import { Governance } from "../../helpers/interfaces/Governance.generated.sol";
-import { ERC20 } from "../../helpers/interfaces/ERC20.generated.sol";
 
-contract UpgradeEmissionManager is Script {
+contract UpgradeStakeManager_Sepolia is Script {
     using stdJson for string;
 
     function run() public {
@@ -62,16 +61,24 @@ contract UpgradeEmissionManager is Script {
         console.logBytes(payloadRegistry);
 
         bytes memory payloadStakeManager = abi.encodeWithSelector(
-            stakeManagerProxy.updateAndCall.selector,
-            address(stakeManagerImpl),
+            stakeManagerProxy.updateImplementation.selector,
+            address(stakeManagerImpl)
+        );
+        
+        console.log("Send payloadStakeManager to: ", address(stakeManagerProxy));
+        console.logBytes(payloadStakeManager);
+
+        bytes memory payloadInitializePol = abi.encodeWithSelector(
+            governance.update.selector,
+            address(stakeManagerProxy),
             abi.encodeWithSelector(
                 stakeManager.initializePOL.selector,
                 address(polToken),
                 migration
             )
         );
-        
-        console.log("Send payloadStakeManager to: ", address(stakeManagerProxy));
-        console.logBytes(payloadStakeManager);
+
+        console.log("Send payloadInitializePol to: ", address(governance));
+        console.logBytes(payloadInitializePol);
     }
 }
