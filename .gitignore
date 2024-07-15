@@ -6,6 +6,7 @@ contractAddresses.json
 
 
 # ignore generated files
+broadcast/*/*/dry-run
 contracts/root/predicates/TransferWithSigUtils.sol
 contracts/common/mixin/ChainIdMixin.sol
 test/helpers/marketplaceUtils.js

@@ -1,0 +1,18 @@
+{
+    "1": {
+        "registry": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "stakeManagerProxy": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+        "governance": "0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48",
+        "timelock": "0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf",
+        "polToken": "0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6",
+        "migration": "0x29e7DF7b6A1B2b07b731457f499E1696c60E2C4e"
+    },
+    "11155111": {
+        "registry": "0xfE92F7c3a701e43d8479738c8844bCc555b9e5CD",
+        "stakeManagerProxy": "0x4ae8f648b1ec892b6cc68c89cc088583964d08be",
+        "timelock": "onlyMainnet",
+        "governance": "0xB7086eda3180c728C1536B35c4d54F6A2B33D6aC",
+        "polToken": "0x44499312f493F62f2DFd3C6435Ca3603EbFCeeBa",
+        "migration": "0x3A3B750E7d4d389Bc1d0be20E5D09530F82B9911"
+    }
+}
