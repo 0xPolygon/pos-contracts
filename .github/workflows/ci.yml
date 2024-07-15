@@ -43,9 +43,9 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes --skip test
+          forge build --sizes
         id: build
 
       - name: Run Forge tests
-        run: if test -d test/foundry && find test/foundry -name '*.sol' | grep -q .; then scripts/helpers/generateInterfaces.sh && FOUNDRY_PROFILE=0_8_4 forge test -vvv; else echo "No .sol files found in test/foundry directory. Skipping Forge tests."; fi
+        run: if test -d test/foundry && find test/foundry -name '*.sol' | grep -q .; then npm run generate:interfaces && forge test -vvv; else echo "No .sol files found in test/foundry directory. Skipping Forge tests."; fi
         id: test
