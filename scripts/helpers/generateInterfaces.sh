@@ -8,7 +8,7 @@ create_interface () {
 
 #forge build
 
-mkdir -p interfaces
+mkdir -p scripts/helpers/interfaces
 
 find out -type f -print0 | while read -d $'\0' file
 do
