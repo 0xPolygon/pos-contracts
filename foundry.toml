@@ -1,24 +1,25 @@
 [profile.default]
 src = 'contracts'
 out = 'out'
-libs = ['node_modules']
-no-match-path = 'test/foundry'
+libs = ['node_modules', 'lib']
+no-match-contract = 'StakeManagerTestable'
 optimizer = true
 optimizer_runs = 200
 via_ir = true
 cache_path = 'forge-cache'
 verbosity = 2
-solc_version = '0.5.17'
+# solc_version = '0.5.17'
 ffi = true
 remappings = [
   "openzeppelin-solidity/=node_modules/openzeppelin-solidity/",
-  "solidity-rlp/=node_modules/solidity-rlp/"
+  "solidity-rlp/=node_modules/solidity-rlp/",
+  "@ensdomains/=node_modules/@ensdomains/",
+  "eth-gas-reporter/=node_modules/eth-gas-reporter/",
+  "forge-std/=lib/forge-std/src/",
+  "hardhat/=node_modules/hardhat/"
 ]
-
-[profile.0_8_4]
-solc_version = '0.8.4'
-src = 'test'
-libs = ["lib"]
+fs_permissions = [{ access = "read", path = "./scripts/"}, { access = "read", path = "./test/"},  { access = "read", path = "./out/"}]
+auto_detect_solc = true
 
 [invariant]
 fail_on_revert = false
@@ -37,11 +38,11 @@ number_underscore = "thousands"
 
 [rpc_endpoints]
 anvil = "http://127.0.0.1:8545"
-mainnet = "https://mainnet.infura.io/v3/${INFURA_KEY}"
-goerli = "https://goerli.infura.io/v3/${INFURA_KEY}"
-sepolia = "https://sepolia.infura.io/v3/${INFURA_KEY}"
-polygon_pos = "https://polygon-mainnet.infura.io/v3/${INFURA_KEY}"
-mumbai = "https://polygon-mumbai.infura.io/v3/${INFURA_KEY}"
+mainnet = "https://mainnet.infura.io/v3/${INFURA_TOKEN}"
+goerli = "https://goerli.infura.io/v3/${INFURA_TOKEN}"
+sepolia = "https://sepolia.infura.io/v3/${INFURA_TOKEN}"
+polygon_pos = "https://polygon-mainnet.infura.io/v3/${INFURA_TOKEN}"
+mumbai = "https://polygon-mumbai.infura.io/v3/${INFURA_TOKEN}"
 polygon_zkevm = "https://zkevm-rpc.com"
 polygon_zkevm_testnet = "https://rpc.public.zkevm-test.net"
 
