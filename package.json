@@ -1,7 +1,7 @@
 {
   "name": "matic-protocol",
   "description": "New repo using Hardhat and Foundry",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "main": "hardhat.config.cjs",
   "type": "module",
   "directories": {
@@ -20,7 +20,8 @@
     "bor:simulate": "cd test-bor-docker && bash run-docker.sh",
     "bor:stop": "cd test-bor-docker && bash stop-docker.sh",
     "bor:clean": "cd test-bor-docker && bash clean.sh",
-    "upgrade:stakeManager:sepolia": "forge script scripts/deployers/pol-upgrade/UpgradeStakeManager_Sepolia.s.sol --rpc-url sepolia"
+    "upgrade:stakeManager:sepolia": "forge script scripts/deployers/pol-upgrade/UpgradeStakeManager_Sepolia.s.sol --rpc-url sepolia",
+    "upgrade:depositManager:sepolia": "forge script scripts/deployers/pol-upgrade/UpgradeDepositManager_Sepolia.s.sol --rpc-url sepolia"
   },
   "keywords": [],
   "author": "Jaynti Kanani <jdkanani@gmail.com>, Simon Dosch <sdosch@polygon.technology",
