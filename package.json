@@ -47,7 +47,7 @@
     "ethereumjs-util": "^6.0.0",
     "ganache": "7.9.2",
     "import-toml": "^1.0.0",
-    "merkle-patricia-tree": "^2.3.2",
+    "merkle-patricia-tree": "^4.0.0",
     "mocha": "10.2.0",
     "nunjucks": "^3.2.0",
     "openzeppelin-solidity": "2.2.0",
