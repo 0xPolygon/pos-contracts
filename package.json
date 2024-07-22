@@ -21,7 +21,8 @@
     "bor:stop": "cd test-bor-docker && bash stop-docker.sh",
     "bor:clean": "cd test-bor-docker && bash clean.sh",
     "upgrade:stakeManager:sepolia": "forge script scripts/deployers/pol-upgrade/UpgradeStakeManager_Sepolia.s.sol --rpc-url sepolia",
-    "upgrade:depositManager:sepolia": "forge script scripts/deployers/pol-upgrade/UpgradeDepositManager_Sepolia.s.sol --rpc-url sepolia"
+    "upgrade:depositManager:sepolia": "forge script scripts/deployers/pol-upgrade/UpgradeDepositManager_Sepolia.s.sol --rpc-url sepolia",
+    "upgrade:pol:mainnet": "forge script scripts/deployers/pol-upgrade/UpgradeStake_DepositManager_Mainnet.s.sol --rpc-url mainnet"
   },
   "keywords": [],
   "author": "Jaynti Kanani <jdkanani@gmail.com>, Simon Dosch <sdosch@polygon.technology",

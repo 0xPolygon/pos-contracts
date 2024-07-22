@@ -31,21 +31,26 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.promptSecretUint("Enter deployer private key: ");
         //uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        
         loadConfig();
         (StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl) = deployImplementations(deployerPrivateKey);
         (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) =
             createPayload(stakeManagerImpl, validatorShareImpl, depositManagerImpl);
 
+        console.log("Expected batch ID: %s", vm.toString(payloadId));
+
+        console.log("\n----------------------\n");
+
         console.log("Send scheduleBatchPayload to: ", address(timelock));
         console.logBytes(scheduleBatchPayload);
 
-        console.log("----------------------");
+        console.log("\n----------------------\n");
+
         console.log("After at least 7 days send executeBatchPayload to: ", address(timelock));
         console.logBytes(executeBatchPayload);
     }
 
     function loadConfig() public {
-        console.log("----------------------");
         console.log("Loading config \n");
 
         string memory input = vm.readFile("scripts/deployers/pol-upgrade/input.json");
@@ -64,9 +69,9 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
         console.log("using Registry at: ", address(registry));
         console.log("using StakeManagerProxy at: ", address(stakeManagerProxy));
-        console.log("using DepositManagerProxy at: ", address(depositManagerProxy));
         console.log("using Governance at: ", address(governance));
         console.log("using Timelock at: ", address(timelock));
+        console.log("using DepositManagerProxy at: ", address(depositManagerProxy));
         console.log("using Matic at: ", address(maticToken));
         console.log("using POL at: ", address(polToken));
         console.log("using PolygonMigration at: ", migrationAddress);
@@ -103,6 +108,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
     function createPayload(StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl)
         public
+        view
         returns (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId)
     {
         console.log("----------------------");
@@ -160,9 +166,8 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
         // STEP 7
         // call mapToken on the Registry to map POL to the PoS native gas token address (1010)
-        bytes memory payloadMapToken7 = abi.encodeCall(
-            governance.update, (address(registry), abi.encodeCall(registry.mapToken, (address(polToken), nativeGasTokenAddress, false)))
-        );
+        bytes memory payloadMapToken7 =
+            abi.encodeCall(governance.update, (address(registry), abi.encodeCall(registry.mapToken, (address(polToken), nativeGasTokenAddress, false))));
 
         console.log("Send payloadMapToken7 to: ", address(governance));
         console.logBytes(payloadMapToken7);
@@ -171,7 +176,6 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // update impl of proxy to DepositManager
         bytes memory payloadUpgradeDepositManager8 = abi.encodeCall(DepositManagerProxy.updateImplementation, (address(depositManagerImpl)));
 
-        console.log();
         console.log("Send payloadUpgradeDepositManager8 to: ", address(depositManagerProxy));
         console.logBytes(payloadUpgradeDepositManager8);
 
@@ -212,9 +216,8 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         payloads[8] = payloadMigrateMatic9;
 
         payloadId = timelock.hashOperationBatch(targets, values, payloads, "", "");
-        console.log("Expected batch ID: %s", vm.toString(payloadId));
 
-        // 172800 is minDelay
+        // 172800 is minDelay (2 days)
         scheduleBatchPayload = abi.encodeCall(Timelock.scheduleBatch, (targets, values, payloads, "", "", 172_800));
         executeBatchPayload = abi.encodeCall(Timelock.executeBatch, (targets, values, payloads, "", ""));
     }
