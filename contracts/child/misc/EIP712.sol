@@ -9,7 +9,7 @@ contract LibEIP712Domain is ChainIdMixin {
     );
 
     string internal constant EIP712_DOMAIN_NAME = "Polygon Ecosystem Token";
-    string internal constant EIP712_DOMAIN_VERSION = "1";
+    string internal constant EIP712_DOMAIN_VERSION = "2";
     uint256 internal constant EIP712_DOMAIN_CHAINID = CHAINID;
 
     bytes32 public EIP712_DOMAIN_HASH;
