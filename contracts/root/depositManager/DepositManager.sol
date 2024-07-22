@@ -44,7 +44,7 @@ contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder 
     }
 
     // new: governance function to migrate MATIC to POL
-    function migrateMatic(uint256) external onlyGovernance {
+    function migrateMatic() external onlyGovernance {
         IERC20 matic = IERC20(registry.contractMap(keccak256("matic")));
         _migrateMatic(matic.balanceOf(address(this)));
     }
