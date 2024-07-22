@@ -161,7 +161,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 7
         // call mapToken on the Registry to map POL to the PoS native gas token address (1010)
         bytes memory payloadMapToken7 = abi.encodeCall(
-            governance.update.selector, (address(registry), abi.encodeCall(registry.mapToken, (address(polToken), nativeGasTokenAddress, false)))
+            governance.update, (address(registry), abi.encodeCall(registry.mapToken, (address(polToken), nativeGasTokenAddress, false)))
         );
 
         console.log("Send payloadMapToken7 to: ", address(governance));
@@ -177,9 +177,8 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
         // STEP 9
         // call migrateMatic on the new DepositManager, migrating all MATIC
-        uint256 amount = maticToken.balanceOf(address(depositManagerProxy));
         bytes memory payloadMigrateMatic9 =
-            abi.encodeCall(governance.update, (address(depositManagerProxy), abi.encodeCall(depositManagerProxy.migrateMatic, (amount / 2))));
+            abi.encodeCall(governance.update, (address(depositManagerProxy), abi.encodeCall(depositManagerProxy.migrateMatic, ())));
 
         console.log("Send payloadMigrateMatic9 to: ", address(governance));
         console.logBytes(payloadMigrateMatic9);
