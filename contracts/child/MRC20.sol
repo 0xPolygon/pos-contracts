@@ -3,7 +3,7 @@ pragma solidity 0.5.17;
 import "./BaseERC20NoSig.sol";
 
 /**
- * @title Polygon Network Token contract
+ * @title Polygon Ecosystem Token contract
  * @notice This contract is an ECR20 like wrapper over native gas token transfers on the Polygon PoS chain
  * @dev ERC20 methods have been made payable while keeping their method signature same as other ChildERC20s on PoS
  */
@@ -71,7 +71,7 @@ contract MRC20 is BaseERC20NoSig {
     }
 
     function name() public pure returns (string memory) {
-        return "Polygon Network Token";
+        return "Polygon Ecosystem Token";
     }
 
     function symbol() public pure returns (string memory) {
