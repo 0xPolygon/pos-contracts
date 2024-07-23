@@ -86,7 +86,7 @@ describe('DepositManagerUpdate @skip-on-coverage', async function () {
       // call migrateMatic using governance
       await governance.update(
         depositManager.address,
-        depositManager.interface.encodeFunctionData('migrateMatic', [amount.toString()])
+        depositManager.interface.encodeFunctionData('migrateMatic')
       )
 
       // check that MATIC balance has been converted to POL
