@@ -25,10 +25,10 @@ contract ForkupgradeStakeManagerTest is Test, UpgradeStake_DepositManager_Mainne
     function test_UpgradeStakeManager() public {
         assertEq(vm.activeFork(), mainnetFork);
 
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        Vm.Wallet memory wallet = vm.createWallet("fork wallet");
 
         loadConfig();
-        (StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl) = deployImplementations(deployerPrivateKey);
+        (StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl) = deployImplementations(wallet.privateKey);
         (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) =
             createPayload(stakeManagerImpl, validatorShareImpl, depositManagerImpl);
 
