@@ -42,10 +42,11 @@ jobs:
 
       - name: Run Forge build
         run: |
+          npm run generate:interfaces
           forge --version
           forge build --sizes
         id: build
 
       - name: Run Forge tests
-        run: npm run generate:interfaces && forge test -vvv
+        run: forge test -vvv
         id: test
