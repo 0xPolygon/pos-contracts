@@ -6,7 +6,7 @@ create_interface () {
     cast interface "$file" -n $contract > scripts/helpers/interfaces/$contract.generated.sol
 }
 
-#forge build
+forge build
 
 mkdir -p scripts/helpers/interfaces
 
