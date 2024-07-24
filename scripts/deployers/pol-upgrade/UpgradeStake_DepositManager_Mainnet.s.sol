@@ -47,7 +47,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
         console.log("\n----------------------\n");
 
-        console.log("After at least 7 days send executeBatchPayload to: ", address(timelock));
+        console.log("After at least 2 days send executeBatchPayload to: ", address(timelock));
         console.logBytes(executeBatchPayload);
     }
 
