@@ -1559,8 +1559,8 @@ describe('StakeManager', function (accounts) {
       runTopUpTests(async function () {
         await doDeploy.call(this)
         const mintAmount = web3.utils.toWei('10000')
-        await this.stakeToken.mint(user, mintAmount)
-        const stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(user))
+        await this.polToken.mint(user, mintAmount)
+        const stakeTokenUser = this.polToken.connect(this.polToken.provider.getSigner(user))
         await stakeTokenUser.approve(this.stakeManager.address, mintAmount.toString())
       }, user)
     })
@@ -1581,7 +1581,7 @@ describe('StakeManager', function (accounts) {
       beforeEach(doDeploy)
 
       it('when user approves less than fee', async function () {
-        const stakeTokenValidatorUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(validatorUser))
+        const stakeTokenValidatorUser = this.polToken.connect(this.polToken.provider.getSigner(validatorUser))
         await stakeTokenValidatorUser.approve(this.stakeManager.address, new BN(fee).sub(new BN(1)).toString())
 
         const stakeManagerValidatorUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(validatorUser))
@@ -1716,7 +1716,7 @@ describe('StakeManager', function (accounts) {
       })
 
       it('balance must increase by fee', async function () {
-        const newBalance = await this.stakeToken.balanceOf(this.user)
+        const newBalance = await this.polToken.balanceOf(this.user)
         assertBigNumberEquality(this.beforeClaimBalance.add(this.claimedFee.toString()), newBalance)
       })
 
@@ -1755,7 +1755,7 @@ describe('StakeManager', function (accounts) {
           this.leaf = createLeafFrom.call(this, this.user, 0)
           this.fee = firstFeeToClaim
           this.claimedFee = this.fee
-          this.beforeClaimBalance = await this.stakeToken.balanceOf(this.user)
+          this.beforeClaimBalance = await this.polToken.balanceOf(this.user)
           this.beforeClaimTotalHeimdallFee = await this.stakeManager.totalHeimdallFee()
         })
 
@@ -1769,7 +1769,7 @@ describe('StakeManager', function (accounts) {
           this.leaf = createLeafFrom.call(this, this.user, 0)
           this.fee = secondFeeToClaim
           this.claimedFee = secondFeeToClaim.sub(firstFeeToClaim)
-          this.beforeClaimBalance = await this.stakeToken.balanceOf(this.user)
+          this.beforeClaimBalance = await this.polToken.balanceOf(this.user)
           this.beforeClaimTotalHeimdallFee = await this.stakeManager.totalHeimdallFee()
         })
 
@@ -1801,7 +1801,7 @@ describe('StakeManager', function (accounts) {
       before(async function () {
         this.tree = await feeCheckpoint.call(this, AliceValidatorId, 0, 22)
         this.leaf = createLeafFrom.call(this, this.user, 0)
-        this.beforeClaimBalance = await this.stakeToken.balanceOf(this.user)
+        this.beforeClaimBalance = await this.polToken.balanceOf(this.user)
       })
 
       it('Bob must fail withdrawing', async function () {
@@ -1852,7 +1852,7 @@ describe('StakeManager', function (accounts) {
 
         describe('claims 1st time', function () {
           before(async function () {
-            this.beforeClaimBalance = await this.stakeToken.balanceOf(this.user)
+            this.beforeClaimBalance = await this.polToken.balanceOf(this.user)
             this.tree = this.trees[0]
             this.fee = firstFee
             this.leaf = createLeafFrom.call(this, AliceValidatorId, 0)
@@ -1867,7 +1867,7 @@ describe('StakeManager', function (accounts) {
             this.fee = secondFee
             this.index = 0
             this.leaf = createLeafFrom.call(this, this.user, 1)
-            this.beforeClaimBalance = await this.stakeToken.balanceOf(this.user)
+            this.beforeClaimBalance = await this.polToken.balanceOf(this.user)
           })
 
           testAliceClaim()
@@ -1897,7 +1897,7 @@ describe('StakeManager', function (accounts) {
       beforeEach(async function () {
         this.tree = await feeCheckpoint.call(this, this.validatorId, 0, 22)
         this.leaf = createLeafFrom.call(this, this.user, 0)
-        this.beforeClaimBalance = await this.stakeToken.balanceOf(this.user)
+        this.beforeClaimBalance = await this.polToken.balanceOf(this.user)
         this.proof = utils.bufferToHex(Buffer.concat(this.tree.getProof(this.leaf)))
       })
 
@@ -2109,7 +2109,7 @@ describe('StakeManager', function (accounts) {
         const polTokenBidder = this.polToken.connect(this.polToken.provider.getSigner(this.bidder))
         await polTokenBidder.approve(this.stakeManager.address, mintAmount)
 
-        this.bidderBalanceBeforeAuction = await this.stakeToken.balanceOf(this.bidder)
+        this.bidderBalanceBeforeAuction = await this.polToken.balanceOf(this.bidder)
         this.totalStakedBeforeAuction = await this.stakeManager.totalStaked()
 
         const stakeManagerBidder = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.bidder))
@@ -2145,7 +2145,7 @@ describe('StakeManager', function (accounts) {
 
         before(async function () {
           this.prevValidatorAddr = initialStakers[0].getChecksumAddressString()
-          this.prevValidatorOldBalance = await this.stakeToken.balanceOf(this.prevValidatorAddr)
+          this.prevValidatorOldBalance = await this.polToken.balanceOf(this.prevValidatorAddr)
 
           this.validator = await this.stakeManager.validators(this.validatorId)
           this.reward = await this.stakeManager.validatorReward(this.validatorId)
@@ -2169,10 +2169,10 @@ describe('StakeManager', function (accounts) {
         prepareToTest()
         before(async function () {
           let restakeAmount = web3.utils.toWei('10000')
-          await this.stakeToken.mint(this.prevValidatorAddr, restakeAmount)
+          await this.polToken.mint(this.prevValidatorAddr, restakeAmount)
 
-          const stakeTokenValidator = this.stakeToken.connect(
-            this.stakeToken.provider.getSigner(this.prevValidatorAddr)
+          const stakeTokenValidator = this.polToken.connect(
+            this.polToken.provider.getSigner(this.prevValidatorAddr)
           )
           await stakeTokenValidator.approve(this.stakeManager.address, restakeAmount)
 
