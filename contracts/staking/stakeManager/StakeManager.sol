@@ -358,7 +358,7 @@ contract StakeManager is
         totalHeimdallFee = totalHeimdallFee.sub(withdrawAmount);
         logger.logClaimFee(msg.sender, withdrawAmount);
         userFeeExit[msg.sender] = accumFeeAmount;
-        _transferToken(msg.sender, withdrawAmount, false);
+        _transferToken(msg.sender, withdrawAmount, true);
     }
 
     function totalStakedFor(address user) external view returns (uint256) {
