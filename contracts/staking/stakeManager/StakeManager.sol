@@ -200,10 +200,12 @@ contract StakeManager is
 
     // Housekeeping function. @todo remove later
     function forceUnstake(uint256 validatorId) external onlyGovernance {
+        require(validators[validatorId].deactivationEpoch == 0);
         _unstake(validatorId, currentEpoch, false);
     }
 
     function forceUnstakePOL(uint256 validatorId) external onlyGovernance {
+        require(validators[validatorId].deactivationEpoch == 0);
         _unstake(validatorId, currentEpoch, true);
     }
 
