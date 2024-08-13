@@ -421,14 +421,14 @@ contract StakeManager is
     }
 
     function unstake(uint256 validatorId) external onlyStaker(validatorId) {
-        _unstake(validatorId, false);
+        _unstakeValidator(validatorId, false);
     }
 
     function unstakePOL(uint256 validatorId) external onlyStaker(validatorId) {
-        _unstake(validatorId, true);
+        _unstakeValidator(validatorId, true);
     }
 
-    function _unstake(uint256 validatorId, bool pol) internal {
+    function _unstakeValidator(uint256 validatorId, bool pol) internal {
         require(validatorAuction[validatorId].amount == 0);
 
         Status status = validators[validatorId].status;
