@@ -267,22 +267,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         uint256 delegatedAmount,
         uint256 totalAmountToSlash
     ) external onlyOwner returns (uint256) {
-        uint256 _withdrawPool = withdrawPool;
-        uint256 delegationAmount = delegatedAmount.add(_withdrawPool);
-        if (delegationAmount == 0) {
-            return 0;
-        }
-        // total amount to be slashed from delegation pool (active + inactive)
-        uint256 _amountToSlash = delegationAmount.mul(totalAmountToSlash).div(validatorStake.add(delegationAmount));
-        uint256 _amountToSlashWithdrawalPool = _withdrawPool.mul(_amountToSlash).div(delegationAmount);
-
-        // slash inactive pool
-        uint256 stakeSlashed = _amountToSlash.sub(_amountToSlashWithdrawalPool);
-        stakeManager.decreaseValidatorDelegatedAmount(validatorId, stakeSlashed);
-        activeAmount = activeAmount.sub(stakeSlashed);
-
-        withdrawPool = withdrawPool.sub(_amountToSlashWithdrawalPool);
-        return _amountToSlash;
+        revert("Slashing disabled");
     }
 
     function updateDelegation(bool _delegation) external onlyOwner {
