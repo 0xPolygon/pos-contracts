@@ -115,7 +115,7 @@ contract StakeManager is
         address _stakingLogger,
         address _validatorShareFactory,
         address _extensionCode
-    ) external onlyGovernance initializer {
+    ) external onlyGovernance {
         require(isContract(_extensionCode));
         eventsHub = address(0x0);
         extensionCode = _extensionCode;
@@ -127,7 +127,7 @@ contract StakeManager is
     function initializePOL(
         address _tokenNew,
         address _migration
-    ) external onlyGovernance initializer {
+    ) external onlyGovernance {
         tokenMatic = IERC20(token);
         token = IERC20(_tokenNew);
         migration = IPolygonMigration(_migration);
