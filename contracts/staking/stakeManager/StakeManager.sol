@@ -110,6 +110,30 @@ contract StakeManager is
         delegationEnabled = true;
     }
 
+    function reinitialize(
+        address _NFTContract,
+        address _stakingLogger,
+        address _validatorShareFactory,
+        address _extensionCode
+    ) external onlyGovernance initializer {
+        require(isContract(_extensionCode));
+        eventsHub = address(0x0);
+        extensionCode = _extensionCode;
+        NFTContract = StakingNFT(_NFTContract);
+        logger = StakingInfo(_stakingLogger);
+        validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
+    }
+
+    function initializePOL(
+        address _tokenNew,
+        address _migration
+    ) external onlyGovernance initializer {
+        tokenMatic = IERC20(token);
+        token = IERC20(_tokenNew);
+        migration = IPolygonMigration(_migration);
+        _convertMaticToPOL(tokenMatic.balanceOf(address(this)));
+    }
+
     function isOwner() public view returns (bool) {
         address _owner;
         bytes32 position = keccak256("matic.network.proxy.owner");
@@ -321,30 +345,6 @@ contract StakeManager is
 
     function drain(address destination, uint256 amount) external onlyGovernance {
         _transferToken(destination, amount, true);
-    }
-
-    function reinitialize(
-        address _NFTContract,
-        address _stakingLogger,
-        address _validatorShareFactory,
-        address _extensionCode
-    ) external onlyGovernance {
-        require(isContract(_extensionCode));
-        eventsHub = address(0x0);
-        extensionCode = _extensionCode;
-        NFTContract = StakingNFT(_NFTContract);
-        logger = StakingInfo(_stakingLogger);
-        validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
-    }
-
-    function initializePOL(
-        address _tokenNew,
-        address _migration
-    ) external onlyGovernance {
-        tokenMatic = IERC20(token);
-        token = IERC20(_tokenNew);
-        migration = IPolygonMigration(_migration);
-        _convertMaticToPOL(tokenMatic.balanceOf(address(this)));
     }
 
     /**
