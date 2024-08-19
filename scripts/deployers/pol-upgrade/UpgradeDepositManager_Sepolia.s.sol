@@ -88,10 +88,8 @@ contract UpgradeDepositManager_Sepolia is Script {
 
         // STEP 4
         // call migrateMatic on the new DepositManager, migrating all MATIC
-        ERC20 maticToken = ERC20(matic);
-        uint256 amount = maticToken.balanceOf(address(depositManagerProxy));
         bytes memory payloadMigrateMatic = abi.encodeWithSelector(
-            governance.update.selector, address(depositManagerProxy), abi.encodeWithSelector(depositManager.migrateMatic.selector, amount)
+            governance.update.selector, address(depositManagerProxy), abi.encodeWithSelector(depositManager.migrateMatic.selector)
         );
 
         console.log("\n Send payloadMigrateMatic to: ", governanceAddress);
