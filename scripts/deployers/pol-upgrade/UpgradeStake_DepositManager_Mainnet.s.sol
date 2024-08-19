@@ -102,7 +102,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // deploy new DepositManager version
         depositManagerImpl = DepositManager(payable(deployCode("out/DepositManager.sol/DepositManager.json")));
 
-        console.log("deployed DepositManager implementation at: ", address(validatorShareImpl));
+        console.log("deployed DepositManager implementation at: ", address(depositManagerImpl));
 
         vm.stopBroadcast();
     }
