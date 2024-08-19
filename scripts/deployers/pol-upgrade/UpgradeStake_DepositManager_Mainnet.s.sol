@@ -118,7 +118,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 1
         // Update ValidatorShare registry entry
         bytes memory payloadRegistry1 = abi.encodeCall(
-            governance.update, (address(registry), abi.encodeCall(registry.updateContractMap, (keccak256("validatorShare"), address(validatorShareImpl))))
+            Governance.update, (address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256("validatorShare"), address(validatorShareImpl))))
         );
 
         console.log("Created payloadRegistry1 for: ", address(governance));
@@ -134,7 +134,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 3
         // Call initializePOL
         bytes memory payloadInitializePol3 = abi.encodeCall(
-            governance.update, (address(stakeManagerProxy), abi.encodeCall(stakeManagerProxy.initializePOL, (address(polToken), migrationAddress)))
+            Governance.update, (address(stakeManagerProxy), abi.encodeCall(StakeManagerProxy.initializePOL, (address(polToken), migrationAddress)))
         );
 
         console.log("Created payloadInitializePol3 for: ", address(governance));
@@ -143,7 +143,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 4
         // Call updateContractMap on registry to add "pol"
         bytes memory payloadContractMapPol4 =
-            abi.encodeCall(governance.update, (address(registry), abi.encodeCall(registry.updateContractMap, (keccak256("pol"), address(polToken)))));
+            abi.encodeCall(Governance.update, (address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256("pol"), address(polToken)))));
 
         console.log("Send payloadContractMapPol4 to: ", address(governance));
         console.logBytes(payloadContractMapPol4);
@@ -151,7 +151,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 5
         // Call updateContractMap on registry to add "matic"
         bytes memory payloadContractMapMatic5 =
-            abi.encodeCall(governance.update, (address(registry), abi.encodeCall(registry.updateContractMap, (keccak256("matic"), address(maticToken)))));
+            abi.encodeCall(Governance.update, (address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256("matic"), address(maticToken)))));
 
         console.log("Send payloadContractMapMatic5 to: ", address(governance));
         console.logBytes(payloadContractMapMatic5);
@@ -159,7 +159,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 6
         // Call updateContractMap on registry to add "polygonMigration"
         bytes memory payloadContractMapMigration6 = abi.encodeCall(
-            governance.update, (address(registry), abi.encodeCall(registry.updateContractMap, (keccak256("polygonMigration"), migrationAddress)))
+            Governance.update, (address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256("polygonMigration"), migrationAddress)))
         );
 
         console.log("Send payloadContractMapMigration6 to: ", address(governance));
@@ -168,7 +168,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 7
         // call mapToken on the Registry to map POL to the PoS native gas token address (1010)
         bytes memory payloadMapToken7 =
-            abi.encodeCall(governance.update, (address(registry), abi.encodeCall(registry.mapToken, (address(polToken), nativeGasTokenAddress, false))));
+            abi.encodeCall(Governance.update, (address(registry), abi.encodeCall(Registry.mapToken, (address(polToken), nativeGasTokenAddress, false))));
 
         console.log("Send payloadMapToken7 to: ", address(governance));
         console.logBytes(payloadMapToken7);
@@ -183,7 +183,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // STEP 9
         // call migrateMatic on the new DepositManager, migrating all MATIC
         bytes memory payloadMigrateMatic9 =
-            abi.encodeCall(governance.update, (address(depositManagerProxy), abi.encodeCall(depositManagerProxy.migrateMatic, ())));
+            abi.encodeCall(Governance.update, (address(depositManagerProxy), abi.encodeCall(DepositManagerProxy.migrateMatic, ())));
 
         console.log("Send payloadMigrateMatic9 to: ", address(governance));
         console.logBytes(payloadMigrateMatic9);
