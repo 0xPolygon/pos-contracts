@@ -1114,8 +1114,6 @@ contract StakeManager is
     }
 
     function _unstake(uint256 validatorId, uint256 exitEpoch, bool pol) internal {
-        // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
-        // must think how to handle it correctly
         _updateRewards(validatorId);
 
         uint256 amount = validators[validatorId].amount;
