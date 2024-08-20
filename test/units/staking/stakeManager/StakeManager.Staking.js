@@ -410,6 +410,58 @@ describe('unstake', function () {
     })
   })
 
+  describe('forceUnstake cannot only unstake active validators', function () {
+    const AliceWallet = wallets[1]
+    const others = [wallets[2], wallets[3]]
+
+    before(async function() {
+      await freshDeploy.call(this, true)
+    })
+    before(doStake(AliceWallet))
+    before(doStake(others[0]))
+    before(doStake(others[1]))
+    before('Alice is forceUnstaked', async function () {
+      this.validatorId = await this.stakeManager.getValidatorId(AliceWallet.getAddressString())
+      await this.governance.update(
+        this.stakeManager.address,
+        this.stakeManager.interface.encodeFunctionData('forceUnstake', [this.validatorId])
+      )
+      this.lastSyncedEpoch = await this.stakeManager.currentEpoch()
+      await checkPoint(others, this.rootChainOwner, this.stakeManager)
+    })
+    it('Alice is unstaked', async function () {
+      const { deactivationEpoch } = await this.stakeManager.validators(this.validatorId)
+      assertBigNumberEquality(deactivationEpoch, this.lastSyncedEpoch)
+    })
+    it('Alice cannot be forceUnstaked again', async function () {
+      await expectRevert(this.governance.update(
+        this.stakeManager.address,
+        this.stakeManager.interface.encodeFunctionData('forceUnstake', [this.validatorId])
+      ), 'Update failed')
+    })
+    it('Alice cannot be forceUnstaked after claiming', async function () {
+      const endEpoch = this.lastSyncedEpoch.add(await this.stakeManager.WITHDRAWAL_DELAY())
+      // mock for i ... range(delay) checkPoint()
+      await this.governance.update(
+        this.stakeManager.address,
+        this.stakeManager.interface.encodeFunctionData('setCurrentEpoch', [endEpoch])
+      )
+
+      await this.stakeManager
+        .connect(this.stakeManager.provider.getSigner(AliceWallet.getAddressString()))
+        .unstakeClaim(this.validatorId)
+      await checkPoint(others, this.rootChainOwner, this.stakeManager)
+
+      await expectRevert(
+        this.governance.update(
+          this.stakeManager.address,
+          this.stakeManager.interface.encodeFunctionData('forceUnstake', [this.validatorId])
+        ),
+        'Update failed'
+      )
+    })
+  })
+
   describe('when user unstakes right after stake', async function () {
     const user = wallets[2].getChecksumAddressString()
     const amounts = walletAmounts[wallets[2].getAddressString()]
