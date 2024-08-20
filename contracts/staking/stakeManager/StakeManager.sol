@@ -200,12 +200,10 @@ contract StakeManager is
 
     // Housekeeping function. @todo remove later
     function forceUnstake(uint256 validatorId) external onlyGovernance {
-        require(validators[validatorId].deactivationEpoch == 0);
         _unstake(validatorId, currentEpoch, false);
     }
 
     function forceUnstakePOL(uint256 validatorId) external onlyGovernance {
-        require(validators[validatorId].deactivationEpoch == 0);
         _unstake(validatorId, currentEpoch, true);
     }
 
@@ -1114,6 +1112,7 @@ contract StakeManager is
     }
 
     function _unstake(uint256 validatorId, uint256 exitEpoch, bool pol) internal {
+        require(validators[validatorId].deactivationEpoch == 0);
         // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
         // must think how to handle it correctly
         _updateRewards(validatorId);
