@@ -444,7 +444,7 @@ describe('unstake', function () {
       // mock for i ... range(delay) checkPoint()
       await this.governance.update(
         this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setCurrentEpoch', [endEpoch])
+        this.stakeManager.interface.encodeFunctionData('setCurrentEpoch', [endEpoch + 1])
       )
 
       await this.stakeManager
