@@ -4,19 +4,20 @@
 
 Ethereum smart contracts that power the [Matic Network](https://polygon.technology/polygon-pos).
 
+## Development
 ### Install dependencies with
 
 ```
 npm install
 ```
 
-### Setup
+### Setup git hooks
 
 ```
 pre-commit install
 ```
 
-### Compile
+### Prepare templates
 
 ```
 npm run template:process -- --bor-chain-id 15001
@@ -27,7 +28,30 @@ bor-chain-id should be:
 Mainnet = 137  
 TestnetV4 (Mumbai) = 80001
 
-### Main chain and side chain
+### Generate interfaces
+
+```
+npm run generate:interfaces
+```
+
+### Build
+
+```
+forge build
+```
+
+## Testing
+
+### Run forge upgrade forktest
+
+```
+forge test
+```
+
+### Run unit tests
+
+
+#### Main chain and side chain
 
 - Main chain
 
@@ -51,18 +75,12 @@ npm run bor:stop
 npm run bor:clean
 ```
 
-### Run tests
+#### Run tests
 
 Run Hardhat test
 
 ```
 npm test:hardhat
-```
-
-Run Foundry test
-
-```
-npm test:foundry
 ```
 
 ### Coverage
