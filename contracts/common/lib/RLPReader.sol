@@ -114,6 +114,8 @@ library RLPReader {
             result[i] = RLPItem(dataLen, memPtr);
             memPtr = memPtr + dataLen;
         }
+        // New check to see if the last mempointer of the last read item has moved farther than the parent item is long
+        require(memPtr - item.memPtr == item.len, "Wrong total length.");
 
         return result;
     }
