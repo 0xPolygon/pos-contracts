@@ -68,7 +68,9 @@ contract StakeManager is
         require(validators[validatorId].contractAddress == msg.sender, "Invalid contract address");
     }
 
-    constructor() public GovernanceLockable(address(0x0)) initializer {}
+    constructor() public GovernanceLockable(address(0x0)) {
+        _disableInitializer();
+    }
 
     function initialize(
         address _registry,
@@ -106,6 +108,30 @@ contract StakeManager is
         auctionPeriod = (2**13) / 4; // 1 week in epochs
         proposerBonus = 10; // 10 % of total rewards
         delegationEnabled = true;
+    }
+
+    function reinitialize(
+        address _NFTContract,
+        address _stakingLogger,
+        address _validatorShareFactory,
+        address _extensionCode
+    ) external onlyGovernance {
+        require(isContract(_extensionCode));
+        eventsHub = address(0x0);
+        extensionCode = _extensionCode;
+        NFTContract = StakingNFT(_NFTContract);
+        logger = StakingInfo(_stakingLogger);
+        validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
+    }
+
+    function initializePOL(
+        address _tokenNew,
+        address _migration
+    ) external onlyGovernance {
+        tokenMatic = IERC20(token);
+        token = IERC20(_tokenNew);
+        migration = IPolygonMigration(_migration);
+        _convertMaticToPOL(tokenMatic.balanceOf(address(this)));
     }
 
     function isOwner() public view returns (bool) {
@@ -319,30 +345,6 @@ contract StakeManager is
 
     function drain(address destination, uint256 amount) external onlyGovernance {
         _transferToken(destination, amount, true);
-    }
-
-    function reinitialize(
-        address _NFTContract,
-        address _stakingLogger,
-        address _validatorShareFactory,
-        address _extensionCode
-    ) external onlyGovernance {
-        require(isContract(_extensionCode));
-        eventsHub = address(0x0);
-        extensionCode = _extensionCode;
-        NFTContract = StakingNFT(_NFTContract);
-        logger = StakingInfo(_stakingLogger);
-        validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
-    }
-
-    function initializePOL(
-        address _tokenNew,
-        address _migration
-    ) external onlyGovernance {
-        tokenMatic = IERC20(token);
-        token = IERC20(_tokenNew);
-        migration = IPolygonMigration(_migration);
-        _convertMaticToPOL(tokenMatic.balanceOf(address(this)));
     }
 
     /**
@@ -1113,8 +1115,7 @@ contract StakeManager is
 
     function _unstake(uint256 validatorId, uint256 exitEpoch, bool pol) internal {
         require(validators[validatorId].deactivationEpoch == 0);
-        // TODO: if validators unstake and slashed to 0, he will be forced to unstake again
-        // must think how to handle it correctly
+
         _updateRewards(validatorId);
 
         uint256 amount = validators[validatorId].amount;
