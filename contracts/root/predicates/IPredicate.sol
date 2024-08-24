@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
+import {RLPReader} from "../../common/lib/RLPReader.sol";
 
 import {Common} from "../../common/lib/Common.sol";
 import {RLPEncode} from "../../common/lib/RLPEncode.sol";
