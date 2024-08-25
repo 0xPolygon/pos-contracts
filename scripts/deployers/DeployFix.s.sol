@@ -33,8 +33,7 @@ contract DeployFix is Script {
     address withdrawManager;
     address eRC20PredicateBurnOnly;
     address eRC721PredicateBurnOnly;
-    address mintableERC721Predicate;
-
+    
 
     function run() public {
         //uint256 deployerPrivateKey = vm.promptSecretUint("Enter deployer private key: ");
@@ -61,11 +60,6 @@ contract DeployFix is Script {
 
         console.log("deployed ERC721PredicateBurnOnly implementation at: ", eRC721PredicateBurnOnly);
 
-        // deploy STEP 4
-        // deploy new ERC721PredicateBurnOnly version
-        mintableERC721Predicate = deployCode("out/MintableERC721Predicate.sol/MintableERC721Predicate.json", abi.encode(withdrawManagerProxy, depositManagerProxy));
-
-        console.log("deployed MintableERC721Predicate implementation at: ", mintableERC721Predicate);
 
         vm.stopBroadcast();
    
@@ -90,39 +84,24 @@ contract DeployFix is Script {
         console.logBytes(payloadRegistry2);
         console.log("to: ", governance);
 
+        // STEP 2
+        // Add predicates
         bytes memory payloadRegistry3 = abi.encodeCall(
-            Governance.update, (address(registry), abi.encodeCall(Registry.removePredicate, (0x932532aA4c0174b8453839A6E44eE09Cc615F2b7)))
+            Governance.update, (address(registry), abi.encodeCall(Registry.addErc20Predicate, (eRC20PredicateBurnOnly)))
         );
 
         console.log("Send: ");
         console.logBytes(payloadRegistry3);
         console.log("to: ", governance);
 
-        // STEP 2
-        // Add predicates
         bytes memory payloadRegistry4 = abi.encodeCall(
-            Governance.update, (address(registry), abi.encodeCall(Registry.addErc20Predicate, (eRC20PredicateBurnOnly)))
+            Governance.update, (address(registry), abi.encodeCall(Registry.addErc721Predicate, (eRC721PredicateBurnOnly)))
         );
 
         console.log("Send: ");
         console.logBytes(payloadRegistry4);
         console.log("to: ", governance);
 
-        bytes memory payloadRegistry5 = abi.encodeCall(
-            Governance.update, (address(registry), abi.encodeCall(Registry.addErc721Predicate, (eRC721PredicateBurnOnly)))
-        );
-
-        console.log("Send: ");
-        console.logBytes(payloadRegistry5);
-        console.log("to: ", governance);
-
-        bytes memory payloadRegistry6 = abi.encodeCall(
-            Governance.update, (address(registry), abi.encodeCall(Registry.addErc721Predicate, (mintableERC721Predicate)))
-        );
-
-        console.log("Send: ");
-        console.logBytes(payloadRegistry6);
-        console.log("to: ", governance);
 
         // STEP 3
         // Update WithdrawManagerProxy implementation contract
