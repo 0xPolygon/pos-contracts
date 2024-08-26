@@ -1,5 +1,5 @@
 import hardhat from 'hardhat'
-const ethers = hardhat.ethers
+export const ethers = hardhat.ethers
 
 export const RootChain = await ethers.getContractFactory('RootChain')
 export const RootChainProxy = await ethers.getContractFactory('RootChainProxy')
@@ -41,6 +41,7 @@ export const ERC721PredicateBurnOnly = await ethers.getContractFactory('ERC721Pr
 // tokens
 export const MaticWETH = await ethers.getContractFactory('MaticWETH')
 export const TestToken = await ethers.getContractFactory('TestToken')
+export const ERC20Permit = await ethers.getContractFactory('ERC20Permit')
 export const RootERC721 = await ethers.getContractFactory('RootERC721')
 export const ERC721PlasmaMintable = await ethers.getContractFactory('ERC721PlasmaMintable')
 export const ExitNFT = await ethers.getContractFactory('ExitNFT')
@@ -49,6 +50,7 @@ export const ExitNFT = await ethers.getContractFactory('ExitNFT')
 export const GnosisSafeProxy = await ethers.getContractFactory('GnosisSafeProxy')
 export const GnosisSafe = await ethers.getContractFactory('GnosisSafe')
 export const PolygonMigrationTest = await ethers.getContractFactory('PolygonMigrationTest')
+export const PolygonMigration = await ethers.getContractFactory('PolygonMigration')
 
 // child chain
 const borProvider = new ethers.providers.JsonRpcProvider(

@@ -25,13 +25,36 @@ const baseConfig = {
     },
   },
   solidity: {
-    version: foundryConfig.profile.default.solc_version,
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: foundryConfig.profile.default.optimizer_runs,
+    compilers: [
+      {
+        version: "0.5.4",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
-    },
+      {
+        version: "0.5.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.8.4",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+    
   },
   paths: {
     sources: "./contracts",

@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, dev]
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev, feat/*]
 
 jobs:
   build:
@@ -42,10 +42,13 @@ jobs:
 
       - name: Run Forge build
         run: |
+          npm run generate:interfaces
           forge --version
           forge build --sizes
         id: build
 
       - name: Run Forge tests
-        run: if test -d test/foundry && find test/foundry -name '*.sol' | grep -q .; then forge test -vvv; else echo "No .sol files found in test/foundry directory. Skipping Forge tests."; fi
+        env:
+          INFURA_TOKEN: ${{ secrets.INFURA_TOKEN }}
+        run: forge test -vvv
         id: test
