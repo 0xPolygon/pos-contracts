@@ -14,12 +14,12 @@ contract MRC20 is BaseERC20NoSig {
     uint8 private constant DECIMALS = 18;
     bool isInitialized;
 
-    uint256 locked = 1; // append to storage layout
+    uint256 locked = 0; // append to storage layout
     modifier nonReentrant() {
-        require(locked == 1, "reentrancy");
-        locked = 2;
-        _;
+        require(locked == 0, "reentrancy");
         locked = 1;
+        _;
+        locked = 0;
     }
 
     constructor() public {}
