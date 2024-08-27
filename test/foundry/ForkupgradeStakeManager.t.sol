@@ -18,7 +18,7 @@ contract ForkupgradeStakeManagerTest is Test, UpgradeStake_DepositManager_Mainne
     uint256 mainnetFork;
 
     function setUp() public {
-        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"));
+        mainnetFork = vm.createFork("https://eth.llamarpc.com", 20585956);
         vm.selectFork(mainnetFork);
     }
 
@@ -28,9 +28,16 @@ contract ForkupgradeStakeManagerTest is Test, UpgradeStake_DepositManager_Mainne
         Vm.Wallet memory wallet = vm.createWallet("fork wallet");
 
         loadConfig();
-        (StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl) = deployImplementations(wallet.privateKey);
-        (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) =
-            createPayload(stakeManagerImpl, validatorShareImpl, depositManagerImpl);
+        (
+            StakeManager stakeManagerImpl,
+            ValidatorShare validatorShareImpl,
+            DepositManager depositManagerImpl
+        ) = deployImplementations(wallet.privateKey);
+        (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) = createPayload(
+            stakeManagerImpl,
+            validatorShareImpl,
+            depositManagerImpl
+        );
 
         uint256 balanceStakeManager = maticToken.balanceOf(address(stakeManagerProxy));
         console.log("Initial StakeManager Matic balance: ", balanceStakeManager);
