@@ -16,6 +16,7 @@ import {RootChain} from "../RootChain.sol";
 
 interface IPolygonMigration {
     function migrate(uint256 amount) external;
+    function unmigrate(uint256 amount) external;
 }
 
 
@@ -61,6 +62,14 @@ contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder 
 
         // call migrate function
         IPolygonMigration(polygonMigration).migrate(_amount);
+    }
+
+    function unmigratePol() external onlyGovernance {
+        IERC20 pol = IERC20(registry.contractMap(keccak256("pol")));
+        address polygonMigration = registry.contractMap(keccak256("polygonMigration"));
+        uint256 amount = pol.balanceOf(address(this));
+        pol.approve(polygonMigration, amount);
+        IPolygonMigration(polygonMigration).unmigrate(amount);
     }
 
     function updateMaxErc20Deposit(uint256 maxDepositAmount) public onlyGovernance {
