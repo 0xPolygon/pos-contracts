@@ -25,7 +25,7 @@ contract RevertPolUpgradePrePolUpgrade is Test, RevertPolUpgrade_Mainnet {
         // perform pol-upgrade
         Vm.Wallet memory wallet = vm.createWallet("fork wallet");
 
-        loadConfig();
+        loadConfig(); // both inherits use the same config
         (
             StakeManager stakeManagerImpl,
             ValidatorShare validatorShareImpl,
@@ -35,7 +35,7 @@ contract RevertPolUpgradePrePolUpgrade is Test, RevertPolUpgrade_Mainnet {
             stakeManagerImpl,
             validatorShareImpl,
             depositManagerImpl
-        );
+        ); // is PolUpgrade.createPayload
 
         uint256 balanceStakeManager = maticToken.balanceOf(address(stakeManagerProxy));
         console.log("Initial StakeManager Matic balance: ", balanceStakeManager);
@@ -89,7 +89,93 @@ contract RevertPolUpgradePrePolUpgrade is Test, RevertPolUpgrade_Mainnet {
         // Check Proxy implementation addresses
         assertEq(Proxy(payable(address(stakeManagerProxy))).implementation(), address(stakeManagerImpl));
         assertEq(Proxy(payable(address(depositManagerProxy))).implementation(), address(depositManagerImpl));
+
+        _labelBefore();
     }
 
-    function test_RevertPolUpgrade() public {}
+    function test_RevertPolUpgrade() public {
+        // pol upgrade basic checks
+        assertEq(maticToken.balanceOf(address(stakeManagerProxy)), 0);
+        assertEq(maticToken.balanceOf(address(depositManagerProxy)), 0);
+        assertNotEq(registry.contractMap(keccak256("validatorShare")), address(validatorShareLegacyImpl));
+
+        uint256 smPolBalance = polToken.balanceOf(address(stakeManagerProxy));
+        uint256 dmPolBalance = polToken.balanceOf(address(depositManagerProxy));
+
+        // perform pre-requisistes for revert-pol-upgrade
+        (
+            StakeManager stakeManagerUnmigrateImpl,
+            DepositManager depositManagerUnmigrateImpl
+        ) = deployTemporaryUnmigrateImplementations(vm.createWallet("deployer").privateKey);
+        _labelAfter(stakeManagerUnmigrateImpl, depositManagerUnmigrateImpl);
+
+        (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) = createPayload(
+            stakeManagerUnmigrateImpl,
+            depositManagerUnmigrateImpl
+        );
+
+        _submitPayload(scheduleBatchPayload, executeBatchPayload, payloadId, 0);
+
+        // #1
+        assertEq(registry.contractMap(keccak256("validatorShare")), address(validatorShareLegacyImpl));
+
+        // #2 & $3
+        assertEq(polToken.balanceOf(address(stakeManagerProxy)), 0);
+        assertEq(polToken.balanceOf(address(depositManagerProxy)), 0);
+
+        assertEq(maticToken.balanceOf(address(stakeManagerProxy)), smPolBalance);
+        assertEq(maticToken.balanceOf(address(depositManagerProxy)), dmPolBalance);
+
+        assertEq(Proxy(payable(address(stakeManagerProxy))).implementation(), address(stakeManagerLegacyImpl));
+        assertEq(Proxy(payable(address(depositManagerProxy))).implementation(), address(depositManagerLegacyImpl));
+    }
+
+    // function _expectCalls() internal {
+    //     vm.expectCall(address())
+    // }
+
+    function _submitPayload(
+        bytes memory _scheduleBatchPayload,
+        bytes memory _executeBatchPayload,
+        bytes32 _payloadId,
+        uint256 _delay
+    ) internal {
+        vm.prank(gSafeAddress);
+        (bool successSchedule, bytes memory dataSchedule) = address(timelock).call(_scheduleBatchPayload);
+        assertTrue(successSchedule);
+
+        assertEq(timelock.isOperation(_payloadId), true);
+        assertEq(timelock.isOperationPending(_payloadId), true);
+
+        vm.warp(block.timestamp + _delay);
+
+        assertEq(timelock.isOperationReady(_payloadId), true);
+
+        vm.prank(gSafeAddress);
+        (bool successExecute, bytes memory dataExecute) = address(timelock).call(_executeBatchPayload);
+        assertTrue(successExecute);
+        assertEq(timelock.isOperationDone(_payloadId), true);
+    }
+
+    function _labelBefore() internal {
+        vm.label(address(registry), "Registry");
+        vm.label(address(stakeManagerProxy), "StakeManagerProxy");
+        vm.label(address(governance), "Governance");
+        vm.label(address(timelock), "Timelock");
+        vm.label(address(depositManagerProxy), "DepositManagerProxy");
+        vm.label(address(maticToken), "Matic");
+        vm.label(address(polToken), "POL");
+        vm.label(migrationAddress, "PolygonMigration");
+        vm.label(nativeGasTokenAddress, "NativGasToken");
+        vm.label(gSafeAddress, "gSafe");
+    }
+
+    function _labelAfter(StakeManager stakeManagerUnmigrateImpl, DepositManager depositManagerUnmigrateImpl) internal {
+        vm.label(stakeManagerLegacyImpl, "stakeManagerLegacyImpl");
+        vm.label(validatorShareLegacyImpl, "validatorShareLegacyImpl");
+        vm.label(depositManagerLegacyImpl, "depositManagerLegacyImpl");
+
+        vm.label(address(stakeManagerUnmigrateImpl), "stakeManagerUnmigrateImpl");
+        vm.label(address(depositManagerUnmigrateImpl), "depositManagerUnmigrateImpl");
+    }
 }
