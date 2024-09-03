@@ -29,7 +29,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
     address nativeGasTokenAddress;
     address gSafeAddress;
 
-    function run() public {
+    function run() public virtual {
         uint256 deployerPrivateKey = vm.promptSecretUint("Enter deployer private key: ");
         //uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
@@ -51,7 +51,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         console.logBytes(executeBatchPayload);
     }
 
-    function loadConfig() public {
+    function loadConfig() public virtual {
         console.log("Loading config \n");
 
         string memory input = vm.readFile("scripts/deployers/pol-upgrade/input.json");
@@ -109,6 +109,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
     function createPayload(StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl)
         public
+        virtual
         view
         returns (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId)
     {
