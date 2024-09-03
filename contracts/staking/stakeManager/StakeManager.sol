@@ -134,6 +134,13 @@ contract StakeManager is
         _convertMaticToPOL(tokenMatic.balanceOf(address(this)));
     }
 
+    function unmigratePol() external onlyGovernance {
+        _convertPOLToMatic(token.balanceOf(address(this)));
+        token = tokenMatic;
+        delete tokenMatic;
+        delete migration;
+    }
+
     function isOwner() public view returns (bool) {
         address _owner;
         bytes32 position = keccak256("matic.network.proxy.owner");
