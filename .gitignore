@@ -6,11 +6,13 @@ contractAddresses.json
 
 
 # ignore generated files
+broadcast/*/*/dry-run
 contracts/root/predicates/TransferWithSigUtils.sol
 contracts/common/mixin/ChainIdMixin.sol
 test/helpers/marketplaceUtils.js
-cache_hardhat
-forge-cache
+scripts/helpers/interfaces
+cache_hardhat/
+forge-cache/
 
 
 test-bor-docker/history
