@@ -44,15 +44,11 @@ describe('RootChain', async function (accounts) {
   })
 
   async function freshDeploy() {
-    const contracts = await deployer.deployStakeManager(wallets)
+    const contracts = await deployer.deployStakeManager(wallets, true)
     governance = contracts.governance
     rootChain = contracts.rootChain
     stakeManager = contracts.stakeManager
-    stakeToken = await TestToken.deploy('Stake Token', 'STAKE')
-    await contracts.governance.update(
-      stakeManager.address,
-      stakeManager.interface.encodeFunctionData('setStakingToken', [stakeToken.address])
-    )
+    stakeToken = contracts.stakeToken
     await stakeManager.changeRootChain(rootChain.address)
     await contracts.governance.update(
       stakeManager.address,

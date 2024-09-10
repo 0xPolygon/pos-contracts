@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, dev]
   pull_request:
+    branches: [main, dev, feat/*]
 
 jobs:
   build:
@@ -42,11 +42,13 @@ jobs:
 
       - name: Run Forge build
         run: |
+          npm run generate:interfaces
           forge --version
           forge build --sizes
         id: build
 
       - name: Run Forge tests
-        run: |
-          forge test -vvv
+        env:
+          INFURA_TOKEN: ${{ secrets.INFURA_TOKEN }}
+        run: forge test -vvv
         id: test

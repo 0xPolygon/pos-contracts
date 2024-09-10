@@ -2,6 +2,7 @@
 
 import chai, { assert } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
+import { BN } from '@openzeppelin/test-helpers'
 
 import { DrainStakeManager } from '../../helpers/artifacts.js'
 
@@ -12,21 +13,25 @@ import { generateFirstWallets, mnemonics } from '../../helpers/wallets.js'
 
 chai.use(chaiAsPromised).should()
 
-describe('DrainStakeManager', async function (accounts) {
-  accounts = await ethers.getSigners()
-  accounts = accounts.map((account) => {
-    return account.address
+// todo: is this even needed anymore?
+describe('DrainStakeManager', function (accounts) {
+  let owner
+  before(async function() {
+    accounts = await ethers.getSigners()
+    accounts = accounts.map((account) => {
+      return account.address
+    })
+    owner = accounts[0]
   })
-
-  const owner = accounts[0]
-  describe('Upgrade and drain staking contract', async function () {
+  
+  describe('Upgrade and drain staking contract', function () {
     before(async function () {
       this.wallets = generateFirstWallets(mnemonics, 10)
 
-      let contracts = await deployer.deployStakeManager(this.wallets)
+      let contracts = await deployer.deployStakeManager(this.wallets, true)
 
       this.governance = contracts.governance
-      this.stakeToken = contracts.stakeToken
+      this.polToken = contracts.polToken
       this.stakeManager = contracts.stakeManager
       this.proxy = contracts.stakeManagerProxy
       this.stakeManagerImpl = contracts.stakeManagerImpl
@@ -36,9 +41,10 @@ describe('DrainStakeManager', async function (accounts) {
     })
 
     it('must have some tokens', async function () {
+      const initalAmount = web3.utils.toWei('10000000')
       const amount = web3.utils.toWei('90000')
-      await this.stakeToken.mint(this.stakeManager.address, amount)
-      ;(await this.stakeToken.balanceOf(this.stakeManager.address)).toString().should.be.equal(amount.toString())
+      await this.polToken.mint(this.stakeManager.address, amount)
+      ;(await this.polToken.balanceOf(this.stakeManager.address)).toString().should.be.equal(BN(amount).add(BN(initalAmount)).toString())
     })
 
     it('must lock stake manager', async function () {
@@ -60,7 +66,7 @@ describe('DrainStakeManager', async function (accounts) {
     })
 
     it('must fail draining when not drained owner', async function () {
-      const balance = await this.stakeToken.balanceOf(this.stakeManager.address)
+      const balance = await this.polToken.balanceOf(this.stakeManager.address)
       try {
         await this.stakeManagerDrainable.drain(owner, balance)
         assert.fail('Funds should not be drained')
@@ -70,10 +76,10 @@ describe('DrainStakeManager', async function (accounts) {
     })
 
     it('must drain all funds when drained by owner (Gnosis safe)', async function () {
-      const balance = await this.stakeToken.balanceOf(this.stakeManager.address)
+      const balance = await this.polToken.balanceOf(this.stakeManager.address)
       const data = this.stakeManagerDrainable.interface.encodeFunctionData('drain', [owner, balance.toString()])
       await execSafe(this.gSafe, this.stakeManager.address, data, [accounts[1], accounts[2]])
-      assert.equal((await this.stakeToken.balanceOf(this.stakeManager.address)).toString(), '0')
+      assert.equal((await this.polToken.balanceOf(this.stakeManager.address)).toString(), '0')
     })
 
     it('must swap back to normal implementaion', async function () {

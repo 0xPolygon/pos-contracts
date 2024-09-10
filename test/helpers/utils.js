@@ -481,6 +481,12 @@ export function assertInLogs(logs, eventName, eventArgs = {}) {
   })
 
   if (event === undefined) {
+    // If this happens there are multiple events of the same name, sometimes the "correct" one is also broken (in the test)
+    // so we return the wrong error, in that case log all errors
+    if (exception.length !== 1){
+      console.log("Multiple events found, unsure which is the correct one.");
+      console.log(exception)
+    }
     throw exception[0]
   }
 
