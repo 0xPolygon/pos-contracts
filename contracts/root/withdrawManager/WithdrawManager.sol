@@ -387,6 +387,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         )
     {
         (bytes32 headerRoot, uint256 startBlock, , uint256 createdAt, ) = rootChain.headerBlocks(headerNumber);
+        require(headerRoot != 0, "Block doesn't exist.");
         require(
             keccak256(abi.encodePacked(blockNumber, blockTime, txRoot, receiptRoot)).checkMembership(
                 blockNumber - startBlock,
