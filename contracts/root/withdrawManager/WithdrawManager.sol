@@ -4,7 +4,6 @@ import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import {ERC721} from "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
 import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
 
-import {RLPReader} from "../../common/lib/RLPReader.sol";
 import {Merkle} from "../../common/lib/Merkle.sol";
 import {MerklePatriciaProof} from "../../common/lib/MerklePatriciaProof.sol";
 import {PriorityQueue} from "../../common/lib/PriorityQueue.sol";
@@ -20,8 +19,6 @@ import {WithdrawManagerStorage} from "./WithdrawManagerStorage.sol";
 
 
 contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
-    using RLPReader for bytes;
-    using RLPReader for RLPReader.RLPItem;
     using Merkle for bytes32;
 
     using ExitPayloadReader for bytes;
