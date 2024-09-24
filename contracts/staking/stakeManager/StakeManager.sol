@@ -328,21 +328,6 @@ contract StakeManager is
         minHeimdallFee = _minHeimdallFee;
     }
 
-    function drainValidatorShares(
-        uint256 validatorId,
-        address tokenAddr,
-        address payable destination,
-        uint256 amount
-    ) external onlyGovernance {
-        address contractAddr = validators[validatorId].contractAddress;
-        require(contractAddr != address(0x0));
-        IValidatorShare(contractAddr).drain(tokenAddr, destination, amount);
-    }
-
-    function drain(address destination, uint256 amount) external onlyGovernance {
-        _transferToken(destination, amount, true);
-    }
-
     /**
         Public Methods
      */
