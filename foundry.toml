@@ -12,7 +12,6 @@ verbosity = 2
 ffi = true
 remappings = [
   "openzeppelin-solidity/=node_modules/openzeppelin-solidity/",
-  "solidity-rlp/=node_modules/solidity-rlp/",
   "@ensdomains/=node_modules/@ensdomains/",
   "eth-gas-reporter/=node_modules/eth-gas-reporter/",
   "forge-std/=lib/forge-std/src/",
