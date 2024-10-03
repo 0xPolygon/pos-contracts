@@ -69,16 +69,19 @@ library MerklePatriciaProof {
                 );
                 pathPtr += 1;
             } else if (currentNodeList.length == 2) {
+                bytes memory nodeValue = RLPReader.toBytes(currentNodeList[0]);
                 uint256 traversed = _nibblesToTraverse(
-                    RLPReader.toBytes(currentNodeList[0]),
+                    nodeValue,
                     path,
                     pathPtr
                 );
                 if (pathPtr + traversed == path.length) {
                     //leaf node
+                    //enforce correct nibble
+                    bytes1 prefix = _getNthNibbleOfBytes(0, nodeValue);
                     if (
-                        keccak256(RLPReader.toBytes(currentNodeList[1])) ==
-                        keccak256(value)
+                        keccak256(RLPReader.toBytes(currentNodeList[1])) == keccak256(value) && 
+                        (prefix == bytes1(uint8(2)) || prefix == bytes1(uint8(3)))
                     ) {
                         return true;
                     } else {
@@ -93,6 +96,28 @@ library MerklePatriciaProof {
 
                 pathPtr += traversed;
                 nodeKey = bytes32(RLPReader.toUintStrict(currentNodeList[1]));
+
+                // // Alternative:
+                // bytes memory nodeValue = RLPReader.toBytes(currentNodeList[0]);
+                // bytes1 prefix = _getNthNibbleOfBytes(0, nodeValue);
+                // // Extension node
+                // if (prefix == bytes1(uint8(0)) || prefix == bytes1(uint8(1))) {
+                //     uint256 traversed = _nibblesToTraverse(
+                //         nodeValue,
+                //         path,
+                //         pathPtr
+                //     );
+                //     if (traversed == 0) {
+                //         return false;
+                //     }
+                //     pathPtr += traversed; 
+                //     nodeKey = bytes32(RLPReader.toUintStrict(currentNodeList[1]));
+                // // Leaf node
+                // } else if (prefix == bytes1(uint8(2)) || prefix == bytes1(uint8(3))){
+                //     return keccak256(RLPReader.toBytes(currentNodeList[1])) == keccak256(value);
+                // } else {
+                //     return false;
+                // }
             } else {
                 return false;
             }
