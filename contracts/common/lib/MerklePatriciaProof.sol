@@ -69,6 +69,7 @@ library MerklePatriciaProof {
                 );
                 pathPtr += 1;
             } else if (currentNodeList.length == 2) {
+                // Alternative 1 start
                 bytes memory nodeValue = RLPReader.toBytes(currentNodeList[0]);
                 uint256 traversed = _nibblesToTraverse(
                     nodeValue,
@@ -96,8 +97,9 @@ library MerklePatriciaProof {
 
                 pathPtr += traversed;
                 nodeKey = bytes32(RLPReader.toUintStrict(currentNodeList[1]));
+                // Alternative 1 end
 
-                // // Alternative:
+                // // Alternative 2 start
                 // bytes memory nodeValue = RLPReader.toBytes(currentNodeList[0]);
                 // bytes1 prefix = _getNthNibbleOfBytes(0, nodeValue);
                 // // Extension node
@@ -118,6 +120,7 @@ library MerklePatriciaProof {
                 // } else {
                 //     return false;
                 // }
+                // // Alternative 2 end
             } else {
                 return false;
             }
