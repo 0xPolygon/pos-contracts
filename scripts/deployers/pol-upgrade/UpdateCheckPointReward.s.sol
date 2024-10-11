@@ -32,7 +32,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         governance = input.readAddress(string.concat(chainIdSlug, ".governance"));
         timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
 
-        uint256 NEW_REWARD = 52_940;
+        uint256 NEW_REWARD = 52_940e18;
 
         // create payload
         bytes memory payload = abi.encodeCall(Governance.update, (stakeManagerProxy, abi.encodeCall(StakeManager.updateCheckpointReward, (NEW_REWARD))));
