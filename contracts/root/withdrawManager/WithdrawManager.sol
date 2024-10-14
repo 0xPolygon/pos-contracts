@@ -3,8 +3,8 @@ pragma solidity ^0.5.2;
 import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import {ERC721} from "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
 import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 
+import {RLPReader} from "../../common/lib/RLPReader.sol";
 import {Merkle} from "../../common/lib/Merkle.sol";
 import {MerklePatriciaProof} from "../../common/lib/MerklePatriciaProof.sol";
 import {PriorityQueue} from "../../common/lib/PriorityQueue.sol";
@@ -387,6 +387,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         )
     {
         (bytes32 headerRoot, uint256 startBlock, , uint256 createdAt, ) = rootChain.headerBlocks(headerNumber);
+        require(headerRoot != 0, "Block doesn't exist.");
         require(
             keccak256(abi.encodePacked(blockNumber, blockTime, txRoot, receiptRoot)).checkMembership(
                 blockNumber - startBlock,
