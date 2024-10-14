@@ -18,7 +18,7 @@ contract ForkupgradeStakeManagerTest is Test, UpgradeStake_DepositManager_Mainne
     uint256 mainnetFork;
 
     function setUp() public {
-        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"));
+        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"), 20678429);
         vm.selectFork(mainnetFork);
     }
 
