@@ -28,9 +28,16 @@ contract ForkupgradeStakeManagerTest is Test, UpgradeStake_DepositManager_Mainne
         Vm.Wallet memory wallet = vm.createWallet("fork wallet");
 
         loadConfig();
-        (StakeManager stakeManagerImpl, ValidatorShare validatorShareImpl, DepositManager depositManagerImpl) = deployImplementations(wallet.privateKey);
-        (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) =
-            createPayload(stakeManagerImpl, validatorShareImpl, depositManagerImpl);
+        (
+            StakeManager stakeManagerImpl,
+            ValidatorShare validatorShareImpl,
+            DepositManager depositManagerImpl
+        ) = deployImplementations(wallet.privateKey);
+        (bytes memory scheduleBatchPayload, bytes memory executeBatchPayload, bytes32 payloadId) = createPayload(
+            stakeManagerImpl,
+            validatorShareImpl,
+            depositManagerImpl
+        );
 
         uint256 balanceStakeManager = maticToken.balanceOf(address(stakeManagerProxy));
         console.log("Initial StakeManager Matic balance: ", balanceStakeManager);
