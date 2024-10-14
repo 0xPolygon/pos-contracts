@@ -16,6 +16,7 @@
     "test:ci": "scripts/run-test.sh",
     "testrpc": "ganache --chain.hardfork istanbul --wallet.mnemonic 'clock radar mass judge dismiss just intact mind resemble fringe diary casino' -p 8545 --gasLimit 10000000 --gasPrice 0 --chain.allowUnlimitedContractSize --accounts 200",
     "template:process": "node scripts/process-templates.cjs",
+    "generate:interfaces": "scripts/helpers/generateInterfaces.sh",
     "coverage": "LOCAL_NETWORK=true npx hardhat coverage --solcoverjs .solcover.cjs",
     "bor:simulate": "cd test-bor-docker && bash run-docker.sh",
     "bor:stop": "cd test-bor-docker && bash stop-docker.sh",

@@ -28,3 +28,6 @@ test-bor-docker/data
 coverage/
 
 coverage.json
+
+scripts/helpers/interfaces
+cache
