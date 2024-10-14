@@ -1,11 +1,11 @@
-pragma solidity ^0.5.11;
+pragma solidity 0.5.17;
 
 import "./BaseERC20NoSig.sol";
 
 /**
- * @title Matic token contract
- * @notice This contract is an ECR20 like wrapper over native ether (matic token) transfers on the matic chain
- * @dev ERC20 methods have been made payable while keeping their method signature same as other ChildERC20s on Matic
+ * @title Polygon Ecosystem Token contract
+ * @notice This contract is an ECR20 like wrapper over native gas token transfers on the Polygon PoS chain
+ * @dev ERC20 methods have been made payable while keeping their method signature same as other ChildERC20s on PoS
  */
 contract MRC20 is BaseERC20NoSig {
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -14,11 +14,17 @@ contract MRC20 is BaseERC20NoSig {
     uint8 private constant DECIMALS = 18;
     bool isInitialized;
 
+    uint256 locked = 0; // append to storage layout
+    modifier nonReentrant() {
+        require(locked == 0, "reentrancy");
+        locked = 1;
+        _;
+        locked = 0;
+    }
+
     constructor() public {}
 
     function initialize(address _childChain, address _token) public {
-        // Todo: once BorValidator(@0x1000) contract added uncomment me
-        // require(msg.sender == address(0x1000));
         require(!isInitialized, "The contract is already initialized");
         isInitialized = true;
         token = _token;
@@ -38,12 +44,11 @@ contract MRC20 is BaseERC20NoSig {
 
         // input balance
         uint256 input1 = balanceOf(user);
+        currentSupply = currentSupply.add(amount);
 
         // transfer amount to user
-        address payable _user = address(uint160(user));
-        _user.transfer(amount);
-
-        currentSupply = currentSupply.add(amount);
+        // not reenterant since this method is only called by commitState on StateReceiver which is onlySystem
+        _nativeTransfer(user, amount);
 
         // deposit events
         emit Deposit(token, user, amount, input1, balanceOf(user));
@@ -66,18 +71,18 @@ contract MRC20 is BaseERC20NoSig {
     }
 
     function name() public pure returns (string memory) {
-        return "Matic Token";
+        return "Polygon Ecosystem Token";
     }
 
     function symbol() public pure returns (string memory) {
-        return "MATIC";
+        return "POL";
     }
 
     function decimals() public pure returns (uint8) {
         return DECIMALS;
     }
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public pure returns (uint256) {
         return 10000000000 * 10**uint256(DECIMALS);
     }
 
@@ -98,13 +103,28 @@ contract MRC20 is BaseERC20NoSig {
 
     /**
    * @dev _transfer is invoked by _transferFrom method that is inherited from BaseERC20.
-   * This enables us to transfer MaticEth between users while keeping the interface same as that of an ERC20 Token.
+   * This enables us to transfer Polygon ETH between users while keeping the interface same as that of an ERC20 Token.
    */
     function _transfer(address sender, address recipient, uint256 amount)
         internal
     {
         require(recipient != address(this), "can't send to MRC20");
-        address(uint160(recipient)).transfer(amount);
+        _nativeTransfer(recipient, amount);
         emit Transfer(sender, recipient, amount);
+    }
+
+    // @notice method to transfer native asset to receiver (nonReentrant)
+    // @dev 5000 gas is forwarded in the call to receiver
+    // @dev msg.value checks (if req), emitting logs are handled seperately
+    // @param receiver address to transfer native token to
+    // @param amount amount of native token to transfer
+    function _nativeTransfer(address receiver, uint256 amount) internal nonReentrant {
+        uint256 txGasLimit = 5000;
+        (bool success, bytes memory ret) = receiver.call.value(amount).gas(txGasLimit)("");
+        if (!success) {
+            assembly {
+                revert(add(ret, 0x20), mload(ret)) // bubble up revert
+            }
+        }
     }
 }

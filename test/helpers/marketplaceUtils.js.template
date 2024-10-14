@@ -79,8 +79,8 @@ function getTransferTypedData({
       ]
     },
     domain: {
-      name: "Matic Network",
-      version: "1",
+      name: "Polygon Ecosystem Token",
+      version: "2",
       chainId: {{ borChainId }},
       verifyingContract: tokenAddress
     },
