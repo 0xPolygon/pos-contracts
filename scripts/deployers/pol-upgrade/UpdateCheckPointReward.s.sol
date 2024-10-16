@@ -32,7 +32,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         governance = input.readAddress(string.concat(chainIdSlug, ".governance"));
         timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
 
-        uint256 NEW_REWARD = 52_940e18;
+        uint256 NEW_REWARD = 53870967741900000000000;
 
         // create payload
         bytes memory payload = abi.encodeCall(Governance.update, (stakeManagerProxy, abi.encodeCall(StakeManager.updateCheckpointReward, (NEW_REWARD))));
@@ -44,10 +44,8 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         console.log("Executing payload: ", vm.toString(executePayload));
 
         vm.startPrank(0xFa7D2a996aC6350f4b56C043112Da0366a59b74c);
-        timelock.schedule(governance, 0, payload, "", "", 172_800);
-
-        vm.warp(block.timestamp + 172_800);
-
+        
+        timelock.schedule(governance, 0, payload, "", "", 0);
         timelock.execute(governance, 0, payload, "", "");
 
         console.log("Checkpoint reward: ", StakeManager(stakeManagerProxy).CHECKPOINT_REWARD());
