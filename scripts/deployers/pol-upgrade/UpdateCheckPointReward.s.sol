@@ -45,8 +45,8 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
 
         vm.startPrank(0xFa7D2a996aC6350f4b56C043112Da0366a59b74c);
         
-        timelock.schedule(governance, 0, payload, "", "", 0);
-        timelock.execute(governance, 0, payload, "", "");
+        address(timelock).call(schedulePayload);
+        address(timelock).call(executePayload);
 
         console.log("Checkpoint reward: ", StakeManager(stakeManagerProxy).CHECKPOINT_REWARD());
 
