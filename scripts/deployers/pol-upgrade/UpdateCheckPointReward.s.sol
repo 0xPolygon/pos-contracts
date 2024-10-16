@@ -37,7 +37,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         // create payload
         bytes memory payload = abi.encodeCall(Governance.update, (stakeManagerProxy, abi.encodeCall(StakeManager.updateCheckpointReward, (NEW_REWARD))));
 
-        bytes memory schedulePayload = abi.encodeCall(Timelock.schedule, (governance, 0, payload, "", "", 172_800));
+        bytes memory schedulePayload = abi.encodeCall(Timelock.schedule, (governance, 0, payload, "", "", 0));
         bytes memory executePayload = abi.encodeCall(Timelock.execute, (governance, 0, payload, "", ""));
 
         console.log("Scheduling payload: ", vm.toString(schedulePayload));
