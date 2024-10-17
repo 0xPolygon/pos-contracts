@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
+import {RLPReader} from "../../common/lib/RLPReader.sol";
 import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import {BytesLib} from "../../common/lib/BytesLib.sol";
