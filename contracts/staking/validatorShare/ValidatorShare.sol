@@ -274,14 +274,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         delegation = _delegation;
     }
 
-    function drain(
-        address token,
-        address payable destination,
-        uint256 amount
-    ) external onlyOwner {
-        revert("No draining.");
-    }
-
     /**
         New shares exit API
      */
