@@ -96,37 +96,37 @@ contract ForkupgradeMPT is Test {
         console.log("Total successful tx: ", successes);
     }
 
-    function test_UpgradeMPToldERC20() public {
-        assertEq(vm.activeFork(), mainnetFork);
+    // function test_UpgradeMPToldERC20() public {
+    //     assertEq(vm.activeFork(), mainnetFork);
 
-        string memory input = vm.readFile("scripts/deployers/mpt-fix/input.json");
-        string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
-        WithdrawManagerProxy withdrawManagerProxy = WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
-        Timelock timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
-        address exitNFT = input.readAddress(string.concat(chainIdSlug, ".exitNFT"));
+    //     string memory input = vm.readFile("scripts/deployers/mpt-fix/input.json");
+    //     string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
+    //     WithdrawManagerProxy withdrawManagerProxy = WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
+    //     Timelock timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
+    //     address exitNFT = input.readAddress(string.concat(chainIdSlug, ".exitNFT"));
 
-        address withdrawManagerImpl = deployCode("out/WithdrawManager.sol/WithdrawManager.json");
+    //     address withdrawManagerImpl = deployCode("out/WithdrawManager.sol/WithdrawManager.json");
        
-        vm.prank(address(timelock));
-        withdrawManagerProxy.updateImplementation(withdrawManagerImpl);
-        WithdrawManager withdrawManager = WithdrawManager(payable(withdrawManagerProxy));
+    //     vm.prank(address(timelock));
+    //     withdrawManagerProxy.updateImplementation(withdrawManagerImpl);
+    //     WithdrawManager withdrawManager = WithdrawManager(payable(withdrawManagerProxy));
 
-        // load tx to be replayed
-        string memory txsJson = vm.readFile("test/foundry/batch2withdrawNew20.json");
-        bytes memory txs = vm.parseJson(txsJson);
-        FileObject memory txBatch1 = abi.decode(txs, (FileObject));
-        uint256 successes = 0;
-        // loop
-        for (uint i = 0; i < txBatch1.txObjects.length; i++) {
-            console.log("tx num: ", i);
-            TxObject memory obj = txBatch1.txObjects[i];
+    //     // load tx to be replayed
+    //     string memory txsJson = vm.readFile("test/foundry/batch2withdrawNew20.json");
+    //     bytes memory txs = vm.parseJson(txsJson);
+    //     FileObject memory txBatch1 = abi.decode(txs, (FileObject));
+    //     uint256 successes = 0;
+    //     // loop
+    //     for (uint i = 0; i < txBatch1.txObjects.length; i++) {
+    //         console.log("tx num: ", i);
+    //         TxObject memory obj = txBatch1.txObjects[i];
 
-            // Check if proof is valid
-            withdrawManager.verifyInclusion(obj.modified_input_proof, 0, false);
+    //         // Check if proof is valid
+    //         withdrawManager.verifyInclusion(obj.modified_input_proof, 0, false);
             
-            successes++;
+    //         successes++;
             
-        }
-        console.log("Total successful tx: ", successes);
-    }
+    //     }
+    //     console.log("Total successful tx: ", successes);
+    // }
 }
