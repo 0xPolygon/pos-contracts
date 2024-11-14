@@ -43,7 +43,7 @@ export function doUnstake(wallet) {
 
 export function prepareForTest(dynastyValue, validatorThreshold) {
   return async function () {
-    await freshDeploy.call(this, true)
+    await freshDeploy.call(this)
 
     await this.governance.update(
       this.stakeManager.address,
@@ -56,127 +56,6 @@ export function prepareForTest(dynastyValue, validatorThreshold) {
     )
   }
 }
-
-describe('migrate matic', function (){
-  describe('initializePOL', function(){
-    before('Setup migration scenario', async function() {
-      await freshDeploy.call(this)
-    })
-
-    describe('must revert with pol functions', function(){
-      let stakeTokenUser, user, stakeManagerUser, amount, userPubkey
-      before('', async function(){
-        userPubkey = wallets[1].getPublicKeyString(),
-        user = wallets[1].getChecksumAddressString()
-        amount = web3.utils.toWei('10')
-
-        stakeTokenUser = this.stakeToken.connect(this.stakeToken.provider.getSigner(user))
-        stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(user))
-      })  
-
-      it('on stake token', async function () {
-        await stakeTokenUser.approve(this.stakeManager.address, amount.toString())
-        await expect(stakeManagerUser.stakeForPOL(user, amount.toString(), web3.utils.toWei('1'), false, userPubkey))
-          .to.be.rejectedWith('')
-      })
-    })  
-
-    describe('run initializePOL', function(){
-      let oldStakeToken, newStakeToken, migrationAmount
-      before('gov update', async function(){
-        migrationAmount =  web3.utils.toWei('20000000')
-
-        oldStakeToken = await TestToken.deploy('MATIC', 'MAT')
-        await this.governance.update(
-            this.stakeManager.address,
-            this.stakeManager.interface.encodeFunctionData('setStakingToken', [oldStakeToken.address])
-          )
-        await oldStakeToken.mint(this.stakeManager.address, migrationAmount)
-
-        newStakeToken = await TestToken.deploy('POL', 'POL')
-       
-        this.migration = await PolygonMigration.deploy(oldStakeToken.address, newStakeToken.address)
-
-        await oldStakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-        await newStakeToken.mint(this.migration.address,  web3.utils.toWei('50000000'))
-      })
-
-      it('must initializePOL', async function () {
-        await this.governance.update(
-          this.stakeManager.address,
-          this.stakeManager.interface.encodeFunctionData('initializePOL', [newStakeToken.address, this.migration.address])
-        )
-      })
-
-      it('stakemanager must have correct pol balance', async function () {
-        let polBalance = await oldStakeToken.balanceOf(this.stakeManager.address)
-        assertBigNumberEquality(BN(0), polBalance)
-      })
-
-      it('stakemanager must have correct stake balance', async function () {
-        let stakeBalance = await newStakeToken.balanceOf(this.stakeManager.address)
-        assertBigNumberEquality(migrationAmount, stakeBalance)
-      })
-    })   
-  }) 
-
-  describe('successful migration', function(){
-    const migrationAmount = new BN('100000000000000')
-    const initalPolAmount = new BN('100000000000000')
-    const initalStakeAmount = new BN(0)
-
-    before('Setup migration scenario', async function() {
-      await freshDeploy.call(this)
-  
-      this.stakeToken = await TestToken.deploy('POL', 'POL')
-      this.polToken = await TestToken.deploy('MATIC', 'MATIC')
-  
-      this.migration = await PolygonMigration.deploy(this.polToken.address, this.stakeToken.address)
-  
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setStakingToken', [this.polToken.address])
-      )
-
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('initializePOL', [this.stakeToken.address, this.migration.address])
-      )
-  
-      await this.stakeToken.mint(this.stakeManager.address, initalStakeAmount.toString())
-      await this.polToken.mint(this.stakeManager.address, initalPolAmount.toString())
-  
-      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-      await this.polToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-    })
-
-    it('must revert with too many token', async function () {
-      const bigAmount = initalPolAmount.mul(new BN('20'))
-      await expectRevert( this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('convertMaticToPOL', [bigAmount.toString()])
-      ), 'Update failed')
-      //'Insufficient MATIC balance'
-    })
-    
-    it('must migrate', async function () {
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('convertMaticToPOL', [migrationAmount.toString()])
-      )
-    })
-    it('must have correct pol balance', async function(){
-      const polBalance = await this.polToken.balanceOf(this.stakeManager.address)
-      assertBigNumberEquality(polBalance, initalPolAmount.sub(migrationAmount))
-    })
-
-    it('must have correct stake balance', async function(){
-      const stakeBalance = await this.stakeToken.balanceOf(this.stakeManager.address)
-      assertBigNumberEquality(stakeBalance, initalStakeAmount.add(migrationAmount))
-    })
-  })    
-})
-
 
 describe('stake POL', function () {
   function testStakeRevert(user, userPubkey, amount, stakeAmount, unspecified = false) {
@@ -331,7 +210,7 @@ describe('stake POL', function () {
 
   describe('double stake', async function () {
     before('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     describe('when stakes first time', function () {
@@ -357,7 +236,7 @@ describe('stake POL', function () {
 
   describe('stake and restake following by another stake', function () {
     before('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     const amounts = walletAmounts[wallets[2].getAddressString()]
@@ -410,7 +289,7 @@ describe('stake POL', function () {
 
   describe('consecutive stakes', function () {
     before('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     it('validatorId must increment 1 by 1', async function () {
@@ -430,7 +309,7 @@ describe('stake POL', function () {
 
   describe('stake with heimdall fee', function () {
     before('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     testStake(
@@ -448,7 +327,7 @@ describe('stake POL', function () {
     const newSigner = wallets[2].getPublicKeyString()
 
     before('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     before(doStake(AliceWallet))
     before('Change signer', async function () {
@@ -477,7 +356,7 @@ describe('unstake POL', function () {
     let stakeManagerAlice
 
     before('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     before(doStake(AliceWallet))
     before(doStake(BobWallet))
@@ -660,7 +539,7 @@ describe('unstake POL', function () {
 
   describe('reverts', function () {
     beforeEach('deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     const user = wallets[2].getChecksumAddressString()
     let stakeManagerUser
@@ -921,18 +800,15 @@ describe('restake POL', function () {
         await approveAndStake.call(this, { wallet, stakeAmount: initialStake, acceptDelegation, pol: true })
       }
 
-      // cooldown period
-      let auctionPeriod = (await this.stakeManager.auctionPeriod()).toNumber()
-      let currentEpoch = (await this.stakeManager.currentEpoch()).toNumber()
-
-      for (let i = currentEpoch; i <= auctionPeriod; i++) {
+      // wait 2 checkpoints for some rewards
+      for (let i = 0; i < 2; i++) {
         await checkPoint(initialStakers, this.rootChainOwner, this.stakeManager)
       }
       // without 10% proposer bonus
       this.validatorReward = checkpointReward
         .mul(new BN(100 - proposerBonus))
         .div(new BN(100))
-        .mul(new BN(auctionPeriod - currentEpoch))
+        .mul(new BN(1))
       this.validatorId = '1'
       this.user = initialStakers[0].getAddressString()
       this.amount = web3.utils.toWei('100')
