@@ -16,7 +16,7 @@ describe('ValidatorShare', async function () {
   const wei100 = toWei('100')
 
   async function doDeploy() {
-    await freshDeploy.call(this, true)
+    await freshDeploy.call(this)
 
     this.validatorId = '8'
     this.validatorUser = wallets[0]
