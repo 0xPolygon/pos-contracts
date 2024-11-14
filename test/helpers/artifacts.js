@@ -22,7 +22,6 @@ export const ValidatorShare = await ethers.getContractFactory('ValidatorShareTes
 
 export const StakeManagerTestable = await ethers.getContractFactory('StakeManagerTestable')
 export const ValidatorShareFactory = await ethers.getContractFactory('ValidatorShareFactory')
-export const SlashingManager = await ethers.getContractFactory('SlashingManager')
 
 export const DepositManager = await ethers.getContractFactory('DepositManager')
 export const DepositManagerProxy = await ethers.getContractFactory('DepositManagerProxy')

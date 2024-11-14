@@ -262,14 +262,6 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         stakingLogger.logDelegatorUnstaked(validatorId, msg.sender, amount);
     }
 
-    function slash(
-        uint256 validatorStake,
-        uint256 delegatedAmount,
-        uint256 totalAmountToSlash
-    ) external onlyOwner returns (uint256) {
-        revert("Slashing disabled");
-    }
-
     function updateDelegation(bool _delegation) external onlyOwner {
         delegation = _delegation;
     }

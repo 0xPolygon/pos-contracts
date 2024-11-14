@@ -711,34 +711,6 @@ contract StakeManager is
         return totalReward;
     }
 
-    function slash(bytes calldata _slashingInfoList) external returns (uint256) {
-        revert();
-    }
-
-    function unjail(uint256 validatorId) public onlyStaker(validatorId) {
-        require(validators[validatorId].status == Status.Locked, "Not jailed");
-        require(validators[validatorId].deactivationEpoch == 0, "Already unstaking");
-
-        uint256 _currentEpoch = currentEpoch;
-        require(validators[validatorId].jailTime <= _currentEpoch, "Incomplete jail period");
-
-        uint256 amount = validators[validatorId].amount;
-        require(amount >= minDeposit);
-
-        address delegationContract = validators[validatorId].contractAddress;
-        if (delegationContract != address(0x0)) {
-            IValidatorShare(delegationContract).unlock();
-        }
-
-        // undo timeline so that validator is normal validator
-        updateTimeline(int256(amount.add(validators[validatorId].delegatedAmount)), 1, 0);
-
-        validators[validatorId].status = Status.Active;
-
-        address signer = validators[validatorId].signer;
-        logger.logUnjailed(validatorId, signer);
-    }
-
     function updateTimeline(
         int256 amount,
         int256 stakerCount,
