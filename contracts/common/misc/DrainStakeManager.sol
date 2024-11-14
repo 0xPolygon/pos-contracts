@@ -22,7 +22,7 @@ contract DrainStakeManager is StakeManagerStorage, Initializable {
         address contractAddr = validators[validatorId].contractAddress;
         require(contractAddr != address(0x0), "unknown validator or no delegation enabled");
         IValidatorShare validatorShare = IValidatorShare(contractAddr);
-        validatorShare.drain(_token, destination, amount);
+        //validatorShare.drain(_token, destination, amount);
     }
 
     // Overriding isOwner from Ownable.sol because owner() and transferOwnership() have been overridden by UpgradableProxy
