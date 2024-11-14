@@ -145,7 +145,7 @@ npm run bor:clean
 Run Hardhat test
 
 ```
-npm test:hardhat
+npm run test:hardhat
 ```
 
 ### Coverage
