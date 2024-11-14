@@ -101,7 +101,6 @@ contract StakeManager is
 
         validatorThreshold = 7; //128
         NFTCounter = 1;
-        auctionPeriod = (2**13) / 4; // 1 week in epochs
         proposerBonus = 10; // 10 % of total rewards
         delegationEnabled = true;
     }
@@ -304,13 +303,6 @@ contract StakeManager is
         logger.logDynastyValueChange(newDynasty, dynasty);
         dynasty = newDynasty;
         WITHDRAWAL_DELAY = newDynasty;
-        auctionPeriod = newDynasty.div(4);
-        replacementCoolDown = currentEpoch.add(auctionPeriod);
-    }
-
-    // Housekeeping function. @todo remove later
-    function stopAuctions(uint256 forNCheckpoints) public onlyGovernance {
-        replacementCoolDown = currentEpoch.add(forNCheckpoints);
     }
 
     function updateProposerBonus(uint256 newProposerBonus) public onlyGovernance {
@@ -351,56 +343,6 @@ contract StakeManager is
         return validators[NFTContract.tokenOfOwnerByIndex(user, 0)].amount;
     }
 
-    function startAuction(
-        uint256 validatorId,
-        uint256 amount,
-        bool _acceptDelegation,
-        bytes calldata _signerPubkey
-    ) external onlyWhenUnlocked {
-        delegatedFwd(
-            extensionCode,
-            abi.encodeWithSelector(
-                StakeManagerExtension(extensionCode).startAuction.selector,
-                validatorId,
-                amount,
-                _acceptDelegation,
-                _signerPubkey
-            )
-        );
-    }
-
-    function confirmAuctionBid(
-        uint256 validatorId,
-        uint256 heimdallFee /** for new validator */
-    ) external onlyWhenUnlocked {
-        delegatedFwd(
-            extensionCode,
-            abi.encodeWithSelector(
-                StakeManagerExtension(extensionCode).confirmAuctionBid.selector,
-                validatorId,
-                heimdallFee,
-                address(this)
-            )
-        );
-    }
-
-    function dethroneAndStake(
-        address auctionUser,
-        uint256 heimdallFee,
-        uint256 validatorId,
-        uint256 auctionAmount,
-        bool acceptDelegation,
-        bytes calldata signerPubkey
-    ) external {
-        require(msg.sender == address(this), "not allowed");
-        // dethrone
-        _transferAndTopUp(auctionUser, auctionUser, heimdallFee, 0, true);
-        _unstake(validatorId, currentEpoch, true);
-
-        uint256 newValidatorId = _stakeFor(auctionUser, auctionAmount, acceptDelegation, signerPubkey);
-        logger.logConfirmAuction(newValidatorId, validatorId, auctionAmount);
-    }
-
     function unstake(uint256 validatorId) external onlyStaker(validatorId) {
         _unstakeValidator(validatorId, false);
     }
@@ -410,8 +352,6 @@ contract StakeManager is
     }
 
     function _unstakeValidator(uint256 validatorId, bool pol) internal {
-        require(validatorAuction[validatorId].amount == 0);
-
         Status status = validators[validatorId].status;
         require(
             validators[validatorId].activationEpoch > 0 &&
@@ -432,7 +372,7 @@ contract StakeManager is
     }
 
     function _transferFunds(uint256 validatorId, uint256 amount, address delegator, bool pol) internal returns (bool) {
-        require(validators[validatorId].contractAddress == msg.sender || Registry(registry).getSlashingManagerAddress() == msg.sender, "not allowed");
+        require(validators[validatorId].contractAddress == msg.sender, "not allowed");
         if (!pol) _convertPOLToMatic(amount);
         IERC20 token_ = _getToken(pol);
         return token_.transfer(delegator, amount);
@@ -1056,8 +996,6 @@ contract StakeManager is
 
         signerToValidator[signer] = validatorId;
         updateTimeline(int256(amount), 1, 0);
-        // no Auctions for 1 dynasty
-        validatorAuction[validatorId].startEpoch = _currentEpoch;
         _logger.logStaked(signer, signerPubkey, validatorId, _currentEpoch, amount, newTotalStaked);
         NFTCounter = validatorId.add(1);
 

@@ -1,16 +1,6 @@
 pragma solidity 0.5.17;
 
 contract IStakeManager {
-    // validator replacement
-    function startAuction(
-        uint256 validatorId,
-        uint256 amount,
-        bool acceptDelegation,
-        bytes calldata signerPubkey
-    ) external;
-
-    function confirmAuctionBid(uint256 validatorId, uint256 heimdallFee) external;
-
     function transferFunds(
         uint256 validatorId,
         uint256 amount,
@@ -84,13 +74,4 @@ contract IStakeManager {
     function withdrawDelegatorsReward(uint256 validatorId) public returns(uint256);
 
     function delegatorsReward(uint256 validatorId) public view returns(uint256);
-
-    function dethroneAndStake(
-        address auctionUser,
-        uint256 heimdallFee,
-        uint256 validatorId,
-        uint256 auctionAmount,
-        bool acceptDelegation,
-        bytes calldata signerPubkey
-    ) external;
 }
