@@ -26,11 +26,6 @@ class Deployer {
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'ST')
    
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
-    this.slashingManager = await contractFactories.SlashingManager.deploy(
-      this.registry.address,
-      this.stakingInfo.address,
-      'heimdall-P5rXwg'
-    )
     this.rootChain = await this.deployRootChain()
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
@@ -68,7 +63,6 @@ class Deployer {
     const withdrawManager = await this.deployWithdrawManager()
 
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
-    await this.updateContractMap(ethUtils.keccak256('slashingManager'), this.slashingManager.address)
     let _contracts = {
       registry: this.registry,
       rootChain: this.rootChain,
@@ -117,11 +111,6 @@ class Deployer {
     )
 
     this.stakeManager = contractFactories.StakeManagerTestable.attach(proxy.address)
-    this.slashingManager = await contractFactories.SlashingManager.deploy(
-      this.registry.address,
-      this.stakingInfo.address,
-      'heimdall-P5rXwg'
-    )
 
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
@@ -153,7 +142,6 @@ class Deployer {
       stakeManager: this.stakeManager,
       stakeToken: this.stakeToken,
       polToken: this.polToken,
-      slashingManager: this.slashingManager,
       stakingInfo: this.stakingInfo,
       governance: this.governance,
       stakingNFT: this.stakingNFT,

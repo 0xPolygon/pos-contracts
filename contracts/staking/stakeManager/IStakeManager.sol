@@ -69,8 +69,6 @@ contract IStakeManager {
 
     function ownerOf(uint256 tokenId) public view returns (address);
 
-    function slash(bytes calldata slashingInfoList) external returns (uint256);
-
     function validatorStake(uint256 validatorId) public view returns (uint256);
 
     function epoch() public view returns (uint256);
