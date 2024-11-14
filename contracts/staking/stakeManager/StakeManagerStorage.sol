@@ -73,11 +73,11 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
     uint256 public NFTCounter;
     uint256 public totalRewards;
     uint256 public totalRewardsLiquidated;
-    uint256 public auctionPeriod; // 1 week in epochs
+    uint256 public auctionPeriod; // 1 week in epochs // deprecated
     uint256 public proposerBonus; // 10 % of total rewards
     bytes32 public accountStateRoot;
     // Stop validator auction for some time when updating dynasty value
-    uint256 public replacementCoolDown;
+    uint256 public replacementCoolDown; // deprecated
     bool public delegationEnabled;
 
     mapping(uint256 => Validator) public validators;
@@ -88,7 +88,7 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
 
     mapping(address => uint256) public userFeeExit;
     //Ongoing auctions for validatorId
-    mapping(uint256 => Auction) public validatorAuction;
+    mapping(uint256 => Auction) public validatorAuction; // deprecated
     // validatorId to last signer update epoch
     mapping(uint256 => uint256) public latestSignerUpdateEpoch;
 
