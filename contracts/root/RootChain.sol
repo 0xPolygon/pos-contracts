@@ -1,6 +1,5 @@
 pragma solidity ^0.5.2;
 
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import {RootChainHeader, RootChainStorage} from "./RootChainStorage.sol";
@@ -12,8 +11,7 @@ import {Registry} from "../common/Registry.sol";
 
 contract RootChain is RootChainStorage, IRootChain {
     using SafeMath for uint256;
-    using RLPReader for bytes;
-    using RLPReader for RLPReader.RLPItem;
+   
 
     modifier onlyDepositManager() {
         require(msg.sender == registry.getDepositManagerAddress(), "UNAUTHORIZED_DEPOSIT_MANAGER_ONLY");

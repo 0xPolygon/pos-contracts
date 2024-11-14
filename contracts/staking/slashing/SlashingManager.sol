@@ -2,7 +2,6 @@ pragma solidity ^0.5.2;
 
 import {Ownable} from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 import {BytesLib} from "../../common/lib/BytesLib.sol";
@@ -18,8 +17,6 @@ import "./ISlashingManager.sol";
 contract SlashingManager is ISlashingManager, Ownable {
     using SafeMath for uint256;
     using ECVerify for bytes32;
-    using RLPReader for bytes;
-    using RLPReader for RLPReader.RLPItem;
 
     modifier onlyStakeManager() {
         require(registry.getStakeManagerAddress() == msg.sender);

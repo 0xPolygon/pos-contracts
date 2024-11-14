@@ -8,11 +8,12 @@ optimizer_runs = 200
 via_ir = true
 cache_path = 'forge-cache'
 verbosity = 2
+memory_limit = 40003554432
+gas_limit = "18446744073709551615"
 
 ffi = true
 remappings = [
   "openzeppelin-solidity/=node_modules/openzeppelin-solidity/",
-  "solidity-rlp/=node_modules/solidity-rlp/",
   "@ensdomains/=node_modules/@ensdomains/",
   "eth-gas-reporter/=node_modules/eth-gas-reporter/",
   "forge-std/=lib/forge-std/src/",

@@ -3,9 +3,7 @@ pragma solidity 0.5.17;
 import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
 import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 
-import {BytesLib} from "../../common/lib/BytesLib.sol";
 import {ECVerify} from "../../common/lib/ECVerify.sol";
 import {Merkle} from "../../common/lib/Merkle.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
@@ -33,8 +31,6 @@ contract StakeManager is
 {
     using SafeMath for uint256;
     using Merkle for bytes32;
-    using RLPReader for bytes;
-    using RLPReader for RLPReader.RLPItem;
 
     struct UnsignedValidatorsContext {
         uint256 unsignedValidatorIndex;
@@ -330,21 +326,6 @@ contract StakeManager is
     function updateMinAmounts(uint256 _minDeposit, uint256 _minHeimdallFee) public onlyGovernance {
         minDeposit = _minDeposit;
         minHeimdallFee = _minHeimdallFee;
-    }
-
-    function drainValidatorShares(
-        uint256 validatorId,
-        address tokenAddr,
-        address payable destination,
-        uint256 amount
-    ) external onlyGovernance {
-        address contractAddr = validators[validatorId].contractAddress;
-        require(contractAddr != address(0x0));
-        IValidatorShare(contractAddr).drain(tokenAddr, destination, amount);
-    }
-
-    function drain(address destination, uint256 amount) external onlyGovernance {
-        _transferToken(destination, amount, true);
     }
 
     /**
