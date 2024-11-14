@@ -1039,7 +1039,7 @@ describe('ValidatorSharePOL', function () {
       ])
     })
 
-    describe('when Alice is not slashed. 1 checkpoint passed', function () {
+    describe('when 1 checkpoint passed', function () {
       runWithdrawRewardsTest([
         { stake: { user: Alice, label: 'Alice', amount: new BN(wei100) } },
         { checkpoints: 1 },
