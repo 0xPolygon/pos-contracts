@@ -276,7 +276,7 @@ describe('StakeManager', function (accounts) {
 
     function doDeploy(acceptDelegation) {
       before('Fresh deploy', async function() {
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       before('Approve and stake', async function () {
         await approveAndStake.call(this, { wallet: staker, stakeAmount: stakeAmount, acceptDelegation })
@@ -332,7 +332,7 @@ describe('StakeManager', function (accounts) {
   describe('checkSignatures', function () {
     function prepareToTest(stakers, checkpointBlockInterval = 1) {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       before('updateCheckPointBlockInterval', async function () {
         await this.governance.update(
@@ -819,7 +819,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when payload is invalid', function () {
       beforeEach('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       beforeEach('Prepare to test', async function () {
         this.amount = new BN(web3.utils.toWei('200'))
@@ -920,7 +920,7 @@ describe('StakeManager', function (accounts) {
       }
 
       async function doDeploy() {
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
 
         this.checkpointIndex = 0
         this.validators = []
@@ -985,7 +985,7 @@ describe('StakeManager', function (accounts) {
 
     describe("when trying to checkpoint when 1 of the validators unstakes with more than 1/3 stake and don't sign", function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       before('Alice And Bob Stake', async function () {
         for (const wallet of [wallets[2], wallets[3]]) {
@@ -1010,7 +1010,7 @@ describe('StakeManager', function (accounts) {
   describe('setDelegationEnabled', function () {
     describe('when from is governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must disable delegation', async function () {
@@ -1038,7 +1038,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when from is not governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       it('reverts', async function () {
         await expectRevert(this.stakeManager.setDelegationEnabled(false), 'Only governance contract is authorized')
@@ -1052,7 +1052,7 @@ describe('StakeManager', function (accounts) {
     const userOriginalPubKey = wallets[3].getPublicKeyString()
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
 
       const amount = web3.utils.toWei('200')
       for (const wallet of w) {
@@ -1256,7 +1256,7 @@ describe('StakeManager', function (accounts) {
   describe('updateDynastyValue', function () {
     describe('when set dynasty to 10', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must update dynasty', async function () {
@@ -1285,7 +1285,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when set dynasty to 0', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must revert', async function () {
@@ -1295,7 +1295,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when from is not governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('reverts', async function () {
@@ -1308,7 +1308,7 @@ describe('StakeManager', function (accounts) {
   describe('updateCheckpointReward', function () {
     describe('when set reward to 20', function () {
         before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must update', async function () {
@@ -1331,7 +1331,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when set reward to 0', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must revert', async function () {
@@ -1341,7 +1341,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when from is not governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('reverts', async function () {
@@ -1358,7 +1358,7 @@ describe('StakeManager', function (accounts) {
     let _wallets = [Alice, Bob]
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
 
       this.amount = new BN(web3.utils.toWei('200'))
       this.totalStaked = new BN(0)
@@ -1463,7 +1463,7 @@ describe('StakeManager', function (accounts) {
     const fee = new BN(web3.utils.toWei('50')).toString()
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
       await approveAndStake.call(this, { wallet, stakeAmount: amount })
     }
 
@@ -1616,7 +1616,7 @@ describe('StakeManager', function (accounts) {
     }
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
 
       this.checkpointIndex = 0
       this.validators = []
@@ -1921,7 +1921,7 @@ describe('StakeManager', function (accounts) {
     let stakeToken9, stakeManager9
 
     async function prepareForTest() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
       stakeManager9 = this.stakeManager.connect(this.stakeManager.provider.getSigner(9))
       stakeToken9 = this.stakeToken.connect(this.stakeToken.provider.getSigner(9))
       await this.governance.update(
