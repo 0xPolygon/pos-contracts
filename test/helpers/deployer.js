@@ -45,7 +45,9 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         owner,
-        auctionImpl.address
+        auctionImpl.address,
+        this.polToken.address,
+        this.migration.address
       ])
     )
 
@@ -110,7 +112,9 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         wallets[0].getAddressString(),
-        auctionImpl.address
+        auctionImpl.address,
+        this.polToken.address,
+        this.migration.address,
       ])
     )
 

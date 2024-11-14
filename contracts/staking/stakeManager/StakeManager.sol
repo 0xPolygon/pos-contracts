@@ -71,20 +71,24 @@ contract StakeManager is
     function initialize(
         address _registry,
         address _rootchain,
-        address _token,
+        address _tokenLegacy,
         address _NFTContract,
         address _stakingLogger,
         address _validatorShareFactory,
         address _governance,
         address _owner,
-        address _extensionCode
+        address _extensionCode,
+        address _token,
+        address _migration
     ) external initializer {
-        require(isContract(_extensionCode), "auction impl incorrect");
+        require(isContract(_extensionCode), "extension impl incorrect");
         extensionCode = _extensionCode;
         governance = IGovernance(_governance);
         registry = _registry;
         rootChain = _rootchain;
         token = IERC20(_token);
+        tokenMatic = IERC20(_tokenLegacy);
+        migration = IPolygonMigration(_migration);
         NFTContract = StakingNFT(_NFTContract);
         logger = StakingInfo(_stakingLogger);
         validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
@@ -103,30 +107,6 @@ contract StakeManager is
         NFTCounter = 1;
         proposerBonus = 10; // 10 % of total rewards
         delegationEnabled = true;
-    }
-
-    function reinitialize(
-        address _NFTContract,
-        address _stakingLogger,
-        address _validatorShareFactory,
-        address _extensionCode
-    ) external onlyGovernance {
-        require(isContract(_extensionCode));
-        eventsHub = address(0x0);
-        extensionCode = _extensionCode;
-        NFTContract = StakingNFT(_NFTContract);
-        logger = StakingInfo(_stakingLogger);
-        validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
-    }
-
-    function initializePOL(
-        address _tokenNew,
-        address _migration
-    ) external onlyGovernance {
-        tokenMatic = IERC20(token);
-        token = IERC20(_tokenNew);
-        migration = IPolygonMigration(_migration);
-        _convertMaticToPOL(tokenMatic.balanceOf(address(this)));
     }
 
     function isOwner() public view returns (bool) {
@@ -230,11 +210,6 @@ contract StakeManager is
 
     function setCurrentEpoch(uint256 _currentEpoch) external onlyGovernance {
         currentEpoch = _currentEpoch;
-    }
-
-    function setStakingToken(address _token) public onlyGovernance {
-        require(_token != address(0x0));
-        token = IERC20(_token);
     }
 
     /**
