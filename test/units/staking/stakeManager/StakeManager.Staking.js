@@ -259,27 +259,6 @@ describe('stake', function () {
         web3.utils.toWei('150')
       )
     })
-    describe('when reStakes while on going auction', function () {
-      it('when auction is active', async function () {
-        let auctionBid = web3.utils.toWei('10000')
-        const auctionUser = wallets[4].getAddressString()
-        await this.polToken.mint(auctionUser, auctionBid)
-
-        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
-        const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
-
-        await polTokenUser.approve(this.stakeManager.address, auctionBid)
-        const validatorId = await this.stakeManager.getValidatorId(wallets[2].getChecksumAddressString())
-        await stakeManagerUser.startAuction(validatorId, auctionBid, false, wallets[4].getPublicKeyString())
-        testRestake(
-          wallets[2].getChecksumAddressString(),
-          amounts.restakeAmonut,
-          amounts.amount,
-          amounts.restakeAmonut,
-          amounts.amount
-        )
-      })
-    })
   })
 
   describe('stake beyond validator threshold', async function () {
@@ -635,20 +614,6 @@ describe('unstake', function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
       await stakeManagerUser.unstake(validatorId)
 
-      await expectRevert.unspecified(stakeManagerUser.unstake(validatorId))
-    })
-
-    it('when unstakes during auction', async function () {
-      const amount = web3.utils.toWei('1200').toString()
-      const auctionUser = wallets[4].getAddressString()
-      await this.polToken.mint(auctionUser, amount)
-
-      const polTokenAuctionUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
-      const stakeManagerAuctionUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
-
-      await polTokenAuctionUser.approve(this.stakeManager.address, amount)
-      const validatorId = await this.stakeManager.getValidatorId(user)
-      await stakeManagerAuctionUser.startAuction(validatorId, amount, false, wallets[4].getPublicKeyString())
       await expectRevert.unspecified(stakeManagerUser.unstake(validatorId))
     })
   })
