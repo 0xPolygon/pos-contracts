@@ -66,6 +66,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         stakeManager = IStakeManager(_stakeManager);
         _transferOwnership(_stakeManager);
         _getOrCacheEventsHub();
+        _getOrCachePOLToken();
 
         minAmount = 10**18;
         delegation = true;
