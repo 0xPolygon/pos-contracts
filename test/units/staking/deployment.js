@@ -44,7 +44,6 @@ export async function freshDeploy(pol = false) {
   this.registry = contracts.registry
   this.governance = contracts.governance
   this.validatorShare = deployer.validatorShare
-  this.slashingManager = contracts.slashingManager
 
   await this.governance.update(
     this.stakeManager.address,
