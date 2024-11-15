@@ -1,66 +1,17 @@
-import ethUtils from 'ethereumjs-util'
-import { TestToken, ERC20Permit, ValidatorShare, StakingInfo, EventsHub, ethers } from '../../helpers/artifacts.js'
+import { TestToken, ValidatorShare, StakingInfo, EventsHub, ethers } from '../../helpers/artifacts.js'
 import testHelpers from '@openzeppelin/test-helpers'
 import { checkPoint, assertBigNumberEquality, assertInTransaction } from '../../helpers/utils.js'
-import { wallets, freshDeploy, approveAndStake } from './deployment.js'
-import { buyVoucher, buyVoucherWithPermit, sellVoucher, sellVoucherNew } from './ValidatorShareHelper.js'
+import { wallets } from './deployment.js'
+import { buyVoucher, buyVoucherWithPermit, sellVoucher, sellVoucherNew, doDeploy, ValidatorDefaultStake, Dynasty } from './ValidatorShareHelper.js'
+
 const BN = testHelpers.BN
 const expectRevert = testHelpers.expectRevert
 const toWei = web3.utils.toWei
 const ZeroAddr = '0x0000000000000000000000000000000000000000'
 const ExchangeRatePrecision = new BN('100000000000000000000000000000')
-const Dynasty = 8
-const ValidatorDefaultStake = new BN(toWei('100'))
 
 describe('ValidatorShare', async function () {
   const wei100 = toWei('100')
-
-  async function doDeploy() {
-    await freshDeploy.call(this)
-
-    this.validatorId = '8'
-    this.validatorUser = wallets[0]
-    this.stakeAmount = ValidatorDefaultStake
-
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('updateDynastyValue', [Dynasty])
-    )
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('updateValidatorThreshold', [8])
-    )
-
-    // we need to increase validator id beyond foundation id, repeat 7 times
-    for (let i = 0; i < 7; ++i) {
-      await approveAndStake.call(this, {
-        wallet: this.validatorUser,
-        stakeAmount: this.stakeAmount,
-        acceptDelegation: true
-      })
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('forceUnstake', [i + 1])
-      )
-      await this.stakeManager.forceFinalizeCommit()
-      await this.stakeManager.advanceEpoch(Dynasty)
-      const stakeManagerValidator = this.stakeManager.connect(
-        this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
-      )
-      await stakeManagerValidator.unstakeClaim(i + 1)
-      await this.stakeManager.resetSignerUsed(this.validatorUser.getChecksumAddressString())
-    }
-
-    await approveAndStake.call(this, {
-      wallet: this.validatorUser,
-      stakeAmount: this.stakeAmount,
-      acceptDelegation: true
-    })
-    await this.stakeManager.forceFinalizeCommit()
-
-    let validator = await this.stakeManager.validators(this.validatorId)
-    this.validatorContract = ValidatorShare.attach(validator.contractAddress)
-  }
 
   describe('locking', function () {
     before(doDeploy)
