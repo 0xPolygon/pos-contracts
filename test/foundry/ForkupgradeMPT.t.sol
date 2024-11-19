@@ -41,7 +41,7 @@ contract ForkupgradeMPT is Test {
     function test_UpgradeMPT() public {
         assertEq(vm.activeFork(), mainnetFork);
 
-        string memory input = vm.readFile("scripts/deployers/mpt-fix/input.json");
+        string memory input = vm.readFile("test/foundry/input.json");
         string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
         WithdrawManagerProxy withdrawManagerProxy = WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
         Timelock timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
@@ -99,7 +99,7 @@ contract ForkupgradeMPT is Test {
     // function test_UpgradeMPToldERC20() public {
     //     assertEq(vm.activeFork(), mainnetFork);
 
-    //     string memory input = vm.readFile("scripts/deployers/mpt-fix/input.json");
+    //     string memory input = vm.readFile("test/foundry/input.json");
     //     string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
     //     WithdrawManagerProxy withdrawManagerProxy = WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
     //     Timelock timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
