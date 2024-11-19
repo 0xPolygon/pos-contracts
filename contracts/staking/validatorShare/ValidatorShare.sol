@@ -279,11 +279,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         address payable destination,
         uint256 amount
     ) external onlyOwner {
-        if (token == address(0x0)) {
-            destination.transfer(amount);
-        } else {
-            require(ERC20(token).transfer(destination, amount), "Drain failed");
-        }
+        revert("No draining.");
     }
 
     /**

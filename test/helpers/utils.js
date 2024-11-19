@@ -273,7 +273,7 @@ export function fireDepositFromMainToMatic(childChain, eventId, user, tokenAddre
   return childChain.onStateReceive(eventId, encodeDepositStateSync(user, tokenAddress, amountOrToken, depositBlockId))
 }
 
-function encodeDepositStateSync(user, rootToken, tokenIdOrAmount, depositId) {
+export function encodeDepositStateSync(user, rootToken, tokenIdOrAmount, depositId) {
   if (typeof tokenIdOrAmount !== 'string') {
     tokenIdOrAmount = tokenIdOrAmount.toString()
   }
