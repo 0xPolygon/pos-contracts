@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import "../../common/oz/token/ERC721/ERC721Full.sol";
+import {ERC721Full} from "../../common/oz/token/ERC721/ERC721Full.sol";
 import {Ownable} from "../../common/oz//ownership/Ownable.sol";
 
 

@@ -1,7 +1,7 @@
 pragma solidity ^0.5.2;
 
 import {Initializable} from "../../common/mixin/Initializable.sol";
-import "../ChildERC721.sol";
+import {ChildERC721} from "../ChildERC721.sol";
 
 contract ChildERC721Proxified is ChildERC721, Initializable {
     string public name;

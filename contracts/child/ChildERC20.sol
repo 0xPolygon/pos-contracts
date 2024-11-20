@@ -5,8 +5,8 @@ import {ERC20} from "../common/oz/token/ERC20/ERC20.sol";
 
 import {StateSyncerVerifier} from "./bor/StateSyncerVerifier.sol";
 import {StateReceiver} from "./bor/StateReceiver.sol";
-import "./BaseERC20.sol";
-import "./misc/IParentToken.sol";
+import {BaseERC20} from "./BaseERC20.sol";
+import {IParentToken} from "./misc/IParentToken.sol";
 
 contract ChildERC20 is BaseERC20, ERC20, ERC20Detailed, StateSyncerVerifier, StateReceiver {
     constructor(
