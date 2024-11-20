@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../oz/token/ERC20/ERC20.sol";
 
 contract WETH is ERC20 {
     event Deposit(address indexed dst, uint256 wad);

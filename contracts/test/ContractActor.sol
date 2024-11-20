@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "../common/oz/token/ERC20/IERC20.sol";
 import "../root/depositManager/IDepositManager.sol";
 import "../root/withdrawManager/WithdrawManager.sol";
 

@@ -2,8 +2,8 @@ pragma solidity ^0.5.2;
 
 import { DepositManagerStorage } from "../../root/depositManager/DepositManagerStorage.sol";
 import { GovernanceLockable } from "../mixin/GovernanceLockable.sol";
-import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import { IERC721 } from "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
+import { IERC20 } from "../oz/token/ERC20/IERC20.sol";
+import { IERC721 } from "../oz/token/ERC721/IERC721.sol";
 import { WETH } from "../tokens/WETH.sol";
 
 
