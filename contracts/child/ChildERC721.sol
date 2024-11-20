@@ -2,8 +2,8 @@ pragma solidity ^0.5.2;
 
 import {ERC721Full} from "../common/oz/token/ERC721/ERC721Full.sol";
 
-import "./ChildToken.sol";
-import "./misc/IParentToken.sol";
+import {ChildToken} from "./ChildToken.sol";
+import {IParentToken} from "./misc/IParentToken.sol";
 
 import {StateSyncerVerifier} from "./bor/StateSyncerVerifier.sol";
 import {StateReceiver} from "./bor/StateReceiver.sol";

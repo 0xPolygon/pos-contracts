@@ -1,7 +1,7 @@
 pragma solidity ^0.5.2;
 
-import "../common/oz/token/ERC721/ERC721Mintable.sol";
-import "../common/oz/token/ERC721/ERC721MetadataMintable.sol";
+import {ERC721Mintable} from "../common/oz/token/ERC721/ERC721Mintable.sol";
+import {ERC721MetadataMintable} from "../common/oz/token/ERC721/ERC721MetadataMintable.sol";
 
 import {ChildERC721} from "./ChildERC721.sol";
 

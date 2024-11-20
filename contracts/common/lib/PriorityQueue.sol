@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import "../oz/ownership/Ownable.sol";
+import {Ownable} from "../oz/ownership/Ownable.sol";
 import {SafeMath} from "../oz/math/SafeMath.sol";
 
 /**

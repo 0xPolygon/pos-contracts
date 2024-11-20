@@ -1,8 +1,8 @@
 pragma solidity ^0.5.2;
 
 import {IERC20} from "../common/oz/token/ERC20/IERC20.sol";
-import "../root/depositManager/IDepositManager.sol";
-import "../root/withdrawManager/WithdrawManager.sol";
+import {IDepositManager} from "../root/depositManager/IDepositManager.sol";
+import {WithdrawManager} from "../root/withdrawManager/WithdrawManager.sol";
 
 contract ContractWithFallback {
   function deposit(address depositManager, address token, uint256 amount) public {
