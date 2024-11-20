@@ -1,13 +1,13 @@
 pragma solidity 0.5.17;
 
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
+import {SafeMath} from "../../common/oz/math/SafeMath.sol";
 import {Registry} from "../../common/Registry.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {IStakeManager} from "./IStakeManager.sol";
 import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
-import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
+import {Math} from "../../common/oz/math/Math.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
 import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";

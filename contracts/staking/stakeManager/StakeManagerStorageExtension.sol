@@ -1,7 +1,7 @@
 pragma solidity 0.5.17;
 
 import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
 
 contract StakeManagerStorageExtension {
     address public eventsHub;

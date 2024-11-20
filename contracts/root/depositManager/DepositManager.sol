@@ -1,10 +1,10 @@
 pragma solidity ^0.5.2;
 
-import {ERC721Holder} from "openzeppelin-solidity/contracts/token/ERC721/ERC721Holder.sol";
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import {IERC721} from "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {SafeERC20} from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import {ERC721Holder} from "../../common/oz/token/ERC721/ERC721Holder.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
+import {IERC721} from "../../common/oz/token/ERC721/IERC721.sol";
+import {SafeMath} from "../../common/oz/math/SafeMath.sol";
+import {SafeERC20} from "../../common/oz/token/ERC20/SafeERC20.sol";
 
 import {Registry} from "../../common/Registry.sol";
 import {WETH} from "../../common/tokens/WETH.sol";

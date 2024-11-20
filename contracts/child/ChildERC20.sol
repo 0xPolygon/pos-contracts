@@ -1,7 +1,7 @@
 pragma solidity ^0.5.2;
 
 import {ERC20Detailed} from "./ERC20Detailed.sol";
-import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "../common/oz/token/ERC20/ERC20.sol";
 
 import {StateSyncerVerifier} from "./bor/StateSyncerVerifier.sol";
 import {StateReceiver} from "./bor/StateReceiver.sol";
