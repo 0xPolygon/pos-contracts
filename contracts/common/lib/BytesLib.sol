@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import "../oz/math/SafeMath.sol";
+import {SafeMath} from "../oz/math/SafeMath.sol";
 
 library BytesLib {
     function concat(bytes memory _preBytes, bytes memory _postBytes)

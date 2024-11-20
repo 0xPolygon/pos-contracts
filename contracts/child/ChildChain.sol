@@ -5,9 +5,9 @@ import {Ownable} from "../common/oz/ownership/Ownable.sol";
 import {StateSyncerVerifier} from "./bor/StateSyncerVerifier.sol";
 import {StateReceiver} from "./bor/StateReceiver.sol";
 
-import "./ChildToken.sol";
-import "./ChildERC20.sol";
-import "./ChildERC721.sol";
+import {ChildToken} from "./ChildToken.sol";
+import {ChildERC20} from "./ChildERC20.sol";
+import {ChildERC721} from "./ChildERC721.sol";
 
 contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
     // mapping for (root token => child token)
