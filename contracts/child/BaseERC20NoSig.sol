@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import "./ChildToken.sol";
+import {ChildToken} from "./ChildToken.sol";
 
 contract BaseERC20NoSig is ChildToken {
     event Deposit(

@@ -1,6 +1,6 @@
 pragma solidity 0.5.17;
 
-import "./BaseERC20NoSig.sol";
+import {BaseERC20NoSig} from "./BaseERC20NoSig.sol";
 
 /**
  * @title Polygon Ecosystem Token contract
