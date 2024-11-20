@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {Ownable} from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import {Ownable} from "../common/oz/ownership/Ownable.sol";
 
 import {StateSyncerVerifier} from "./bor/StateSyncerVerifier.sol";
 import {StateReceiver} from "./bor/StateReceiver.sol";

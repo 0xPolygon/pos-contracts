@@ -1,8 +1,8 @@
 pragma solidity ^0.5.2;
 
 import {Registry} from "../common/Registry.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {Ownable} from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import {SafeMath} from "../common/oz/math/SafeMath.sol";
+import {Ownable} from "../common/oz/ownership/Ownable.sol";
 
 
 // dummy interface to avoid cyclic dependency

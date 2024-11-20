@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {SafeMath} from "../common/oz/math/SafeMath.sol";
 
 import {RootChainHeader, RootChainStorage} from "./RootChainStorage.sol";
 

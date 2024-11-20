@@ -1,8 +1,8 @@
 pragma solidity 0.5.17;
 
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
+import {Math} from "../../common/oz/math/Math.sol";
+import {SafeMath} from "../../common/oz/math/SafeMath.sol";
 
 import {ECVerify} from "../../common/lib/ECVerify.sol";
 import {Merkle} from "../../common/lib/Merkle.sol";

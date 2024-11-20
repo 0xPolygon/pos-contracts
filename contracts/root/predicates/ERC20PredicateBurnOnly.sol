@@ -2,10 +2,10 @@ pragma solidity ^0.5.2;
 
 import {BytesLib} from "../../common/lib/BytesLib.sol";
 import {Common} from "../../common/lib/Common.sol";
-import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
+import {Math} from "../../common/oz/math/Math.sol";
 import {RLPEncode} from "../../common/lib/RLPEncode.sol";
 import {RLPReader} from "../../common/lib/RLPReader.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {SafeMath} from "../../common/oz/math/SafeMath.sol";
 import {ExitPayloadReader} from "../../common/lib/ExitPayloadReader.sol";
 import {IErcPredicate} from "./IPredicate.sol";
 import {Registry} from "../../common/Registry.sol";

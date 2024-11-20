@@ -1,7 +1,7 @@
 pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../oz/ownership/Ownable.sol";
+import {SafeMath} from "../oz/math/SafeMath.sol";
 
 /**
  * @title PriorityQueue
