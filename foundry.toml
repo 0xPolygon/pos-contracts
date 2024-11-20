@@ -14,7 +14,6 @@ libraries = ["contracts/common/lib/Common.sol:Common:0x5FbDB2315678afecb367f032d
 
 ffi = true
 remappings = [
-  "openzeppelin-solidity/=node_modules/openzeppelin-solidity/",
   "eth-gas-reporter/=node_modules/eth-gas-reporter/",
   "forge-std/=lib/forge-std/src/",
   "hardhat/=node_modules/hardhat/"
