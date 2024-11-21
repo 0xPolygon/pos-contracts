@@ -1,6 +1,6 @@
 {
-  "name": "matic-protocol",
-  "description": "New repo using Hardhat and Foundry",
+  "name": "pos-contracts",
+  "description": "Contracts infrastructure of Polygon POS",
   "version": "0.5.0",
   "main": "hardhat.config.cjs",
   "type": "module",
@@ -54,6 +54,7 @@
     "openzeppelin-solidity": "2.2.0",
     "solidity-rlp": "^2.0.0"
   },
+  "dependencies": {},
   "eslintConfig": {
     "env": {
       "browser": false,
