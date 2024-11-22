@@ -10,6 +10,7 @@ cache_path = 'forge-cache'
 verbosity = 2
 memory_limit = 40003554432
 gas_limit = "18446744073709551615"
+ignored_warnings_from = ["scripts/helpers/interfaces"]
 
 ffi = true
 remappings = [

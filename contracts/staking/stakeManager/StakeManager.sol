@@ -822,15 +822,14 @@ contract StakeManager is
         // attempt to save gas in case if rewards were updated previously
         if (initialRewardPerStake < currentRewardPerStake) {
             uint256 validatorsStake = validators[validatorId].amount;
-            uint256 delegatedAmount = validators[validatorId].delegatedAmount;
-            if (delegatedAmount > 0) {
-                uint256 combinedStakePower = validatorsStake.add(delegatedAmount);
+            uint256 valDelegatedAmount = validators[validatorId].delegatedAmount;
+            if (valDelegatedAmount > 0) {
+                uint256 combinedStakePower = validatorsStake.add(valDelegatedAmount);
                 _increaseValidatorRewardWithDelegation(
                     validatorId,
                     validatorsStake,
-                    delegatedAmount,
+                    valDelegatedAmount,
                     _getEligibleValidatorReward(
-                        validatorId,
                         combinedStakePower,
                         currentRewardPerStake,
                         initialRewardPerStake
@@ -840,7 +839,6 @@ contract StakeManager is
                 _increaseValidatorReward(
                     validatorId,
                     _getEligibleValidatorReward(
-                        validatorId,
                         validatorsStake,
                         currentRewardPerStake,
                         initialRewardPerStake
@@ -859,7 +857,6 @@ contract StakeManager is
     }
 
     function _getEligibleValidatorReward(
-        uint256 validatorId,
         uint256 validatorStakePower,
         uint256 currentRewardPerStake,
         uint256 initialRewardPerStake
@@ -877,19 +874,19 @@ contract StakeManager is
     function _increaseValidatorRewardWithDelegation(
         uint256 validatorId,
         uint256 validatorsStake,
-        uint256 delegatedAmount,
+        uint256 valDelegatedAmount,
         uint256 reward
     ) private {
-        uint256 combinedStakePower = delegatedAmount.add(validatorsStake);
-        (uint256 validatorReward, uint256 delegatorsReward) =
+        uint256 combinedStakePower = valDelegatedAmount.add(validatorsStake);
+        (uint256 valReward, uint256 delReward) =
             _getValidatorAndDelegationReward(validatorId, validatorsStake, reward, combinedStakePower);
 
-        if (delegatorsReward > 0) {
-            validators[validatorId].delegatorsReward = validators[validatorId].delegatorsReward.add(delegatorsReward);
+        if (delReward > 0) {
+            validators[validatorId].delegatorsReward = validators[validatorId].delegatorsReward.add(delReward);
         }
 
-        if (validatorReward > 0) {
-            validators[validatorId].reward = validators[validatorId].reward.add(validatorReward);
+        if (valReward > 0) {
+            validators[validatorId].reward = validators[validatorId].reward.add(valReward);
         }
     }
 
@@ -903,24 +900,24 @@ contract StakeManager is
             return (0, 0);
         }
 
-        uint256 validatorReward = validatorsStake.mul(reward).div(combinedStakePower);
+        uint256 valReward = validatorsStake.mul(reward).div(combinedStakePower);
 
         // add validator commission from delegation reward
         uint256 commissionRate = validators[validatorId].commissionRate;
         if (commissionRate > 0) {
-            validatorReward = validatorReward.add(
-                reward.sub(validatorReward).mul(commissionRate).div(MAX_COMMISION_RATE)
+            valReward = valReward.add(
+                reward.sub(valReward).mul(commissionRate).div(MAX_COMMISION_RATE)
             );
         }
 
-        uint256 delegatorsReward = reward.sub(validatorReward);
-        return (validatorReward, delegatorsReward);
+        uint256 delReward = reward.sub(valReward);
+        return (valReward, delReward);
     }
 
     function _evaluateValidatorAndDelegationReward(uint256 validatorId)
         private
         view
-        returns (uint256 validatorReward, uint256 delegatorsReward)
+        returns (uint256 valReward, uint256 delReward)
     {
         uint256 validatorsStake = validators[validatorId].amount;
         uint256 combinedStakePower = validatorsStake.add(validators[validatorId].delegatedAmount);
