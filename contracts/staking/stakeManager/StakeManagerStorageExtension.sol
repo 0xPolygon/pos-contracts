@@ -9,7 +9,7 @@ contract StakeManagerStorageExtension {
     address public extensionCode;
     address[] public signers;
 
-    uint256 constant CHK_REWARD_PRECISION = 100;
+    uint256 internal constant CHK_REWARD_PRECISION = 100;
     uint256 public prevBlockInterval;
     // how much less reward per skipped checkpoint, 0 - 100%
     uint256 public rewardDecreasePerCheckpoint;

@@ -1,19 +1,11 @@
 pragma solidity ^0.5.2;
 
 import {BytesLib} from "../../common/lib/BytesLib.sol";
-import {Common} from "../../common/lib/Common.sol";
-import {Math} from "../../common/oz/math/Math.sol";
-import {RLPEncode} from "../../common/lib/RLPEncode.sol";
-import {RLPReader} from "../../common/lib/RLPReader.sol";
 import {SafeMath} from "../../common/oz/math/SafeMath.sol";
 import {ExitPayloadReader} from "../../common/lib/ExitPayloadReader.sol";
 import {IErcPredicate} from "./IPredicate.sol";
-import {Registry} from "../../common/Registry.sol";
-import {WithdrawManagerHeader} from "../withdrawManager/WithdrawManagerStorage.sol";
 
 contract ERC20PredicateBurnOnly is IErcPredicate {
-    using RLPReader for bytes;
-    using RLPReader for RLPReader.RLPItem;
     using SafeMath for uint256;
 
     using ExitPayloadReader for bytes;
@@ -23,7 +15,7 @@ contract ERC20PredicateBurnOnly is IErcPredicate {
     using ExitPayloadReader for ExitPayloadReader.LogTopics;
 
     // keccak256('Withdraw(address,address,uint256,uint256,uint256)')
-    bytes32 constant WITHDRAW_EVENT_SIG = 0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f;
+    bytes32 internal constant WITHDRAW_EVENT_SIG = 0xebff2602b3f468259e1e99f613fed6691f3a6526effe6ef3e768ba7ae7a36c4f;
 
     constructor(
         address _withdrawManager,
