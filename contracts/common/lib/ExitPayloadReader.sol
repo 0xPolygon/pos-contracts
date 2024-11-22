@@ -1,7 +1,6 @@
 pragma solidity 0.5.17;
 
 import {RLPReader} from "./RLPReader.sol";
-import {BytesLib} from "./BytesLib.sol";
 
 library ExitPayloadReader {
   using RLPReader for bytes;
