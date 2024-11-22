@@ -2,11 +2,10 @@ pragma solidity ^0.5.2;
 
 import {SafeMath} from "../common/oz/math/SafeMath.sol";
 
-import {RootChainHeader, RootChainStorage} from "./RootChainStorage.sol";
+import {RootChainStorage} from "./RootChainStorage.sol";
 
 import {IStakeManager} from "../staking/stakeManager/IStakeManager.sol";
 import {IRootChain} from "./IRootChain.sol";
-import {Registry} from "../common/Registry.sol";
 
 
 contract RootChain is RootChainStorage, IRootChain {

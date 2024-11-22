@@ -2,7 +2,6 @@ pragma solidity 0.5.17;
 
 import {Registry} from "../../common/Registry.sol";
 import {ERC20NonTradable} from "../../common/tokens/ERC20NonTradable.sol";
-import {ERC20} from "../../common/oz/token/ERC20/ERC20.sol";
 import {StakingInfo} from "./../StakingInfo.sol";
 import {EventsHub} from "./../EventsHub.sol";
 import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
