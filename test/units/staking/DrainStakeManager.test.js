@@ -66,9 +66,8 @@ describe('DrainStakeManager', function (accounts) {
     })
 
     it('must fail draining when not drained owner', async function () {
-      const balance = await this.polToken.balanceOf(this.stakeManager.address)
       try {
-        await this.stakeManagerDrainable.drain(owner, balance)
+        await this.stakeManagerDrainable.drain(owner)
         assert.fail('Funds should not be drained')
       } catch (error) {
         assert(error.message.search('revert') >= 0, "Expected revert, got '" + error + "' instead")
@@ -76,10 +75,13 @@ describe('DrainStakeManager', function (accounts) {
     })
 
     it('must drain all funds when drained by owner (Gnosis safe)', async function () {
-      const balance = await this.polToken.balanceOf(this.stakeManager.address)
-      const data = this.stakeManagerDrainable.interface.encodeFunctionData('drain', [owner, balance.toString()])
+      const balanceSM = await this.polToken.balanceOf(this.stakeManager.address)
+      const balanceO = await this.polToken.balanceOf(owner)
+      
+      const data = this.stakeManagerDrainable.interface.encodeFunctionData('drain', [owner])
       await execSafe(this.gSafe, this.stakeManager.address, data, [accounts[1], accounts[2]])
       assert.equal((await this.polToken.balanceOf(this.stakeManager.address)).toString(), '0')
+      assert.equal((await this.polToken.balanceOf(owner)).toString(), (balanceSM.add(balanceO)).toString())
     })
 
     it('must swap back to normal implementaion', async function () {

@@ -109,26 +109,6 @@ export async function checkPoint(
   )
 }
 
-export async function updateSlashedAmounts(
-  wallets,
-  proposer,
-  _slashingNonce,
-  slashingInfoList,
-  slashingManager,
-  options = {}
-) {
-  let data = web3.eth.abi.encodeParameters(
-    ['uint256', 'address', 'bytes'],
-    [_slashingNonce, proposer.getAddressString(), ethUtils.bufferToHex(ethUtils.rlp.encode(slashingInfoList))]
-  )
-  const sigData = Buffer.concat([ethUtils.toBuffer('' || '0x01'), ethUtils.toBuffer(data)])
-  const sigs = ethUtils.bufferToHex(encodeSigs(getSigs(wallets, ethUtils.keccak256(sigData))))
-  const slashingManagerProposer = slashingManager.connect(
-    slashingManager.provider.getSigner(proposer.getAddressString())
-  )
-  return slashingManagerProposer.updateSlashedAmounts(data, sigs)
-}
-
 export function assertBigNumberEquality(num1, num2) {
   if (!BN.isBN(num1)) num1 = web3.utils.toBN(num1.toString())
   if (!BN.isBN(num2)) num2 = web3.utils.toBN(num2.toString())

@@ -2,8 +2,6 @@ pragma solidity ^0.5.2;
 
 
 interface IRootChain {
-    function slash() external;
-
     function submitHeaderBlock(bytes calldata data, bytes calldata sigs)
         external;
     

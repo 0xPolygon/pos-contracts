@@ -3,7 +3,7 @@
 // [Very] modified version of Sam Mayo's library.
 pragma solidity ^0.5.2;
 
-import "./BytesLib.sol";
+import {BytesLib} from "./BytesLib.sol";
 
 library RLPEncode {
     // Encode an item (bytes memory)
