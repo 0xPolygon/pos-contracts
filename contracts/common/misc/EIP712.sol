@@ -2,12 +2,12 @@
 pragma solidity 0.5.17;
 
 /*
- meant for testing only, adapted from: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.2/contracts/utils/cryptography/EIP712.sol
+meant for testing only, adapted from:
+https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.2/contracts/utils/cryptography/EIP712.sol
  modifications: 
  - removed `immutable` since was it introduced in solidity 0.6.5 but we have to adhere to 0.5.17
  - added chainId method since block.chainid isn't available yet
- - removed `_nameFallback` & `_versionFallback`
-*/
+ - removed `_nameFallback` & `_versionFallback`*/
 
 contract EIP712 {
     /* solhint-disable var-name-mixedcase */
@@ -38,9 +38,8 @@ contract EIP712 {
     constructor(string memory name, string memory version) public {
         bytes32 hashedName = keccak256(bytes(name));
         bytes32 hashedVersion = keccak256(bytes(version));
-        bytes32 typeHash = keccak256(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-        );
+        bytes32 typeHash =
+            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
         _HASHED_NAME = hashedName;
         _HASHED_VERSION = hashedVersion;
         _CACHED_CHAIN_ID = _chainId();
@@ -52,7 +51,7 @@ contract EIP712 {
         return _VERSION;
     }
 
-    function _chainId() internal pure returns (uint chainId) {
+    function _chainId() internal pure returns (uint256 chainId) {
         assembly {
             chainId := chainid()
         }

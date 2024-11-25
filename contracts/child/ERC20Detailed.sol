@@ -11,7 +11,7 @@ contract ERC20Detailed {
     string internal _symbol;
     uint8 internal _decimals;
 
-    constructor (string memory name, string memory symbol, uint8 decimals) public {
+    constructor(string memory name, string memory symbol, uint8 decimals) public {
         _name = name;
         _symbol = symbol;
         _decimals = decimals;

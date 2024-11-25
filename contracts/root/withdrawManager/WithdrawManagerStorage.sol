@@ -5,7 +5,6 @@ import {Registry} from "../../common/Registry.sol";
 import {RootChain} from "../RootChain.sol";
 import {ExitNFT} from "./ExitNFT.sol";
 
-
 contract ExitsDataStructure {
     struct Input {
         address utxoOwner;
@@ -25,16 +24,11 @@ contract ExitsDataStructure {
     }
 }
 
-
 contract WithdrawManagerHeader is ExitsDataStructure {
     event Withdraw(uint256 indexed exitId, address indexed user, address indexed token, uint256 amount);
 
     event ExitStarted(
-        address indexed exitor,
-        uint256 indexed exitId,
-        address indexed token,
-        uint256 amount,
-        bool isRegularExit
+        address indexed exitor, uint256 indexed exitId, address indexed token, uint256 amount, bool isRegularExit
     );
 
     event ExitUpdated(uint256 indexed exitId, uint256 indexed age, address signer);
@@ -43,13 +37,12 @@ contract WithdrawManagerHeader is ExitsDataStructure {
     event ExitCancelled(uint256 indexed exitId);
 }
 
-
 contract WithdrawManagerStorage is ProxyStorage, WithdrawManagerHeader {
     // 0.5 week = 7 * 86400 / 2 = 302400
-    uint256 public HALF_EXIT_PERIOD = 302400;
+    uint256 public HALF_EXIT_PERIOD = 302_400;
 
     // Bonded exits collaterized at 0.1 ETH
-    uint256 internal constant BOND_AMOUNT = 10**17;
+    uint256 internal constant BOND_AMOUNT = 10 ** 17;
 
     Registry internal registry;
     RootChain internal rootChain;
@@ -66,7 +59,7 @@ contract WithdrawManagerStorage is ProxyStorage, WithdrawManagerHeader {
     // uint32 constant internal ITERATION_GAS = 52000;
 
     // So putting an upper limit of 155000 + 52000 + leeway
-    uint32 public ON_FINALIZE_GAS_LIMIT = 300000;
+    uint32 public ON_FINALIZE_GAS_LIMIT = 300_000;
 
     uint256 public exitWindow;
 }

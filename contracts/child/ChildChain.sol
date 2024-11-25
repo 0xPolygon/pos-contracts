@@ -16,11 +16,7 @@ contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
     mapping(uint256 => bool) public deposits;
     mapping(uint256 => bool) public withdraws;
 
-    event NewToken(
-        address indexed rootToken,
-        address indexed token,
-        uint8 _decimals
-    );
+    event NewToken(address indexed rootToken, address indexed token, uint8 _decimals);
 
     event TokenDeposited(
         address indexed rootToken,
@@ -43,12 +39,9 @@ contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
         tokens[0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0] = 0x0000000000000000000000000000000000001010;
     }
 
-    function onStateReceive(
-        uint256, /* id */
-        bytes calldata data
-    ) external onlyStateSyncer {
-        (address user, address rootToken, uint256 amountOrTokenId, uint256 depositId) = abi
-            .decode(data, (address, address, uint256, uint256));
+    function onStateReceive(uint256, /* id */ bytes calldata data) external onlyStateSyncer {
+        (address user, address rootToken, uint256 amountOrTokenId, uint256 depositId) =
+            abi.decode(data, (address, address, uint256, uint256));
         depositTokens(rootToken, user, amountOrTokenId, depositId);
     }
 
@@ -65,14 +58,10 @@ contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
 
         // create new token contract
         if (_isERC721) {
-            token = address(
-                new ChildERC721(_owner, _rootToken, _name, _symbol)
-            );
+            token = address(new ChildERC721(_owner, _rootToken, _name, _symbol));
             isERC721[_rootToken] = true;
         } else {
-            token = address(
-                new ChildERC20(_owner, _rootToken, _name, _symbol, _decimals)
-            );
+            token = address(new ChildERC20(_owner, _rootToken, _name, _symbol, _decimals));
         }
 
         // add mapping with root token
@@ -83,10 +72,7 @@ contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
     }
 
     // for testnet updates remove for mainnet
-    function mapToken(address rootToken, address token, bool isErc721)
-        public
-        onlyOwner
-    {
+    function mapToken(address rootToken, address token, bool isErc721) public onlyOwner {
         tokens[rootToken] = token;
         isERC721[rootToken] = isErc721;
     }
@@ -120,21 +106,10 @@ contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
         obj.withdraw(amountOrTokenId);
 
         // Emit TokenWithdrawn event
-        emit TokenWithdrawn(
-            rootToken,
-            childToken,
-            user,
-            amountOrTokenId,
-            withdrawCount
-        );
+        emit TokenWithdrawn(rootToken, childToken, user, amountOrTokenId, withdrawCount);
     }
 
-    function depositTokens(
-        address rootToken,
-        address user,
-        uint256 amountOrTokenId,
-        uint256 depositId
-    ) internal {
+    function depositTokens(address rootToken, address user, uint256 amountOrTokenId, uint256 depositId) internal {
         // check if deposit happens only once
         require(deposits[depositId] == false);
 
@@ -159,13 +134,6 @@ contract ChildChain is Ownable, StateSyncerVerifier, StateReceiver {
         obj.deposit(user, amountOrTokenId);
 
         // Emit TokenDeposited event
-        emit TokenDeposited(
-            rootToken,
-            childToken,
-            user,
-            amountOrTokenId,
-            depositId
-        );
+        emit TokenDeposited(rootToken, childToken, user, amountOrTokenId, depositId);
     }
-
 }
