@@ -3,7 +3,6 @@ pragma solidity ^0.5.2;
 import "./ERC721Metadata.sol";
 import "../../access/roles/MinterRole.sol";
 
-
 /**
  * @title ERC721MetadataMintable
  * @dev ERC721 minting logic with metadata

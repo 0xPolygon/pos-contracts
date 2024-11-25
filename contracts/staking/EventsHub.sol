@@ -22,14 +22,13 @@ contract EventsHub is Initializable {
 
     modifier onlyValidatorContract(uint256 validatorId) {
         address _contract;
-        (, , , , , , _contract) = IStakeManagerEventsHub(registry.getStakeManagerAddress()).validators(validatorId);
+        (,,,,,, _contract) = IStakeManagerEventsHub(registry.getStakeManagerAddress()).validators(validatorId);
         require(_contract == msg.sender, "not validator");
         _;
     }
 
     modifier onlyStakeManager() {
-        require(registry.getStakeManagerAddress() == msg.sender,
-        "Invalid sender, not stake manager");
+        require(registry.getStakeManagerAddress() == msg.sender, "Invalid sender, not stake manager");
         _;
     }
 
@@ -38,11 +37,7 @@ contract EventsHub is Initializable {
     }
 
     event ShareBurnedWithId(
-        uint256 indexed validatorId,
-        address indexed user,
-        uint256 indexed amount,
-        uint256 tokens,
-        uint256 nonce
+        uint256 indexed validatorId, address indexed user, uint256 indexed amount, uint256 tokens, uint256 nonce
     );
 
     function logShareBurnedWithId(
@@ -55,12 +50,7 @@ contract EventsHub is Initializable {
         emit ShareBurnedWithId(validatorId, user, amount, tokens, nonce);
     }
 
-    event DelegatorUnstakeWithId(
-        uint256 indexed validatorId,
-        address indexed user,
-        uint256 amount,
-        uint256 nonce
-    );
+    event DelegatorUnstakeWithId(uint256 indexed validatorId, address indexed user, uint256 amount, uint256 nonce);
 
     function logDelegatorUnstakedWithId(
         uint256 validatorId,
@@ -72,9 +62,7 @@ contract EventsHub is Initializable {
     }
 
     event RewardParams(
-        uint256 rewardDecreasePerCheckpoint,
-        uint256 maxRewardedCheckpoints,
-        uint256 checkpointRewardDelta
+        uint256 rewardDecreasePerCheckpoint, uint256 maxRewardedCheckpoints, uint256 checkpointRewardDelta
     );
 
     function logRewardParams(
@@ -86,9 +74,7 @@ contract EventsHub is Initializable {
     }
 
     event UpdateCommissionRate(
-        uint256 indexed validatorId,
-        uint256 indexed newCommissionRate,
-        uint256 indexed oldCommissionRate
+        uint256 indexed validatorId, uint256 indexed newCommissionRate, uint256 indexed oldCommissionRate
     );
 
     function logUpdateCommissionRate(
@@ -96,19 +82,10 @@ contract EventsHub is Initializable {
         uint256 newCommissionRate,
         uint256 oldCommissionRate
     ) public onlyStakeManager {
-        emit UpdateCommissionRate(
-            validatorId,
-            newCommissionRate,
-            oldCommissionRate
-        );
+        emit UpdateCommissionRate(validatorId, newCommissionRate, oldCommissionRate);
     }
 
-    event SharesTransfer(
-        uint256 indexed validatorId,
-        address indexed from,
-        address indexed to,
-        uint256 value
-    );
+    event SharesTransfer(uint256 indexed validatorId, address indexed from, address indexed to, uint256 value);
 
     function logSharesTransfer(
         uint256 validatorId,

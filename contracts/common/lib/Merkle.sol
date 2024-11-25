@@ -21,13 +21,9 @@ library Merkle {
             }
 
             if (index % 2 == 0) {
-                computedHash = keccak256(
-                    abi.encodePacked(computedHash, proofElement)
-                );
+                computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
             } else {
-                computedHash = keccak256(
-                    abi.encodePacked(proofElement, computedHash)
-                );
+                computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
             }
 
             index = index / 2;

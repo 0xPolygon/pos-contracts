@@ -25,7 +25,7 @@ contract ERC721Metadata is ERC165, ERC721, IERC721Metadata {
     /**
      * @dev Constructor function
      */
-    constructor (string memory name, string memory symbol) public {
+    constructor(string memory name, string memory symbol) public {
         _name = name;
         _symbol = symbol;
 

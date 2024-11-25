@@ -9,7 +9,12 @@ import {StakingNFT} from "./StakingNFT.sol";
 import {ValidatorShareFactory} from "../validatorShare/ValidatorShareFactory.sol";
 
 contract StakeManagerStorage is GovernanceLockable, RootChainable {
-    enum Status {Inactive, Active, Locked, Unstaked}
+    enum Status {
+        Inactive,
+        Active,
+        Locked,
+        Unstaked
+    }
 
     struct Auction {
         uint256 amount;
@@ -47,8 +52,8 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
 
     uint256 internal constant MAX_COMMISION_RATE = 100;
     uint256 internal constant MAX_PROPOSER_BONUS = 100;
-    uint256 internal constant REWARD_PRECISION = 10**25;
-    uint256 internal constant INCORRECT_VALIDATOR_ID = 2**256 - 1;
+    uint256 internal constant REWARD_PRECISION = 10 ** 25;
+    uint256 internal constant INCORRECT_VALIDATOR_ID = 2 ** 256 - 1;
     uint256 internal constant INITIALIZED_AMOUNT = 1;
 
     IERC20 public token;

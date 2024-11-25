@@ -6,7 +6,8 @@ import {TestToken} from "./TestToken.sol";
 import {EIP712} from "./../misc/EIP712.sol";
 import {IERC20Permit} from "./../misc/IERC20Permit.sol";
 
-// only meant for testing, adapted from: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.2/contracts/token/ERC20/extensions/ERC20Permit.sol
+// only meant for testing, adapted from:
+// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.2/contracts/token/ERC20/extensions/ERC20Permit.sol
 // modifications:
 // - check EIP712
 // - replaced custom errors with strings

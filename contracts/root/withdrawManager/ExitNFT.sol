@@ -7,10 +7,7 @@ contract ExitNFT is ERC721 {
     Registry internal registry;
 
     modifier onlyWithdrawManager() {
-        require(
-            msg.sender == registry.getWithdrawManagerAddress(),
-            "UNAUTHORIZED_WITHDRAW_MANAGER_ONLY"
-        );
+        require(msg.sender == registry.getWithdrawManagerAddress(), "UNAUTHORIZED_WITHDRAW_MANAGER_ONLY");
         _;
     }
 
@@ -18,10 +15,7 @@ contract ExitNFT is ERC721 {
         registry = Registry(_registry);
     }
 
-    function mint(address _owner, uint256 _tokenId)
-        external
-        onlyWithdrawManager
-    {
+    function mint(address _owner, uint256 _tokenId) external onlyWithdrawManager {
         _mint(_owner, _tokenId);
     }
 

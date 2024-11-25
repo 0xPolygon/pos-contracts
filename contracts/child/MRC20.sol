@@ -15,6 +15,7 @@ contract MRC20 is BaseERC20NoSig {
     bool isInitialized;
 
     uint256 locked = 0; // append to storage layout
+
     modifier nonReentrant() {
         require(locked == 0, "reentrancy");
         locked = 1;
@@ -37,10 +38,7 @@ contract MRC20 is BaseERC20NoSig {
 
     function deposit(address user, uint256 amount) public onlyOwner {
         // check for amount and user
-        require(
-            amount > 0 && user != address(0x0),
-            "Insufficient amount or invalid user"
-        );
+        require(amount > 0 && user != address(0x0), "Insufficient amount or invalid user");
 
         // input balance
         uint256 input1 = balanceOf(user);
@@ -61,10 +59,7 @@ contract MRC20 is BaseERC20NoSig {
 
         currentSupply = currentSupply.sub(amount);
         // check for amount
-        require(
-            amount > 0 && msg.value == amount,
-            "Insufficient amount"
-        );
+        require(amount > 0 && msg.value == amount, "Insufficient amount");
 
         // withdraw event
         emit Withdraw(token, user, amount, input, balanceOf(user));
@@ -83,7 +78,7 @@ contract MRC20 is BaseERC20NoSig {
     }
 
     function totalSupply() public pure returns (uint256) {
-        return 10000000000 * 10**uint256(DECIMALS);
+        return 10_000_000_000 * 10 ** uint256(DECIMALS);
     }
 
     function balanceOf(address account) public view returns (uint256) {
@@ -102,12 +97,10 @@ contract MRC20 is BaseERC20NoSig {
     }
 
     /**
-   * @dev _transfer is invoked by _transferFrom method that is inherited from BaseERC20.
-   * This enables us to transfer Polygon ETH between users while keeping the interface same as that of an ERC20 Token.
-   */
-    function _transfer(address sender, address recipient, uint256 amount)
-        internal
-    {
+     * @dev _transfer is invoked by _transferFrom method that is inherited from BaseERC20.
+     * This enables us to transfer Polygon ETH between users while keeping the interface same as that of an ERC20 Token.
+     */
+    function _transfer(address sender, address recipient, uint256 amount) internal {
         require(recipient != address(this), "can't send to MRC20");
         _nativeTransfer(recipient, amount);
         emit Transfer(sender, recipient, amount);
