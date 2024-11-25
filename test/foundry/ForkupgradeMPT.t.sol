@@ -33,8 +33,8 @@ contract ForkupgradeMPT is Test {
 
     uint256 mainnetFork;
 
-    function setUp() public {                             
-        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"), 20900000);
+    function setUp() public {
+        mainnetFork = vm.createFork(vm.rpcUrl("mainnet"), 20_900_000);
         vm.selectFork(mainnetFork);
     }
 
@@ -43,12 +43,13 @@ contract ForkupgradeMPT is Test {
 
         string memory input = vm.readFile("test/foundry/input.json");
         string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
-        WithdrawManagerProxy withdrawManagerProxy = WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
+        WithdrawManagerProxy withdrawManagerProxy =
+            WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
         Timelock timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
         address exitNFT = input.readAddress(string.concat(chainIdSlug, ".exitNFT"));
 
         address withdrawManagerImpl = deployCode("out/WithdrawManager.sol/WithdrawManager.json");
-       
+
         vm.prank(address(timelock));
         withdrawManagerProxy.updateImplementation(withdrawManagerImpl);
         WithdrawManager withdrawManager = WithdrawManager(payable(withdrawManagerProxy));
@@ -59,7 +60,7 @@ contract ForkupgradeMPT is Test {
         FileObject memory txBatch1 = abi.decode(txs, (FileObject));
         uint256 successes = 0;
         // loop
-        for (uint i = 0; i < txBatch1.txObjects.length; i++) {
+        for (uint256 i = 0; i < txBatch1.txObjects.length; i++) {
             console.log("tx num: ", i);
             TxObject memory obj = txBatch1.txObjects[i];
             console.log(obj.from);
@@ -69,21 +70,21 @@ contract ForkupgradeMPT is Test {
 
             // Calculate the storage slots we need to manipulate to replay the tx
             bytes32 slotisKnownExit = keccak256(abi.encode(uint128(index << 1), 5));
-            bytes32 slotexits = bytes32(uint256(keccak256(abi.encode(index << 1, 6)))+ 3);
+            bytes32 slotexits = bytes32(uint256(keccak256(abi.encode(index << 1, 6))) + 3);
             bytes32 slot_tokenOwner = keccak256(abi.encode((index << 1), 1));
             // WithdrawManager
             vm.store(address(withdrawManager), slotisKnownExit, 0);
             vm.store(address(withdrawManager), slotexits, 0);
             // ExitNFT
-            vm.store(exitNFT, slot_tokenOwner, 0); 
-            
-         
+            vm.store(exitNFT, slot_tokenOwner, 0);
+
             // Expect the exit correctly happens, this is the last thing that happens in an orderly exit
             vm.expectEmit(true, false, false, false, address(withdrawManager));
             emit WithdrawManager.ExitStarted(obj.from, index, address(0), 0, true);
             // Pretend to be the the exitor and replay tx
             vm.prank(obj.from);
-            (bool successSchedule, bytes memory dataSchedule) = address(0x626fb210bf50e201ED62cA2705c16DE2a53DC966).call(obj.input_proof);
+            (bool successSchedule, bytes memory dataSchedule) =
+                address(0x626fb210bf50e201ED62cA2705c16DE2a53DC966).call(obj.input_proof);
             if (successSchedule == false) {
                 assembly {
                     revert(add(dataSchedule, 32), mload(dataSchedule))
@@ -101,12 +102,13 @@ contract ForkupgradeMPT is Test {
 
     //     string memory input = vm.readFile("test/foundry/input.json");
     //     string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
-    //     WithdrawManagerProxy withdrawManagerProxy = WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
+    //     WithdrawManagerProxy withdrawManagerProxy =
+    // WithdrawManagerProxy(payable(input.readAddress(string.concat(chainIdSlug, ".withdrawManagerProxy"))));
     //     Timelock timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
     //     address exitNFT = input.readAddress(string.concat(chainIdSlug, ".exitNFT"));
 
     //     address withdrawManagerImpl = deployCode("out/WithdrawManager.sol/WithdrawManager.json");
-       
+
     //     vm.prank(address(timelock));
     //     withdrawManagerProxy.updateImplementation(withdrawManagerImpl);
     //     WithdrawManager withdrawManager = WithdrawManager(payable(withdrawManagerProxy));
@@ -123,9 +125,9 @@ contract ForkupgradeMPT is Test {
 
     //         // Check if proof is valid
     //         withdrawManager.verifyInclusion(obj.modified_input_proof, 0, false);
-            
+
     //         successes++;
-            
+
     //     }
     //     console.log("Total successful tx: ", successes);
     // }

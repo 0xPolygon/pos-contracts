@@ -25,11 +25,11 @@ contract UpgradableProxy is DelegateProxy {
         _;
     }
 
-    function owner() external view returns(address) {
+    function owner() external view returns (address) {
         return loadOwner();
     }
 
-    function loadOwner() internal view returns(address) {
+    function loadOwner() internal view returns (address) {
         address _owner;
         bytes32 position = OWNER_SLOT;
         assembly {
@@ -42,7 +42,7 @@ contract UpgradableProxy is DelegateProxy {
         return loadImplementation();
     }
 
-    function loadImplementation() internal view returns(address) {
+    function loadImplementation() internal view returns (address) {
         address _impl;
         bytes32 position = IMPLEMENTATION_SLOT;
         assembly {
@@ -69,11 +69,11 @@ contract UpgradableProxy is DelegateProxy {
         require(isContract(_newProxyTo), "DESTINATION_ADDRESS_IS_NOT_A_CONTRACT");
 
         emit ProxyUpdated(_newProxyTo, loadImplementation());
-        
+
         setImplementation(_newProxyTo);
     }
 
-    function updateAndCall(address _newProxyTo, bytes memory data) payable public onlyProxyOwner {
+    function updateAndCall(address _newProxyTo, bytes memory data) public payable onlyProxyOwner {
         updateImplementation(_newProxyTo);
 
         (bool success, bytes memory returnData) = address(this).call.value(msg.value)(data);

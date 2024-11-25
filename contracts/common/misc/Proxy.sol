@@ -1,7 +1,7 @@
 pragma solidity ^0.5.2;
+
 import {DelegateProxy} from "./DelegateProxy.sol";
 import {ProxyStorage} from "./ProxyStorage.sol";
-
 
 contract Proxy is ProxyStorage, DelegateProxy {
     event ProxyUpdated(address indexed _new, address indexed _old);

@@ -14,7 +14,7 @@ contract WhitelistAdminRole {
 
     Roles.Role private _whitelistAdmins;
 
-    constructor () internal {
+    constructor() internal {
         _addWhitelistAdmin(msg.sender);
     }
 

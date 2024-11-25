@@ -19,12 +19,7 @@ contract IWithdrawManager {
         uint256 priority
     ) external;
 
-    function addInput(
-        uint256 exitId,
-        uint256 age,
-        address utxoOwner,
-        address token
-    ) external;
+    function addInput(uint256 exitId, uint256 age, address utxoOwner, address token) external;
 
     function challengeExit(
         uint256 exitId,

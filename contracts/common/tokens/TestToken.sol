@@ -12,7 +12,7 @@ contract TestToken is ERC20Mintable {
         name = _name;
         symbol = _symbol;
 
-        uint256 value = 10**10 * (10**18);
+        uint256 value = 10 ** 10 * (10 ** 18);
         mint(msg.sender, value);
     }
 }

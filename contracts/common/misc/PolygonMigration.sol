@@ -23,7 +23,7 @@ contract PolygonMigration is IPolygonMigration {
         _;
     }
 
-     modifier onlyOwner() {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Only owner");
         _;
     }

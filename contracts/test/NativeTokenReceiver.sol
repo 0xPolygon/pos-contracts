@@ -7,7 +7,7 @@ contract NativeTokenReceiver_Reverts {
 }
 
 contract NativeTokenReceiver {
-    event SafeReceived(address indexed sender, uint value);
+    event SafeReceived(address indexed sender, uint256 value);
 
     // bytes32(uint(keccak256("singleton")) - 1)
     bytes32 public constant SINGLETON_SLOT = 0x3d9111c4ec40e72567dff1e7eb8686c719e04ff7490697118315d2143e8e9edb;
@@ -33,16 +33,18 @@ contract NativeTokenReceiver {
 }
 
 contract Receive {
-    event SafeReceived(address indexed sender, uint value);
+    event SafeReceived(address indexed sender, uint256 value);
+
     function() external payable {
         emit SafeReceived(msg.sender, msg.value);
     }
 }
 
 contract NativeTokenReceiver_OOG {
-    uint counter;
+    uint256 counter;
+
     function() external payable {
-        for (uint i; i < 100; i++) {
+        for (uint256 i; i < 100; i++) {
             counter++;
         }
     }
