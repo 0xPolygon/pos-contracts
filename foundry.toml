@@ -38,7 +38,7 @@ number_underscore = "thousands"
 multiline_func_header = "params_first_multi"
 wrap_comments = true
 single_line_statement_blocks = "preserve"
-ignore = []
+ignore = ["contracts/staking/StakingInfo.sol", "contracts/common/mixin/ChainIdMixin.sol"]
 
 [rpc_endpoints]
 anvil = "http://127.0.0.1:8545"
