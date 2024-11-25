@@ -20,4 +20,4 @@ contract StakeManagerStorageExtension {
 
     IERC20 public tokenMatic;
     IPolygonMigration public migration;
-}   
+}

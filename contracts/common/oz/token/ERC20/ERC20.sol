@@ -18,9 +18,9 @@ import "../../math/SafeMath.sol";
 contract ERC20 is IERC20 {
     using SafeMath for uint256;
 
-    mapping (address => uint256) private _balances;
+    mapping(address => uint256) private _balances;
 
-    mapping (address => mapping (address => uint256)) private _allowed;
+    mapping(address => mapping(address => uint256)) private _allowed;
 
     uint256 private _totalSupply;
 
@@ -71,7 +71,7 @@ contract ERC20 is IERC20 {
      */
     function approve(address spender, uint256 value) public returns (bool) {
         _approve(msg.sender, spender, value);
-      
+
         return true;
     }
 

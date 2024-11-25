@@ -10,7 +10,7 @@ contract MinterRole {
 
     Roles.Role private _minters;
 
-    constructor () internal {
+    constructor() internal {
         _addMinter(msg.sender);
     }
 
