@@ -1,4 +1,12 @@
 import { getPermitDigest } from './permitHelper.js'
+import { wallets, freshDeploy, approveAndStake } from './deployment.js'
+import testHelpers from '@openzeppelin/test-helpers'
+import { ValidatorShare } from '../../helpers/artifacts.js'
+
+const BN = testHelpers.BN
+const toWei = web3.utils.toWei
+export const ValidatorDefaultStake = new BN(toWei('100'))
+export const Dynasty = 8
 
 export async function buyVoucher(validatorContract, amount, delegator, minSharesToMint) {
   const validatorContract_Delegator = validatorContract.connect(validatorContract.provider.getSigner(delegator))
@@ -85,4 +93,67 @@ export async function sellVoucherNewPOL(validatorContract, delegator, minClaimAm
   const validatorContract_Delegator = validatorContract.connect(validatorContract.provider.getSigner(delegator))
 
   return validatorContract_Delegator.sellVoucher_newPOL(minClaimAmount.toString(), maxShares)
+}
+
+export async function doDeployPOL() {
+  await doDeploy.call(this, true)
+}
+
+export async function doDeploy(pol = false) {
+  await freshDeploy.call(this)
+  this.validatorId = '8'
+  this.validatorUser = wallets[0]
+  this.stakeAmount = ValidatorDefaultStake
+
+  await this.governance.update(
+    this.stakeManager.address,
+    this.stakeManager.interface.encodeFunctionData('updateDynastyValue', [Dynasty])
+  )
+  await this.governance.update(
+    this.stakeManager.address,
+    this.stakeManager.interface.encodeFunctionData('updateValidatorThreshold', [8])
+  )
+
+  // we need to increase validator id beyond foundation id, repeat 7 times
+  for (let i = 0; i < 7; ++i) {
+    await approveAndStake.call(this, {
+      wallet: this.validatorUser,
+      stakeAmount: this.stakeAmount,
+      acceptDelegation: true,
+      pol: pol
+    })
+    if(pol) {
+      await this.governance.update(
+        this.stakeManager.address,
+        this.stakeManager.interface.encodeFunctionData('forceUnstakePOL', [i + 1])
+      )
+    } else {
+      await this.governance.update(
+        this.stakeManager.address,
+        this.stakeManager.interface.encodeFunctionData('forceUnstake', [i + 1])
+      )
+    }
+    await this.stakeManager.forceFinalizeCommit()
+    await this.stakeManager.advanceEpoch(Dynasty)
+    const stakeManagerValidator = this.stakeManager.connect(
+      this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
+    )
+    if(pol) {
+      await stakeManagerValidator.unstakeClaimPOL(i + 1)
+    } else {
+      await stakeManagerValidator.unstakeClaim(i + 1)
+    }
+    await this.stakeManager.resetSignerUsed(this.validatorUser.getChecksumAddressString())
+  }
+
+  await approveAndStake.call(this, {
+    wallet: this.validatorUser,
+    stakeAmount: this.stakeAmount,
+    acceptDelegation: true,
+    pol: pol
+  })
+  await this.stakeManager.forceFinalizeCommit()
+
+  const validator = await this.stakeManager.validators(this.validatorId)
+  this.validatorContract = ValidatorShare.attach(validator.contractAddress)
 }

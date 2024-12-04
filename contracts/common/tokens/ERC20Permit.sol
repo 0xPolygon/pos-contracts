@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.5.17;
 
-import {ECDSA} from "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import {ECVerify} from "../lib/ECVerify.sol";
 import {TestToken} from "./TestToken.sol";
 import {EIP712} from "./../misc/EIP712.sol";
 import {IERC20Permit} from "./../misc/IERC20Permit.sol";
 
-// only meant for testing, adapted from: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.2/contracts/token/ERC20/extensions/ERC20Permit.sol
+// only meant for testing, adapted from:
+// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.2/contracts/token/ERC20/extensions/ERC20Permit.sol
 // modifications:
 // - check EIP712
 // - replaced custom errors with strings
@@ -41,7 +42,7 @@ contract ERC20Permit is TestToken, IERC20Permit, EIP712 {
 
         bytes32 hash = _hashTypedDataV4(structHash);
 
-        address signer = ECDSA.recover(hash, _compress(v, r, s));
+        address signer = ECVerify.ecrecovery(hash, v, r, s);
         if (signer != owner) {
             revert("ERC2612InvalidSigner");
         }
