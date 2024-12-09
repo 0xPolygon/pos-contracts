@@ -35,7 +35,7 @@ max_test_rejects = 999999
 [fmt]
 line_length = 120
 number_underscore = "thousands"
-multiline_func_header = "params_first_multi"
+multiline_func_header = "params_first"
 wrap_comments = true
 single_line_statement_blocks = "preserve"
 ignore = ["contracts/staking/StakingInfo.sol", "contracts/common/mixin/ChainIdMixin.sol"]
