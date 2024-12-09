@@ -15,9 +15,6 @@ contract Governable {
     }
 
     function _assertGovernance() private view {
-        require(
-            msg.sender == address(governance),
-            "Only governance contract is authorized"
-        );
+        require(msg.sender == address(governance), "Only governance contract is authorized");
     }
 }

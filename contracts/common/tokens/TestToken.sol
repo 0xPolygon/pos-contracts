@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol";
+import {ERC20Mintable} from "../oz/token/ERC20/ERC20Mintable.sol";
 
 contract TestToken is ERC20Mintable {
     // detailed ERC20
@@ -12,7 +12,7 @@ contract TestToken is ERC20Mintable {
         name = _name;
         symbol = _symbol;
 
-        uint256 value = 10**10 * (10**18);
+        uint256 value = 10 ** 10 * (10 ** 18);
         mint(msg.sender, value);
     }
 }

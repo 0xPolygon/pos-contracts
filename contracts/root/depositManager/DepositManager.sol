@@ -1,10 +1,10 @@
 pragma solidity ^0.5.2;
 
-import {ERC721Holder} from "openzeppelin-solidity/contracts/token/ERC721/ERC721Holder.sol";
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import {IERC721} from "openzeppelin-solidity/contracts/token/ERC721/IERC721.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {SafeERC20} from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import {ERC721Holder} from "../../common/oz/token/ERC721/ERC721Holder.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
+import {IERC721} from "../../common/oz/token/ERC721/IERC721.sol";
+import {SafeMath} from "../../common/oz/math/SafeMath.sol";
+import {SafeERC20} from "../../common/oz/token/ERC20/SafeERC20.sol";
 
 import {Registry} from "../../common/Registry.sol";
 import {WETH} from "../../common/tokens/WETH.sol";
@@ -18,16 +18,12 @@ interface IPolygonMigration {
     function migrate(uint256 amount) external;
 }
 
-
 contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     modifier isTokenMapped(address _token) {
-        require(
-            registry.isTokenMapped(_token),
-            "TOKEN_NOT_SUPPORTED"
-        );
+        require(registry.isTokenMapped(_token), "TOKEN_NOT_SUPPORTED");
         _;
     }
 
@@ -81,8 +77,7 @@ contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder 
             // new: pay out POL when MATIC is withdrawn
             if (_token == registry.contractMap(keccak256("matic"))) {
                 require(
-                    IERC20(registry.contractMap(keccak256("pol"))).transfer(_user, _amountOrNFTId),
-                    "TRANSFER_FAILED"
+                    IERC20(registry.contractMap(keccak256("pol"))).transfer(_user, _amountOrNFTId), "TRANSFER_FAILED"
                 );
             } else {
                 require(IERC20(_token).transfer(_user, _amountOrNFTId), "TRANSFER_FAILED");

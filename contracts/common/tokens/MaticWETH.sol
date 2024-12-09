@@ -2,7 +2,6 @@ pragma solidity ^0.5.2;
 
 import {WETH} from "./WETH.sol";
 
-
 contract MaticWETH is WETH {
     string public name = "Wrapped Ether";
     string public symbol = "WETH";

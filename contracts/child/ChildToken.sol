@@ -1,9 +1,9 @@
 pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import {SafeMath} from "../common/oz/math/SafeMath.sol";
+import {Ownable} from "../common/oz/ownership/Ownable.sol";
 
-import "./misc/LibTokenTransferOrder.sol";
+import {LibTokenTransferOrder} from "./misc/LibTokenTransferOrder.sol";
 
 contract ChildToken is Ownable, LibTokenTransferOrder {
     using SafeMath for uint256;
@@ -16,10 +16,7 @@ contract ChildToken is Ownable, LibTokenTransferOrder {
     mapping(bytes32 => bool) public disabledHashes;
 
     modifier onlyChildChain() {
-        require(
-            msg.sender == childChain,
-            "Child token: caller is not the child chain contract"
-        );
+        require(msg.sender == childChain, "Child token: caller is not the child chain contract");
         _;
     }
 
@@ -34,24 +31,14 @@ contract ChildToken is Ownable, LibTokenTransferOrder {
         uint256 output2
     );
 
-    event ChildChainChanged(
-        address indexed previousAddress,
-        address indexed newAddress
-    );
+    event ChildChainChanged(address indexed previousAddress, address indexed newAddress);
 
-    event ParentChanged(
-        address indexed previousAddress,
-        address indexed newAddress
-    );
+    event ParentChanged(address indexed previousAddress, address indexed newAddress);
 
     function deposit(address user, uint256 amountOrTokenId) public;
     function withdraw(uint256 amountOrTokenId) public payable;
 
-    function ecrecovery(bytes32 hash, bytes memory sig)
-        public
-        pure
-        returns (address result)
-    {
+    function ecrecovery(bytes32 hash, bytes memory sig) public pure returns (address result) {
         bytes32 r;
         bytes32 s;
         uint8 v;
@@ -78,20 +65,14 @@ contract ChildToken is Ownable, LibTokenTransferOrder {
 
     // change child chain address
     function changeChildChain(address newAddress) public onlyOwner {
-        require(
-            newAddress != address(0),
-            "Child token: new child address is the zero address"
-        );
+        require(newAddress != address(0), "Child token: new child address is the zero address");
         emit ChildChainChanged(childChain, newAddress);
         childChain = newAddress;
     }
 
     // change parent address
     function setParent(address newAddress) public onlyOwner {
-        require(
-            newAddress != address(0),
-            "Child token: new parent address is the zero address"
-        );
+        require(newAddress != address(0), "Child token: new parent address is the zero address");
         emit ParentChanged(parent, newAddress);
         parent = newAddress;
     }

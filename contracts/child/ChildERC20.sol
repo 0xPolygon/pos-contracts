@@ -1,16 +1,16 @@
 pragma solidity ^0.5.2;
 
 import {ERC20Detailed} from "./ERC20Detailed.sol";
-import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "../common/oz/token/ERC20/ERC20.sol";
 
 import {StateSyncerVerifier} from "./bor/StateSyncerVerifier.sol";
 import {StateReceiver} from "./bor/StateReceiver.sol";
-import "./BaseERC20.sol";
-import "./misc/IParentToken.sol";
+import {BaseERC20} from "./BaseERC20.sol";
+import {IParentToken} from "./misc/IParentToken.sol";
 
 contract ChildERC20 is BaseERC20, ERC20, ERC20Detailed, StateSyncerVerifier, StateReceiver {
     constructor(
-        address /* ignoring parent owner, use contract owner instead */,
+        address, /* ignoring parent owner, use contract owner instead */
         address _token,
         string memory _name,
         string memory _symbol,
@@ -21,11 +21,11 @@ contract ChildERC20 is BaseERC20, ERC20, ERC20Detailed, StateSyncerVerifier, Sta
     }
 
     /**
-   * Deposit tokens
-   *
-   * @param user address for address
-   * @param amount token balance
-   */
+     * Deposit tokens
+     *
+     * @param user address for address
+     * @param amount token balance
+     */
     function deposit(address user, uint256 amount) public onlyChildChain {
         // check for amount and user
         require(amount > 0 && user != address(0x0));
@@ -41,18 +41,15 @@ contract ChildERC20 is BaseERC20, ERC20, ERC20Detailed, StateSyncerVerifier, Sta
     }
 
     /**
-   * Withdraw tokens
-   *
-   * @param amount tokens
-   */
+     * Withdraw tokens
+     *
+     * @param amount tokens
+     */
     function withdraw(uint256 amount) public payable {
         _withdraw(msg.sender, amount);
     }
 
-    function onStateReceive(
-        uint256, /* id */
-        bytes calldata data
-    ) external onlyStateSyncer {
+    function onStateReceive(uint256, /* id */ bytes calldata data) external onlyStateSyncer {
         (address user, uint256 burnAmount) = abi.decode(data, (address, uint256));
         uint256 balance = balanceOf(user);
         if (balance < burnAmount) {
@@ -72,10 +69,7 @@ contract ChildERC20 is BaseERC20, ERC20, ERC20Detailed, StateSyncerVerifier, Sta
     /// @param value Number of tokens to transfer.
     /// @return Returns success of function call.
     function transfer(address to, uint256 value) public returns (bool) {
-        if (
-            parent != address(0x0) &&
-            !IParentToken(parent).beforeTransfer(msg.sender, to, value)
-        ) {
+        if (parent != address(0x0) && !IParentToken(parent).beforeTransfer(msg.sender, to, value)) {
             return false;
         }
         return _transferFrom(msg.sender, to, value);

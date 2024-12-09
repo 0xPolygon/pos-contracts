@@ -27,9 +27,13 @@ interface Timelock {
     function PROPOSER_ROLE() external view returns (bytes32);
     function TIMELOCK_ADMIN_ROLE() external view returns (bytes32);
     function cancel(bytes32 id) external;
-    function execute(address target, uint256 value, bytes memory data, bytes32 predecessor, bytes32 salt)
-        external
-        payable;
+    function execute(
+        address target,
+        uint256 value,
+        bytes memory data,
+        bytes32 predecessor,
+        bytes32 salt
+    ) external payable;
     function executeBatch(
         address[] memory targets,
         uint256[] memory values,
@@ -42,10 +46,13 @@ interface Timelock {
     function getTimestamp(bytes32 id) external view returns (uint256 timestamp);
     function grantRole(bytes32 role, address account) external;
     function hasRole(bytes32 role, address account) external view returns (bool);
-    function hashOperation(address target, uint256 value, bytes memory data, bytes32 predecessor, bytes32 salt)
-        external
-        pure
-        returns (bytes32 hash);
+    function hashOperation(
+        address target,
+        uint256 value,
+        bytes memory data,
+        bytes32 predecessor,
+        bytes32 salt
+    ) external pure returns (bytes32 hash);
     function hashOperationBatch(
         address[] memory targets,
         uint256[] memory values,
