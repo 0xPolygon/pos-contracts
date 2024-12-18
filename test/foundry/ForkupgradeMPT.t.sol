@@ -39,6 +39,7 @@ contract ForkupgradeMPT is Test {
     }
 
     function test_UpgradeMPT() public {
+        vm.skip(vm.envBool("IS_CI"));
         assertEq(vm.activeFork(), mainnetFork);
 
         string memory input = vm.readFile("scripts/deployers/mpt-fix/input.json");
