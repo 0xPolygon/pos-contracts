@@ -50,5 +50,6 @@ jobs:
       - name: Run Forge tests
         env:
           INFURA_TOKEN: ${{ secrets.INFURA_TOKEN }}
+          IS_CI: true
         run: forge test -vvv
         id: test
