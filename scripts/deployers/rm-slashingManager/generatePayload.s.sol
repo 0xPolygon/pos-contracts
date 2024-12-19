@@ -16,7 +16,7 @@ contract DeployFix is Script {
 
     address governance = 0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48;
 
-    address gSafeAddress = 0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf;
+    address timelock = 0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf;
 
     function run() public {
         console.log("Generating payload \n");
@@ -33,7 +33,7 @@ contract DeployFix is Script {
         assert(registry.getSlashingManagerAddress() == 0x01F645DcD6C796F6BC6C982159B32fAaaebdC96A);
         assert(registry.contractMap(SLASHING_MANAGER) == 0x01F645DcD6C796F6BC6C982159B32fAaaebdC96A);
 
-        vm.prank(gSafeAddress);
+        vm.prank(timelock);
         (bool success, /* bytes memory res */ ) = governance.call(payloadRegistry);
         assert(success);
         assert(registry.getSlashingManagerAddress() == address(0x00));
