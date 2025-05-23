@@ -35,7 +35,10 @@ contract ERC20PredicateBurnOnly is IErcPredicate {
         ExitPayloadReader.ExitPayload memory payload = data.toExitPayload();
         ExitPayloadReader.Receipt memory receipt = payload.getReceipt();
         uint256 logIndex = payload.getReceiptLogIndex();
-        require(logIndex < MAX_LOGS, "Supporting a max of 10 logs");
+        //require(logIndex < MAX_LOGS, "Supporting a max of 10 logs");
+        // Alternative example :
+        //require(logIndex < 50, "Supporting a max of 50 logs");
+
         uint256 age = withdrawManager.verifyInclusion(
             data,
             0, /* offset */
