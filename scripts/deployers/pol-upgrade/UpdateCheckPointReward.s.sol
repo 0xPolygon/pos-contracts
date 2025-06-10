@@ -25,14 +25,14 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
     function run() public {
         vm.selectFork(vm.createFork(vm.rpcUrl("mainnet")));
 
-        string memory input = vm.readFile("scripts/deployers/pol-upgrade/input.json");
+        string memory input = vm.readFile("scripts/deployers/input.json");
         string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
 
         stakeManagerProxy = input.readAddress(string.concat(chainIdSlug, ".stakeManagerProxy"));
         governance = input.readAddress(string.concat(chainIdSlug, ".governance"));
         timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
 
-        uint256 NEW_REWARD = 53870967741900000000000;
+        uint256 NEW_REWARD = 37108000000000000000000;
 
         // create payload
         bytes memory payload = abi.encodeCall(Governance.update, (stakeManagerProxy, abi.encodeCall(StakeManager.updateCheckpointReward, (NEW_REWARD))));
