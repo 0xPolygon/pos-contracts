@@ -51,24 +51,17 @@ contract ERC20PredicateBurnOnly is IErcPredicate {
         ExitPayloadReader.LogTopics memory topics = log.getTopics();
         // now, inputItems[i] refers to i-th (0-based) topic in the topics array
         // event Withdraw(address indexed token, address indexed from, uint256 amountOrTokenId, uint256 input1, uint256 output1)
-        require(
-            bytes32(topics.getField(0).toUint()) == WITHDRAW_EVENT_SIG,
-            "Not a withdraw event signature"
-        );
-        require(
-            msg.sender == address(topics.getField(2).toUint()), // from
-            "Withdrawer and burn exit tx do not match"
-        );
+        require(bytes32(topics.getField(0).toUint()) == WITHDRAW_EVENT_SIG, "Not a withdraw event signature");
+        // Need to skip this check because we aren't the exitor
+        // require(
+        //     msg.sender == address(topics.getField(2).toUint()), // from
+        //     "Withdrawer and burn exit tx do not match"
+        // );
         address rootToken = address(topics.getField(1).toUint());
         uint256 exitAmount = BytesLib.toUint(log.getData(), 0); // amountOrTokenId
+        // Need to pass in the actual exitor here, not msg.sender
         withdrawManager.addExitToQueue(
-            msg.sender,
-            childToken,
-            rootToken,
-            exitAmount,
-            bytes32(0x0),
-            true, /* isRegularExit */
-            age << 1
+            address(topics.getField(2).toUint()), childToken, rootToken, exitAmount, bytes32(0x0), true, /* isRegularExit */ age << 1
         );
     }
 
