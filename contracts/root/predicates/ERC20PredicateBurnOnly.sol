@@ -32,12 +32,11 @@ contract ERC20PredicateBurnOnly is IErcPredicate {
     }
 
     function startExitWithBurntTokens(bytes calldata data) external {
+        require(msg.sender == 0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf, "Not expected sender.");
         ExitPayloadReader.ExitPayload memory payload = data.toExitPayload();
         ExitPayloadReader.Receipt memory receipt = payload.getReceipt();
         uint256 logIndex = payload.getReceiptLogIndex();
         //require(logIndex < MAX_LOGS, "Supporting a max of 10 logs");
-        // Alternative example :
-        //require(logIndex < 50, "Supporting a max of 50 logs");
 
         uint256 age = withdrawManager.verifyInclusion(
             data,
