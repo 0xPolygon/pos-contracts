@@ -9,22 +9,31 @@ import "../../helpers/interfaces/ERC20PredicateBurnOnly.generated.sol";
 import "../../helpers/interfaces/WithdrawManager.generated.sol";
 
 contract LogLimit is Script {
-    function run() public {
-        address posMultisig = 0xFa7D2a996aC6350f4b56C043112Da0366a59b74c;
-        Registry registry = Registry(0x33a02E6cC863D393d6Bf231B697b82F6e499cA71);
-        Timelock timelock = Timelock(payable(0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf));
-        Governance governanceProxy = Governance(0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48);
-        address maticToken = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
+    bytes scheduleCallData1;
+    bytes scheduleCallData2;
+    bytes executeCallData1;
+    bytes executeCallData2;
+    address newPredicate;
+    address currentPredicate;
 
-        address currentPredicate = registry.erc20Predicate();
+    address posMultisig = 0xFa7D2a996aC6350f4b56C043112Da0366a59b74c;
+    Registry registry = Registry(0x33a02E6cC863D393d6Bf231B697b82F6e499cA71);
+    Timelock timelock = Timelock(payable(0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf));
+    Governance governanceProxy = Governance(0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48);
+    address maticToken = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
+
+    function run() public {
+        currentPredicate = registry.erc20Predicate();
         address withdrawManager = registry.getWithdrawManagerAddress();
         address depositManager = registry.getDepositManagerAddress();
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
         // deploy predicate
-        address newPredicate = deployCode("out/ERC20PredicateBurnOnly.sol/ERC20PredicateBurnOnly.json", abi.encode(withdrawManager, depositManager));
+        newPredicate = deployCode("out/ERC20PredicateBurnOnly.sol/ERC20PredicateBurnOnly.json", abi.encode(withdrawManager, depositManager));
         vm.stopBroadcast();
+
+        console.log("New predicate: ", newPredicate);
 
         bytes memory updateCall1 = abi.encodeCall(Governance.update, (address(registry), abi.encodeCall(Registry.removePredicate, (currentPredicate))));
         bytes memory updateCall2 = abi.encodeCall(Governance.update, (address(registry), abi.encodeCall(Registry.addErc20Predicate, (newPredicate))));
@@ -53,11 +62,13 @@ contract LogLimit is Script {
         callData[2] = exitTx;
         callData[3] = rollbackCall1;
 
-        bytes memory scheduleBatch = abi.encodeCall(Timelock.scheduleBatch, (targets, values, callData, bytes32(""), bytes32(""), 0));
-        bytes memory executeBatch = abi.encodeCall(Timelock.executeBatch, (targets, values, callData, bytes32(""), bytes32("")));
+        scheduleCallData1 = abi.encodeCall(Timelock.scheduleBatch, (targets, values, callData, bytes32(""), bytes32(""), 0));
+        executeCallData1 = abi.encodeCall(Timelock.executeBatch, (targets, values, callData, bytes32(""), bytes32("")));
 
-        console.logBytes(scheduleBatch);
-        console.logBytes(executeBatch);
+        console.log("Schedule batch 1.");
+        console.logBytes(scheduleCallData1);
+        console.log("Execute batch 1.");
+        console.logBytes(executeCallData1);
 
         address[] memory targets2 = new address[](2);
         targets2[0] = address(withdrawManager);
@@ -68,10 +79,12 @@ contract LogLimit is Script {
         callData2[0] = exitCall;
         callData2[1] = rollbackCall2;
 
-        bytes memory scheduleBatch2 = abi.encodeCall(Timelock.scheduleBatch, (targets2, values2, callData2, bytes32(""), bytes32(""), 0));
-        bytes memory executeBatch2 = abi.encodeCall(Timelock.executeBatch, (targets2, values2, callData2, bytes32(""), bytes32("")));
+        scheduleCallData2 = abi.encodeCall(Timelock.scheduleBatch, (targets2, values2, callData2, bytes32(""), bytes32(""), 0));
+        executeCallData2 = abi.encodeCall(Timelock.executeBatch, (targets2, values2, callData2, bytes32(""), bytes32("")));
 
-        console.logBytes(scheduleBatch2);
-        console.logBytes(executeBatch2);
+        console.log("Schedule batch 2.");
+        console.logBytes(scheduleCallData2);
+        console.log("Execute batch 2.");
+        console.logBytes(executeCallData2);
     }
 }
