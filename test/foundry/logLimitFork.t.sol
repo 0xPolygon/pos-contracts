@@ -24,6 +24,9 @@ contract LogLimitForkTest is Test, LogLimit {
         address(timelock).call(executeCallData1);
         vm.warp(vm.getBlockTimestamp() + 1);
 
+        address newOldPredicate1 = registry.erc20Predicate();
+        assertEq(currentPredicate, newOldPredicate1);
+
         address(timelock).call(scheduleCallData2);
         address(timelock).call(executeCallData2);
         vm.stopPrank();
@@ -31,8 +34,8 @@ contract LogLimitForkTest is Test, LogLimit {
         uint256 newBalance = polToken.balanceOf(exitingAccount);
         assertEq(oldBalance + expectedAmount, newBalance);
 
-        address newOldPredicate = registry.erc20Predicate();
-        assertEq(currentPredicate, newOldPredicate);
+        address newOldPredicate2 = registry.erc20Predicate();
+        assertEq(currentPredicate, newOldPredicate2);
 
         Registry.Type newPredicateStatus = registry.predicates(newPredicate);
         assertEq(Registry.Type.unwrap(newPredicateStatus), 0);
