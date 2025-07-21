@@ -41,6 +41,7 @@ contract ERC20PredicateBurnOnlyOneExit is IErcPredicate {
     function releaseFunds() external {
         require(msg.sender == 0xCaf0aa768A3AE1297DF20072419Db8Bb8b5C8cEf, "Not expected sender.");
         require(!called, "Already called once.");
+        called = true;
         address token = 0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0;
         address exitor = 0xc980508cC8866f726040Da1C0C61f682e74aBc39;
         uint256 tokenAmount = 493_058_332_956_360_409_726_125;
