@@ -20,15 +20,8 @@ contract LogLimitForkTest is Test, LogLimit {
         uint256 oldBalance = polToken.balanceOf(exitingAccount);
 
         vm.startPrank(posMultisig);
-        address(timelock).call(scheduleCallData1);
-        address(timelock).call(executeCallData1);
-        vm.warp(vm.getBlockTimestamp() + 1);
-
-        address newOldPredicate1 = registry.erc20Predicate();
-        assertEq(currentPredicate, newOldPredicate1);
-
-        address(timelock).call(scheduleCallData2);
-        address(timelock).call(executeCallData2);
+        address(timelock).call(scheduleCallData);
+        address(timelock).call(executeCallData);
         vm.stopPrank();
 
         uint256 newBalance = polToken.balanceOf(exitingAccount);
