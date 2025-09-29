@@ -56,12 +56,17 @@ contract DeploySystem is Script, ArtifactPath {
     ERC20Permit polToken;
     TestToken maticToken;
     PolygonMigration polygonMigration;
+    StakingInfo stakingInfo;
+    EventsHub eventsHub;
+    RootChain rootChain;
+    address owner = makeAddr("owner");
+    uint256 defaultStakeVS = 1000 * 10 ** 18;
 
     function run() public {
         vm.startBroadcast();
     }
 
-    function deployAll(address _owner) public {
+    function deployAll() public {
         address governanceImpl = deployCode(GovernancePath);
         // Owner is msg.sender
         address governanceProxy = deployCode(GovernanceProxyPath, abi.encode(governanceImpl));
@@ -69,15 +74,15 @@ contract DeploySystem is Script, ArtifactPath {
 
         registry = Registry(deployCode(RegistryPath, abi.encode(governanceProxy)));
 
-        address eventsHub = deployCode(EventsHubPath);
+        address eventsHubImpl = deployCode(EventsHubPath);
         // Not sure why, but that's how the old tests do it
-        address eventsHubProxy = deployCode(EventsHubProxyPath, abi.encode(address(0)));
+        eventsHub = EventsHub(deployCode(EventsHubProxyPath, abi.encode(address(0))));
 
-        EventsHubProxy(payable(eventsHubProxy)).updateAndCall(
-            eventsHub, abi.encodeCall(EventsHub.initialize, (address(registry)))
+        EventsHubProxy(payable(address(eventsHub))).updateAndCall(
+            eventsHubImpl, abi.encodeCall(EventsHub.initialize, (address(registry)))
         );
 
-        updateRegistryContractMap("eventsHub", eventsHubProxy);
+        updateRegistryContractMap("eventsHub", address(eventsHub));
 
         address validatorShareFactory = deployCode(ValidatorShareFactoryPath);
         address validatorShare = deployCode(ValidatorSharePath);
@@ -90,15 +95,15 @@ contract DeploySystem is Script, ArtifactPath {
         polygonMigration =
             PolygonMigration(deployCode(PolygonMigrationPath, abi.encode(address(maticToken), address(polToken))));
 
-        address stakingInfo = deployCode(StakingInfoPath, abi.encode(registry));
+        stakingInfo = StakingInfo(deployCode(StakingInfoPath, abi.encode(registry)));
 
         address stakingNFT = deployCode(StakingNFTPath, abi.encode("Matic Validator", "MV"));
 
-        address rootChain = deployCode(RootChainPath);
-        address rootChainProxy = deployCode(RootChainProxyPath, abi.encode(rootChain, registry, "heimdall-P5rXwg"));
+        address rootChainImpl = deployCode(RootChainPath);
+        rootChain = RootChain(deployCode(RootChainProxyPath, abi.encode(rootChainImpl, registry, "heimdall-P5rXwg")));
 
-        address stakeManagerImpl = deployCode(StakeManagerPath, abi.encode(address(0)));
-        address stakeManagerProxy = deployCode(StakeManagerProxyPath);
+        address stakeManagerImpl = deployCode(StakeManagerPath);
+        address stakeManagerProxy = deployCode(StakeManagerProxyPath, abi.encode(address(0)));
         stakeManager = StakeManager(stakeManagerProxy);
         updateRegistryContractMap("stakeManager", address(stakeManager));
         address stakeManagerExtension = deployCode(StakeManagerExtensionPath);
@@ -109,13 +114,13 @@ contract DeploySystem is Script, ArtifactPath {
                 StakeManager.initialize,
                 (
                     address(registry),
-                    rootChainProxy,
+                    address(rootChain),
                     address(maticToken),
                     stakingNFT,
-                    stakingInfo,
+                    address(stakingInfo),
                     validatorShareFactory,
                     governanceProxy,
-                    _owner,
+                    owner,
                     stakeManagerExtension,
                     address(polToken),
                     address(polygonMigration)
@@ -131,8 +136,11 @@ contract DeploySystem is Script, ArtifactPath {
 
     function setTestConfig() public {
         governanceUpdateCall(address(stakeManager), abi.encodeCall(StakeManager.updateCheckPointBlockInterval, (1)));
-        maticToken.mint(address(polygonMigration), 5 * 10 ^ 9 * 10 ^ 18);
-        polToken.mint(address(polygonMigration), 5 * 10 ^ 9 * 10 ^ 18);
+
+        uint256 defaultTokenAmount = 5 * 10 ** 9 * 10 ** 18;
+        maticToken.mint(address(polygonMigration), defaultTokenAmount);
+        polToken.mint(address(polygonMigration), defaultTokenAmount);
+        polToken.mint(address(stakeManager), defaultTokenAmount);
     }
 
     function governanceUpdateCall(address target, bytes memory callData) public {
@@ -142,7 +150,7 @@ contract DeploySystem is Script, ArtifactPath {
 
     function updateRegistryContractMap(string memory key, address value) public {
         governanceUpdateCall(
-            address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256(abi.encode(key)), value))
+            address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256(abi.encodePacked(key)), value))
         );
     }
 
@@ -157,15 +165,18 @@ contract DeploySystem is Script, ArtifactPath {
         }
 
         uint256 minDeposit = stakeManager.minDeposit();
-        uint256 customMinDeposit = 1000 * 10 ^ 18;
-        if (minDeposit < customMinDeposit) {
-            minDeposit = customMinDeposit;
+        if (minDeposit > defaultStakeVS) {
+            defaultStakeVS = minDeposit;
         }
         uint256 heimdallFee = stakeManager.minHeimdallFee();
-        if (heimdallFee + minDeposit > polToken.balanceOf(_validator.addr)) {
-            fundAddr(_validator.addr, (heimdallFee + minDeposit) - polToken.balanceOf(_validator.addr));
+        if (heimdallFee + defaultStakeVS > polToken.balanceOf(_validator.addr)) {
+            fundAddr(_validator.addr, (heimdallFee + defaultStakeVS) - polToken.balanceOf(_validator.addr));
         }
-        stakeManager.stakeForPOL(_validator.addr, minDeposit, heimdallFee, true, _validator.pubKey);
+        vm.prank(_validator.addr);
+        polToken.approve(address(stakeManager), heimdallFee + defaultStakeVS);
+
+        vm.prank(_validator.addr);
+        stakeManager.stakeForPOL(_validator.addr, defaultStakeVS, heimdallFee, true, _validator.pubKey);
     }
 
     function removeValidator(uint8 _id) public {
@@ -205,5 +216,98 @@ contract DeploySystem is Script, ArtifactPath {
 
     function fundAddrMatic(address _address, uint256 _amount) public {
         maticToken.mint(_address, _amount);
+    }
+
+    function buyVouchersPOL(uint8 _validatorId, address _from, uint256 _amount) public {
+        ValidatorShare validatorShare = ValidatorShare(stakeManager.getValidatorContract(_validatorId));
+        fundAddr(_from, _amount);
+
+        vm.prank(_from);
+        polToken.approve(address(validatorShare), _amount);
+
+        vm.prank(_from);
+        validatorShare.buyVoucher(_amount, _amount);
+    }
+
+    function buyVouchersPOLPermit(uint8 _validatorId, address _from, uint256 _pk, uint256 _amount) public {
+        // Generate permit signature for POL token
+        uint256 _deadline = block.timestamp + 10;
+        (uint8 _v, bytes32 _r, bytes32 _s) = createPermit(_from, address(stakeManager), _amount, _deadline, _pk);
+
+        ValidatorShare validatorShare = ValidatorShare(stakeManager.getValidatorContract(_validatorId));
+
+        vm.prank(_from);
+        validatorShare.buyVoucherWithPermit(_amount, _amount, _deadline, _v, _r, _s);
+    }
+
+    function createPermit(
+        address _from,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint256 _pk
+    ) public view returns (uint8, bytes32, bytes32) {
+        (uint8 _v, bytes32 _r, bytes32 _s) = vm.sign(
+            _pk,
+            keccak256(
+                abi.encodePacked(
+                    hex"1901",
+                    polToken.DOMAIN_SEPARATOR(),
+                    keccak256(
+                        abi.encode(
+                            keccak256(
+                                "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+                            ),
+                            _from,
+                            _spender,
+                            _value,
+                            polToken.nonces(_from),
+                            _deadline
+                        )
+                    )
+                )
+            )
+        );
+        return (_v, _r, _s);
+    }
+
+    function sellVouchersPol(uint8 _validatorId, address _from, uint256 _amount) public returns (uint256) {
+        ValidatorShare validatorShare = getValidatorShareContract(_validatorId);
+
+        vm.prank(_from);
+        validatorShare.sellVoucher_newPOL(_amount, 0);
+
+        return validatorShare.unbondNonces(_from);
+    }
+
+    function unstakeClaimPOL(uint8 _validatorId, address _from, uint256 _nonce) public {
+        ValidatorShare validatorShare = getValidatorShareContract(_validatorId);
+
+        vm.prank(_from);
+        validatorShare.unstakeClaimTokens_newPOL(_nonce);
+    }
+
+    function getValidatorShareContract(uint8 _validatorId) public view returns (ValidatorShare) {
+        return ValidatorShare(stakeManager.getValidatorContract(_validatorId));
+    }
+
+    function progressCheckpointWithRewards(Validator[] memory validators, address proposer) public returns (uint256) {
+        bytes32 voteHash = keccak256("voteData");
+        bytes32 stateRootHash = keccak256("stateRoot");
+        uint256[3][] memory sigs = signWithValidators(validators, voteHash);
+
+        vm.prank(address(rootChain));
+        return stakeManager.checkSignatures(1, voteHash, stateRootHash, proposer, sigs);
+    }
+
+    function signWithValidators(
+        Validator[] memory validators,
+        bytes32 data
+    ) public returns (uint256[3][] memory sigs) {
+        sigs = new uint256[3][](validators.length);
+        for (uint256 i = 0; i < validators.length; i++) {
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(validators[i].pk, data);
+            sigs[i] = [uint256(r), uint256(s), uint256(v)];
+        }
     }
 }
