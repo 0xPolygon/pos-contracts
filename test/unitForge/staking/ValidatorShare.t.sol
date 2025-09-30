@@ -14,7 +14,7 @@ contract ValidatorShareTest is Test, DeploySystem {
     uint256 defaultAmount = 1000e18;
     uint256 bobAmount = 2000e18;
     // Found in StakeManager.sol
-    uint256 constant STAKEMANAGERrEWARD_PRECISION = 10 ** 25;
+    uint256 constant STAKEMANAGERREWARD_PRECISION = 10 ** 25;
 
     function setUp() public {
         deployAll();
@@ -27,19 +27,19 @@ contract ValidatorShareTest is Test, DeploySystem {
 
     function test_lock_notStakeManager() public {
         vm.prank(alice);
-        vm.expectRevert();
+        vm.expectRevert(bytes(""));
         defaultValidator.lock();
     }
 
     function test_unlock_notStakeManager() public {
         vm.prank(alice);
-        vm.expectRevert();
+        vm.expectRevert(bytes(""));
         defaultValidator.unlock();
     }
 
     function test_updateDelegation_notStakeManager() public {
         vm.prank(alice);
-        vm.expectRevert();
+        vm.expectRevert(bytes(""));
         defaultValidator.updateDelegation(false);
     }
 
@@ -481,8 +481,8 @@ contract ValidatorShareTest is Test, DeploySystem {
         uint256 currentTotalStake = stakeManager.currentValidatorSetTotalStake();
         uint256 proposerBonus = (_reward * stakeManager.proposerBonus()) / 100;
         uint256 remainingReward = _reward - proposerBonus;
-        uint256 rewardPerStake = (remainingReward * STAKEMANAGERrEWARD_PRECISION) / currentTotalStake;
-        uint256 eligbleReward = (rewardPerStake * currentTotalStake) / STAKEMANAGERrEWARD_PRECISION;
+        uint256 rewardPerStake = (remainingReward * STAKEMANAGERREWARD_PRECISION) / currentTotalStake;
+        uint256 eligbleReward = (rewardPerStake * currentTotalStake) / STAKEMANAGERREWARD_PRECISION;
 
         uint256 validatorReward = defaultStakeVS * eligbleReward / currentTotalStake;
         // This needs to be done this way (first calc validator reward, then substract from total reward, instead of
