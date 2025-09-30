@@ -62,9 +62,7 @@ contract DeploySystem is Script, ArtifactPath {
     address owner = makeAddr("owner");
     uint256 defaultStakeVS = 1000 * 10 ** 18;
 
-    function run() public {
-        vm.startBroadcast();
-    }
+    function run() public {}
 
     function deployAll() public {
         address governanceImpl = deployCode(GovernancePath);
@@ -143,14 +141,14 @@ contract DeploySystem is Script, ArtifactPath {
         polToken.mint(address(stakeManager), defaultTokenAmount);
     }
 
-    function governanceUpdateCall(address target, bytes memory callData) public {
+    function governanceUpdateCall(address _target, bytes memory _callData) public {
         vm.prank(governance.owner());
-        governance.update(target, callData);
+        governance.update(_target, _callData);
     }
 
-    function updateRegistryContractMap(string memory key, address value) public {
+    function updateRegistryContractMap(string memory _key, address _value) public {
         governanceUpdateCall(
-            address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256(abi.encodePacked(key)), value))
+            address(registry), abi.encodeCall(Registry.updateContractMap, (keccak256(abi.encodePacked(_key)), _value))
         );
     }
 
@@ -230,11 +228,12 @@ contract DeploySystem is Script, ArtifactPath {
     }
 
     function buyVouchersPOLPermit(uint8 _validatorId, address _from, uint256 _pk, uint256 _amount) public {
+        ValidatorShare validatorShare = ValidatorShare(stakeManager.getValidatorContract(_validatorId));
+        fundAddr(_from, _amount);
+
         // Generate permit signature for POL token
         uint256 _deadline = block.timestamp + 10;
         (uint8 _v, bytes32 _r, bytes32 _s) = createPermit(_from, address(stakeManager), _amount, _deadline, _pk);
-
-        ValidatorShare validatorShare = ValidatorShare(stakeManager.getValidatorContract(_validatorId));
 
         vm.prank(_from);
         validatorShare.buyVoucherWithPermit(_amount, _amount, _deadline, _v, _r, _s);
@@ -247,7 +246,7 @@ contract DeploySystem is Script, ArtifactPath {
         uint256 _deadline,
         uint256 _pk
     ) public view returns (uint8, bytes32, bytes32) {
-        (uint8 _v, bytes32 _r, bytes32 _s) = vm.sign(
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             _pk,
             keccak256(
                 abi.encodePacked(
@@ -268,10 +267,10 @@ contract DeploySystem is Script, ArtifactPath {
                 )
             )
         );
-        return (_v, _r, _s);
+        return (v, r, s);
     }
 
-    function sellVouchersPol(uint8 _validatorId, address _from, uint256 _amount) public returns (uint256) {
+    function sellVouchersPOL(uint8 _validatorId, address _from, uint256 _amount) public returns (uint256) {
         ValidatorShare validatorShare = getValidatorShareContract(_validatorId);
 
         vm.prank(_from);
@@ -291,22 +290,25 @@ contract DeploySystem is Script, ArtifactPath {
         return ValidatorShare(stakeManager.getValidatorContract(_validatorId));
     }
 
-    function progressCheckpointWithRewards(Validator[] memory validators, address proposer) public returns (uint256) {
+    function progressCheckpointWithRewards(
+        Validator[] memory _validators,
+        address _proposer
+    ) public returns (uint256) {
         bytes32 voteHash = keccak256("voteData");
         bytes32 stateRootHash = keccak256("stateRoot");
-        uint256[3][] memory sigs = signWithValidators(validators, voteHash);
+        uint256[3][] memory sigs = signWithValidators(_validators, voteHash);
 
         vm.prank(address(rootChain));
-        return stakeManager.checkSignatures(1, voteHash, stateRootHash, proposer, sigs);
+        return stakeManager.checkSignatures(1, voteHash, stateRootHash, _proposer, sigs);
     }
 
     function signWithValidators(
-        Validator[] memory validators,
-        bytes32 data
-    ) public returns (uint256[3][] memory sigs) {
-        sigs = new uint256[3][](validators.length);
-        for (uint256 i = 0; i < validators.length; i++) {
-            (uint8 v, bytes32 r, bytes32 s) = vm.sign(validators[i].pk, data);
+        Validator[] memory _validators,
+        bytes32 _data
+    ) public pure returns (uint256[3][] memory sigs) {
+        sigs = new uint256[3][](_validators.length);
+        for (uint256 i = 0; i < _validators.length; i++) {
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(_validators[i].pk, _data);
             sigs[i] = [uint256(r), uint256(s), uint256(v)];
         }
     }
