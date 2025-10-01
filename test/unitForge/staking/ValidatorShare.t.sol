@@ -116,6 +116,11 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(defaultValidator.balanceOf(alice), defaultAmount);
     }
 
+    function test_buyVoucher_once_matic() public {
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount);
+    }
+
     function test_buyVoucher_unstaked() public {
         vm.prank(stakeManager.governance());
         stakeManager.forceUnstake(defaultValidatorId);
@@ -123,6 +128,15 @@ contract ValidatorShareTest is Test, DeploySystem {
         vm.expectRevert("locked");
         vm.prank(alice);
         defaultValidator.buyVoucherPOL(defaultAmount, defaultAmount);
+    }
+
+    function test_buyVoucher_unstaked_matic() public {
+        vm.prank(stakeManager.governance());
+        stakeManager.forceUnstake(defaultValidatorId);
+
+        vm.expectRevert("locked");
+        vm.prank(alice);
+        defaultValidator.buyVoucher(defaultAmount, defaultAmount);
     }
 
     function test_buyVoucher_delegationDisabled() public {
@@ -133,6 +147,14 @@ contract ValidatorShareTest is Test, DeploySystem {
         defaultValidator.buyVoucherPOL(defaultAmount, defaultAmount);
     }
 
+    function test_buyVoucher_delegationDisabled_matic() public {
+        vm.prank(defaultValidator.owner());
+        defaultValidator.updateDelegation(false);
+        vm.expectRevert("Delegation is disabled");
+        vm.prank(alice);
+        defaultValidator.buyVoucher(defaultAmount, defaultAmount);
+    }
+
     function test_buyVoucher_thrice_no_checkpoints() public {
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount);
@@ -141,6 +163,21 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(defaultValidator.balanceOf(alice), defaultAmount * 3);
 
         buyVoucherDefaultTested(defaultAmount * 3, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount * 6);
+
+        withdrawRewardsDefaultTested(alice, 0);
+
+        assertEq(defaultValidator.totalSupply(), defaultAmount * 6, "total supply not correct");
+    }
+
+    function test_buyVoucher_thrice_no_checkpoints_matic() public {
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount);
+
+        buyVoucherDefaultMaticTested(defaultAmount * 2, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount * 3);
+
+        buyVoucherDefaultMaticTested(defaultAmount * 3, alice);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount * 6);
 
         withdrawRewardsDefaultTested(alice, 0);
@@ -177,10 +214,14 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(defaultValidator.exchangeRate(), 1e29, "initial exchange rate not correct");
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.exchangeRate(), 1e29, "exchange rate not correct after buyVoucher");
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.exchangeRate(), 1e29, "exchange rate not correct after buyVoucherMatic");
         progressCheckpointWithRewardsDefault();
         assertEq(defaultValidator.exchangeRate(), 1e29, "exchange rate not correct after checkpoint");
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.exchangeRate(), 1e29, "exchange rate not correct after second buyVoucher");
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.exchangeRate(), 1e29, "exchange rate not correct after second buyVoucherMatic");
     }
 
     function test_exchangeRate_sell() public {
@@ -195,6 +236,13 @@ contract ValidatorShareTest is Test, DeploySystem {
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount);
         sellVoucherDefaultTested(alice, defaultAmount, false, true);
+        assertEq(defaultValidator.balanceOf(alice), 0);
+    }
+
+    function test_sellVoucher_matic() public {
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount);
+        sellVoucherDefaultMaticTested(alice, defaultAmount, false, true);
         assertEq(defaultValidator.balanceOf(alice), 0);
     }
 
@@ -219,6 +267,18 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(defaultValidator.balanceOf(alice), 0);
     }
 
+    function test_sellVoucher_partial_two_checkpoints_matic() public {
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount);
+        progressCheckpointWithRewardsDefault();
+        progressCheckpointWithRewardsDefault();
+        sellVoucherDefaultMaticTested(alice, defaultAmount / 2, true, true);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount / 2);
+        progressCheckpointWithRewardsDefault();
+        sellVoucherDefaultMaticTested(alice, defaultAmount / 2, true, true);
+        assertEq(defaultValidator.balanceOf(alice), 0);
+    }
+
     function test_sellVoucher_partial_two_checkpoints_oldApi() public {
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount);
@@ -228,6 +288,18 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(defaultValidator.balanceOf(alice), defaultAmount / 2);
         progressCheckpointWithRewardsDefault();
         sellVoucherDefaultTested(alice, defaultAmount / 2, true, false);
+        assertEq(defaultValidator.balanceOf(alice), 0);
+    }
+
+    function test_sellVoucher_partial_two_checkpoints_oldApi_matic() public {
+        buyVoucherDefaultMaticTested(defaultAmount, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount);
+        progressCheckpointWithRewardsDefault();
+        progressCheckpointWithRewardsDefault();
+        sellVoucherDefaultMaticTested(alice, defaultAmount / 2, true, false);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount / 2);
+        progressCheckpointWithRewardsDefault();
+        sellVoucherDefaultMaticTested(alice, defaultAmount / 2, true, false);
         assertEq(defaultValidator.balanceOf(alice), 0);
     }
 
@@ -395,7 +467,7 @@ contract ValidatorShareTest is Test, DeploySystem {
     // 18169200000000000000000  90% remaining rewards, this gets distributed to all stakes/delegators and the
     // proposer (addition to bonus)
     function test_buyVoucher_thrice_3_checkpoints() public {
-        // This breaks if default amount is lower
+        // This breaks if default amount is lower, that's why we use approxEq sometimes
         // console.log("first buyVoucher");
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount, "alice has non 0 dPOL balance");
@@ -416,12 +488,6 @@ contract ValidatorShareTest is Test, DeploySystem {
         //uint256 stValReward = stakeManager.validatorReward(defaultValidatorId);
         uint256 stDelReward = stakeManager.delegatorsReward(defaultValidatorId);
         assertEq(stDelReward, aliceRewards, "alice rewards not matching delegator rewards");
-
-        // assertEq(
-        //     defaultRewardPerfectCheckpoint(reward, stakeManager.currentValidatorSetTotalStake()),
-        //     stValReward + stDelReward,
-        //     "Total reward calc not correct"
-        // );
 
         // console.log("second buyVoucher");
         buyVoucherDefaultTested(defaultAmount * 2, alice);
@@ -522,15 +588,19 @@ contract ValidatorShareTest is Test, DeploySystem {
 
     // helpers
     function buyVoucherDefaultTested(uint256 _amount, address _user) public {
-        buyVoucherGenericTested(_amount, _user, 0);
+        buyVoucherDefaultGenericTested(_amount, _user, false, 0);
+    }
+
+    function buyVoucherDefaultMaticTested(uint256 _amount, address _user) public {
+        buyVoucherDefaultGenericTested(_amount, _user, true, 0);
     }
 
     function buyVoucherDefaultPermitTested(uint256 _amount, address _user, uint256 _userPk) public {
-        buyVoucherGenericTested(_amount, _user, _userPk);
+        buyVoucherDefaultGenericTested(_amount, _user, false, _userPk);
     }
 
     // if userPk is 0, then no permit is used and it uses regular approve
-    function buyVoucherGenericTested(uint256 _amount, address _user, uint256 _userPk) public {
+    function buyVoucherDefaultGenericTested(uint256 _amount, address _user, bool matic, uint256 _userPk) public {
         uint256 currentStakeManagerStake = stakeManager.currentValidatorSetTotalStake();
         uint256 currentUserShares = defaultValidator.balanceOf(_user);
         uint256 currentActiveAmount = defaultValidator.activeAmount();
@@ -538,11 +608,16 @@ contract ValidatorShareTest is Test, DeploySystem {
 
         // Ensure allowance is zero
         assertEq(polToken.allowance(_user, address(stakeManager)), 0, "initial user allowance not zero");
-        fundAddr(_user, _amount);
+        assertEq(maticToken.allowance(_user, address(stakeManager)), 0, "initial user allowance not zero");
+        fundAddr(_user, _amount, matic);
 
         if (_userPk == 0) {
             vm.prank(_user);
-            polToken.approve(address(stakeManager), _amount);
+            if (matic) {
+                maticToken.approve(address(stakeManager), _amount);
+            } else {
+                polToken.approve(address(stakeManager), _amount);
+            }
         }
 
         // Test buying vouchers
@@ -557,7 +632,11 @@ contract ValidatorShareTest is Test, DeploySystem {
 
         if (_userPk == 0) {
             vm.prank(_user);
-            defaultValidator.buyVoucherPOL(_amount, _amount);
+            if (matic) {
+                defaultValidator.buyVoucher(_amount, _amount);
+            } else {
+                defaultValidator.buyVoucherPOL(_amount, _amount);
+            }
         } else {
             uint256 deadline = block.timestamp + 10;
             (uint8 v, bytes32 r, bytes32 s) = createPermit(_user, address(stakeManager), _amount, deadline, _userPk);
@@ -575,13 +654,30 @@ contract ValidatorShareTest is Test, DeploySystem {
         );
     }
 
-    function sellVoucherDefaultTested(address _user, uint256 _amount, bool _expectReward, bool _newAPI) public {
+    function sellVoucherDefaultTested(address _user, uint256 _amount, bool _expectReward, bool _newApi) public {
+        sellVoucherDefaultGenericTested(_user, _amount, _expectReward, false, _newApi);
+    }
+
+    function sellVoucherDefaultMaticTested(address _user, uint256 _amount, bool _expectReward, bool _newApi) public {
+        sellVoucherDefaultGenericTested(_user, _amount, _expectReward, true, _newApi);
+    }
+
+    function sellVoucherDefaultGenericTested(
+        address _user,
+        uint256 _amount,
+        bool _expectReward,
+        bool _matic,
+        bool _newAPI
+    ) public {
         uint256 currentStakeManagerStake = stakeManager.currentValidatorSetTotalStake();
         uint256 currentUserShares = defaultValidator.balanceOf(_user);
         uint256 polBalanceBefore = polToken.balanceOf(_user);
+        uint256 maticBalanceBefore = maticToken.balanceOf(_user);
         uint256 rewards = defaultValidator.getLiquidRewards(_user);
         uint256 userNonce = defaultValidator.unbondNonces(_user) + 1;
         uint256 validatorNonce = stakingInfo.validatorNonce(defaultValidatorId);
+
+        address transferedToken = _matic ? address(maticToken) : address(polToken);
 
         bool fullyUnstaked = true;
         uint256 expectedStakeUpdate = 0;
@@ -594,7 +690,7 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(rewards > 0, _expectReward, "user reward expectation not met");
         // Test selling vouchers
         if (rewards > 0) {
-            vm.expectEmit(true, true, true, true, address(polToken));
+            vm.expectEmit(true, true, true, true, transferedToken);
             emit ERC20Permit.Transfer(address(stakeManager), _user, rewards);
 
             vm.expectEmit(true, true, false, true, address(stakingInfo));
@@ -615,11 +711,14 @@ contract ValidatorShareTest is Test, DeploySystem {
         vm.expectEmit(true, true, false, true, address(stakingInfo));
         emit StakingInfo.StakeUpdate(defaultValidatorId, validatorNonce + 1, expectedStakeUpdate);
 
-        if (_newAPI) {
-            vm.prank(_user);
+        vm.prank(_user);
+        if (_newAPI && _matic) {
+            defaultValidator.sellVoucher_new(_amount, _amount);
+        } else if (_newAPI && !_matic) {
             defaultValidator.sellVoucher_newPOL(_amount, _amount);
+        } else if (!_newAPI && _matic) {
+            defaultValidator.sellVoucher(_amount, _amount);
         } else {
-            vm.prank(_user);
             defaultValidator.sellVoucherPOL(_amount, _amount);
         }
 
@@ -645,22 +744,41 @@ contract ValidatorShareTest is Test, DeploySystem {
         vm.prank(address(governance));
         stakeManager.setCurrentEpoch(withdrawEpoch);
 
-        vm.expectEmit(true, true, true, true, address(polToken));
+        vm.expectEmit(true, true, true, true, transferedToken);
         emit ERC20Permit.Transfer(address(stakeManager), _user, _amount);
 
         if (_newAPI) {
             vm.expectEmit(true, true, true, true, address(eventsHub));
             emit EventsHub.DelegatorUnstakeWithId(defaultValidatorId, _user, _amount, userNonce);
             vm.prank(_user);
-            defaultValidator.unstakeClaimTokens_newPOL(userNonce);
+            if (_matic) {
+                defaultValidator.unstakeClaimTokens_new(userNonce);
+            } else {
+                defaultValidator.unstakeClaimTokens_newPOL(userNonce);
+            }
         } else {
             vm.expectEmit(true, true, true, true, address(stakingInfo));
             emit StakingInfo.DelegatorUnstaked(defaultValidatorId, _user, _amount);
             vm.prank(_user);
-            defaultValidator.unstakeClaimTokensPOL();
+            if (_matic) {
+                defaultValidator.unstakeClaimTokens();
+            } else {
+                defaultValidator.unstakeClaimTokensPOL();
+            }
         }
-
-        assertEq(polToken.balanceOf(_user), polBalanceBefore + _amount + rewards, "user didn't get correct POL back");
+        if (_matic) {
+            assertEq(
+                maticToken.balanceOf(_user),
+                maticBalanceBefore + _amount + rewards,
+                "user didn't get correct MATIC back"
+            );
+            //assertEq(polToken.balanceOf(_user), maticBalanceBefore, "user unexpectedly got POL");
+        } else {
+            assertEq(
+                polToken.balanceOf(_user), polBalanceBefore + _amount + rewards, "user didn't get correct POL back"
+            );
+            //assertEq(maticToken.balanceOf(_user), maticBalanceBefore, "user unexpectedly got matic");
+        }
     }
 
     function withdrawRewardsDefaultTested(address _user, uint256 _expectReward) public {
