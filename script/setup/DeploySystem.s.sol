@@ -212,6 +212,14 @@ contract DeploySystem is Script, ArtifactPath {
         polToken.mint(_address, _amount);
     }
 
+    function fundAddr(address _address, uint256 _amount, bool matic) public {
+        if (matic) {
+            maticToken.mint(_address, _amount);
+        } else {
+            polToken.mint(_address, _amount);
+        }
+    }
+
     function fundAddrMatic(address _address, uint256 _amount) public {
         maticToken.mint(_address, _amount);
     }
