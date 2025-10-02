@@ -3,7 +3,6 @@ pragma solidity ^0.5.2;
 import {Governable} from "./governance/Governable.sol";
 import {IWithdrawManager} from "../root/withdrawManager/IWithdrawManager.sol";
 
-
 contract Registry is Governable {
     // @todo hardcode constants
     bytes32 private constant WETH_TOKEN = keccak256("wethToken");
@@ -24,10 +23,17 @@ contract Registry is Governable {
     mapping(address => bool) public proofValidatorContracts;
     mapping(address => bool) public isERC721;
 
-    enum Type {Invalid, ERC20, ERC721, Custom}
+    enum Type {
+        Invalid,
+        ERC20,
+        ERC721,
+        Custom
+    }
+
     struct Predicate {
         Type _type;
     }
+
     mapping(address => Predicate) public predicates;
 
     event TokenMapped(address indexed rootToken, address indexed childToken);
@@ -50,11 +56,7 @@ contract Registry is Governable {
      * @param _childToken Token address on the child chain
      * @param _isERC721 Is the token being mapped ERC721
      */
-    function mapToken(
-        address _rootToken,
-        address _childToken,
-        bool _isERC721
-    ) external onlyGovernance {
+    function mapToken(address _rootToken, address _childToken, bool _isERC721) external onlyGovernance {
         require(_rootToken != address(0x0) && _childToken != address(0x0), "INVALID_TOKEN_ADDRESS");
         rootToChildToken[_rootToken] = _childToken;
         childToRootToken[_childToken] = _rootToken;

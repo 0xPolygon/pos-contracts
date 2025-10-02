@@ -10,7 +10,7 @@ contract PauserRole {
 
     Roles.Role private _pausers;
 
-    constructor () internal {
+    constructor() internal {
         _addPauser(msg.sender);
     }
 

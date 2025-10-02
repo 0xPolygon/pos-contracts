@@ -35,9 +35,10 @@ max_test_rejects = 999999
 [fmt]
 line_length = 120
 number_underscore = "thousands"
-multiline_func_header = "all"
+multiline_func_header = "params_first_multi"
 wrap_comments = true
-ignore = []
+single_line_statement_blocks = "preserve"
+ignore = ["contracts/staking/StakingInfo.sol", "contracts/common/mixin/ChainIdMixin.sol"]
 
 [rpc_endpoints]
 anvil = "http://127.0.0.1:8545"

@@ -1,29 +1,13 @@
 pragma solidity 0.5.17;
 
 contract IStakeManager {
-    function transferFunds(
-        uint256 validatorId,
-        uint256 amount,
-        address delegator
-    ) external returns (bool);
+    function transferFunds(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
 
-    function transferFundsPOL(
-        uint256 validatorId, 
-        uint256 amount, 
-        address delegator
-    ) external returns (bool);
+    function transferFundsPOL(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
 
-    function delegationDeposit(
-        uint256 validatorId,
-        uint256 amount,
-        address delegator
-    ) external returns (bool);
+    function delegationDeposit(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
 
-    function delegationDepositPOL(
-        uint256 validatorId, 
-        uint256 amount, 
-        address delegator
-    ) external returns (bool);
+    function delegationDepositPOL(uint256 validatorId, uint256 amount, address delegator) external returns (bool);
 
     function unstake(uint256 validatorId) external;
 
@@ -52,7 +36,7 @@ contract IStakeManager {
         bytes32 voteHash,
         bytes32 stateRoot,
         address proposer,
-        uint[3][] calldata sigs
+        uint256[3][] calldata sigs
     ) external returns (uint256);
 
     function updateValidatorState(uint256 validatorId, int256 amount) public;
@@ -67,11 +51,11 @@ contract IStakeManager {
 
     function withdrawalDelay() public view returns (uint256);
 
-    function delegatedAmount(uint256 validatorId) public view returns(uint256);
+    function delegatedAmount(uint256 validatorId) public view returns (uint256);
 
     function decreaseValidatorDelegatedAmount(uint256 validatorId, uint256 amount) public;
 
-    function withdrawDelegatorsReward(uint256 validatorId) public returns(uint256);
+    function withdrawDelegatorsReward(uint256 validatorId) public returns (uint256);
 
-    function delegatorsReward(uint256 validatorId) public view returns(uint256);
+    function delegatorsReward(uint256 validatorId) public view returns (uint256);
 }

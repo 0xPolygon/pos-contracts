@@ -14,7 +14,7 @@ contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManag
 
     constructor() public GovernanceLockable(address(0x0)) {}
 
-    function migrateValidatorsData(uint256 validatorIdFrom, uint256 validatorIdTo) external {       
+    function migrateValidatorsData(uint256 validatorIdFrom, uint256 validatorIdTo) external {
         for (uint256 i = validatorIdFrom; i < validatorIdTo; ++i) {
             ValidatorShare contractAddress = ValidatorShare(validators[i].contractAddress);
             if (contractAddress != ValidatorShare(0)) {
@@ -42,7 +42,9 @@ contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManag
         maxRewardedCheckpoints = _maxRewardedCheckpoints;
         checkpointRewardDelta = _checkpointRewardDelta;
 
-        _getOrCacheEventsHub().logRewardParams(_rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta);
+        _getOrCacheEventsHub().logRewardParams(
+            _rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta
+        );
     }
 
     function updateCommissionRate(uint256 validatorId, uint256 newCommissionRate) external {
@@ -50,17 +52,20 @@ contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManag
         uint256 _lastCommissionUpdate = validators[validatorId].lastCommissionUpdate;
 
         require( // withdrawalDelay == dynasty
-            (_lastCommissionUpdate.add(WITHDRAWAL_DELAY) <= _epoch) || _lastCommissionUpdate == 0, // For initial setting of commission rate
+            (_lastCommissionUpdate.add(WITHDRAWAL_DELAY) <= _epoch) || _lastCommissionUpdate == 0, // For initial
+                // setting of commission rate
             "Cooldown"
         );
 
         require(newCommissionRate <= MAX_COMMISION_RATE, "Incorrect value");
-        _getOrCacheEventsHub().logUpdateCommissionRate(validatorId, newCommissionRate, validators[validatorId].commissionRate);
+        _getOrCacheEventsHub().logUpdateCommissionRate(
+            validatorId, newCommissionRate, validators[validatorId].commissionRate
+        );
         validators[validatorId].commissionRate = newCommissionRate;
         validators[validatorId].lastCommissionUpdate = _epoch;
     }
 
-    function _getOrCacheEventsHub() private returns(EventsHub) {
+    function _getOrCacheEventsHub() private returns (EventsHub) {
         EventsHub _eventsHub = EventsHub(eventsHub);
         if (_eventsHub == EventsHub(0x0)) {
             _eventsHub = EventsHub(Registry(registry).contractMap(keccak256("eventsHub")));
