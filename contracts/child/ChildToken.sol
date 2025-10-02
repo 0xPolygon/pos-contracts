@@ -1,9 +1,9 @@
 pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import {SafeMath} from "../common/oz/math/SafeMath.sol";
+import {Ownable} from "../common/oz/ownership/Ownable.sol";
 
-import "./misc/LibTokenTransferOrder.sol";
+import {LibTokenTransferOrder} from "./misc/LibTokenTransferOrder.sol";
 
 contract ChildToken is Ownable, LibTokenTransferOrder {
     using SafeMath for uint256;

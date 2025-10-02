@@ -1,8 +1,7 @@
 pragma solidity 0.5.17;
 
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
 
-import {Registry} from "../../common/Registry.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {RootChainable} from "../../common/mixin/RootChainable.sol";
 import {StakingInfo} from "../StakingInfo.sol";
@@ -46,9 +45,9 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
         uint256 initialRewardPerStake;
     }
 
-    uint256 constant MAX_COMMISION_RATE = 100;
-    uint256 constant MAX_PROPOSER_BONUS = 100;
-    uint256 constant REWARD_PRECISION = 10**25;
+    uint256 internal constant MAX_COMMISION_RATE = 100;
+    uint256 internal constant MAX_PROPOSER_BONUS = 100;
+    uint256 internal constant REWARD_PRECISION = 10**25;
     uint256 internal constant INCORRECT_VALIDATOR_ID = 2**256 - 1;
     uint256 internal constant INITIALIZED_AMOUNT = 1;
 
@@ -73,11 +72,11 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
     uint256 public NFTCounter;
     uint256 public totalRewards;
     uint256 public totalRewardsLiquidated;
-    uint256 public auctionPeriod; // 1 week in epochs
+    uint256 public auctionPeriod; // 1 week in epochs // deprecated
     uint256 public proposerBonus; // 10 % of total rewards
     bytes32 public accountStateRoot;
     // Stop validator auction for some time when updating dynasty value
-    uint256 public replacementCoolDown;
+    uint256 public replacementCoolDown; // deprecated
     bool public delegationEnabled;
 
     mapping(uint256 => Validator) public validators;
@@ -88,7 +87,7 @@ contract StakeManagerStorage is GovernanceLockable, RootChainable {
 
     mapping(address => uint256) public userFeeExit;
     //Ongoing auctions for validatorId
-    mapping(uint256 => Auction) public validatorAuction;
+    mapping(uint256 => Auction) public validatorAuction; // deprecated
     // validatorId to last signer update epoch
     mapping(uint256 => uint256) public latestSignerUpdateEpoch;
 

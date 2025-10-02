@@ -1,8 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import {ERC721} from "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
-import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
+import {Math} from "../../common/oz/math/Math.sol";
 
 import {Merkle} from "../../common/lib/Merkle.sol";
 import {MerklePatriciaProof} from "../../common/lib/MerklePatriciaProof.sol";
@@ -13,7 +11,6 @@ import {ExitNFT} from "./ExitNFT.sol";
 import {DepositManager} from "../depositManager/DepositManager.sol";
 import {IPredicate} from "../predicates/IPredicate.sol";
 import {IWithdrawManager} from "./IWithdrawManager.sol";
-import {RootChainHeader} from "../RootChainStorage.sol";
 import {Registry} from "../../common/Registry.sol";
 import {WithdrawManagerStorage} from "./WithdrawManagerStorage.sol";
 

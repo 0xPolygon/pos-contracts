@@ -24,13 +24,10 @@ class Deployer {
     this.eventsHub = await this.deployEventsHub(this.registry.address)
     this.validatorShareFactory = await contractFactories.ValidatorShareFactory.deploy()
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'ST')
-   
+    this.polToken = await contractFactories.ERC20Permit.deploy('POL', 'POL', '1.1.0')
+    this.migration = await contractFactories.PolygonMigration.deploy(this.stakeToken.address, this.polToken.address)
+
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
-    this.slashingManager = await contractFactories.SlashingManager.deploy(
-      this.registry.address,
-      this.stakingInfo.address,
-      'heimdall-P5rXwg'
-    )
     this.rootChain = await this.deployRootChain()
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
@@ -48,7 +45,9 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         owner,
-        auctionImpl.address
+        auctionImpl.address,
+        this.polToken.address,
+        this.migration.address
       ])
     )
 
@@ -68,7 +67,6 @@ class Deployer {
     const withdrawManager = await this.deployWithdrawManager()
 
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
-    await this.updateContractMap(ethUtils.keccak256('slashingManager'), this.slashingManager.address)
     let _contracts = {
       registry: this.registry,
       rootChain: this.rootChain,
@@ -84,7 +82,7 @@ class Deployer {
     return _contracts
   }
 
-  async deployStakeManager(wallets, pol = false) {
+  async deployStakeManager(wallets) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
 
@@ -94,6 +92,8 @@ class Deployer {
     this.rootChain = await this.deployRootChain()
     this.stakingInfo = await contractFactories.StakingInfo.deploy(this.registry.address)
     this.stakeToken = await contractFactories.TestToken.deploy('Stake Token', 'STAKE')
+    this.polToken = await contractFactories.ERC20Permit.deploy('POL', 'POL', '1.1.0')
+    this.migration = await contractFactories.PolygonMigration.deploy(this.stakeToken.address, this.polToken.address)
 
     this.stakingNFT = await contractFactories.StakingNFT.deploy('Matic Validator', 'MV')
 
@@ -112,39 +112,24 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         wallets[0].getAddressString(),
-        auctionImpl.address
+        auctionImpl.address,
+        this.polToken.address,
+        this.migration.address,
       ])
     )
 
     this.stakeManager = contractFactories.StakeManagerTestable.attach(proxy.address)
-    this.slashingManager = await contractFactories.SlashingManager.deploy(
-      this.registry.address,
-      this.stakingInfo.address,
-      'heimdall-P5rXwg'
-    )
 
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('validatorShare'), this.validatorShare.address)
-    await this.updateContractMap(ethUtils.keccak256('slashingManager'), this.slashingManager.address)
+    await this.updateContractMap(ethUtils.keccak256('pol'), this.polToken.address)
 
     await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
+    await this.polToken.mint(this.stakeManager.address, web3.utils.toWei('10000000'))
 
-    if (pol){
-      this.polToken = await contractFactories.ERC20Permit.deploy('POL', 'POL', '1.1.0')
-  
-      this.migration = await contractFactories.PolygonMigration.deploy(this.stakeToken.address, this.polToken.address)
-  
-      await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-      await this.polToken.mint(this.migration.address, web3.utils.toWei('50000000'))
-  
-      await this.governance.update(
-          this.stakeManager.address,
-          this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
-        )
-      
-      await this.updateContractMap(ethUtils.keccak256('pol'), this.polToken.address)
-    } 
+    await this.stakeToken.mint(this.migration.address, web3.utils.toWei('50000000'))
+    await this.polToken.mint(this.migration.address, web3.utils.toWei('50000000'))
     
     let _contracts = {
       rootChainOwner: rootChainOwner,
@@ -153,7 +138,6 @@ class Deployer {
       stakeManager: this.stakeManager,
       stakeToken: this.stakeToken,
       polToken: this.polToken,
-      slashingManager: this.slashingManager,
       stakingInfo: this.stakingInfo,
       governance: this.governance,
       stakingNFT: this.stakingNFT,

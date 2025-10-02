@@ -1,17 +1,12 @@
 pragma solidity ^0.5.2;
 
-import {RLPReader} from "../../common/lib/RLPReader.sol";
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {SafeMath} from "../../common/oz/math/SafeMath.sol";
 
 import {BytesLib} from "../../common/lib/BytesLib.sol";
-import {Common} from "../../common/lib/Common.sol";
-import {RLPEncode} from "../../common/lib/RLPEncode.sol";
 import {ExitPayloadReader} from "../../common/lib/ExitPayloadReader.sol";
 import {IErcPredicate} from "./IPredicate.sol";
 
 contract ERC721PredicateBurnOnly is IErcPredicate {
-    using RLPReader for bytes;
-    using RLPReader for RLPReader.RLPItem;
     using SafeMath for uint256;
 
     using ExitPayloadReader for bytes;
@@ -21,7 +16,7 @@ contract ERC721PredicateBurnOnly is IErcPredicate {
     using ExitPayloadReader for ExitPayloadReader.LogTopics;
 
     // keccak256('Withdraw(address,address,uint256)')
-    bytes32 constant WITHDRAW_EVENT_SIG = 0x9b1bfa7fa9ee420a16e124f794c35ac9f90472acc99140eb2f6447c714cad8eb;
+    bytes32 internal constant WITHDRAW_EVENT_SIG = 0x9b1bfa7fa9ee420a16e124f794c35ac9f90472acc99140eb2f6447c714cad8eb;
 
     constructor(address _withdrawManager, address _depositManager)
         public

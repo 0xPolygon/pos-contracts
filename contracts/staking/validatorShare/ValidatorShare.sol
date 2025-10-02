@@ -2,7 +2,6 @@ pragma solidity 0.5.17;
 
 import {Registry} from "../../common/Registry.sol";
 import {ERC20NonTradable} from "../../common/tokens/ERC20NonTradable.sol";
-import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import {StakingInfo} from "./../StakingInfo.sol";
 import {EventsHub} from "./../EventsHub.sol";
 import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
@@ -26,12 +25,12 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     StakingInfo public stakingLogger;
     IStakeManager public stakeManager;
     uint256 public validatorId;
-    uint256 public validatorRewards_deprecated;
-    uint256 public commissionRate_deprecated;
-    uint256 public lastCommissionUpdate_deprecated;
+    uint256 public validatorRewards_deprecated; // Now in StakeManager
+    uint256 public commissionRate_deprecated; // Now in StakeManager
+    uint256 private lastCommissionUpdate_deprecated; // Now in StakeManager
     uint256 public minAmount;
 
-    uint256 public totalStake_deprecated;
+    uint256 private totalStake_deprecated; // Now in StakeManager
     uint256 public rewardPerShare;
     uint256 public activeAmount;
 
@@ -66,6 +65,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         stakeManager = IStakeManager(_stakeManager);
         _transferOwnership(_stakeManager);
         _getOrCacheEventsHub();
+        _getOrCachePOLToken();
 
         minAmount = 10**18;
         delegation = true;
@@ -262,24 +262,8 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         stakingLogger.logDelegatorUnstaked(validatorId, msg.sender, amount);
     }
 
-    function slash(
-        uint256 validatorStake,
-        uint256 delegatedAmount,
-        uint256 totalAmountToSlash
-    ) external onlyOwner returns (uint256) {
-        revert("Slashing disabled");
-    }
-
     function updateDelegation(bool _delegation) external onlyOwner {
         delegation = _delegation;
-    }
-
-    function drain(
-        address token,
-        address payable destination,
-        uint256 amount
-    ) external onlyOwner {
-        revert("No draining.");
     }
 
     /**

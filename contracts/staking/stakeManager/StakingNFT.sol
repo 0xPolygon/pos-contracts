@@ -1,7 +1,7 @@
 pragma solidity ^0.5.2;
 
-import "openzeppelin-solidity/contracts/token/ERC721/ERC721Full.sol";
-import {Ownable} from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import {ERC721Full} from "../../common/oz/token/ERC721/ERC721Full.sol";
+import {Ownable} from "../../common/oz//ownership/Ownable.sol";
 
 
 contract StakingNFT is ERC721Full, Ownable {

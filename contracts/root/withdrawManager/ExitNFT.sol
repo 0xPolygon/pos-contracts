@@ -1,6 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {ERC721} from "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
+import {ERC721} from "../../common/oz/token/ERC721/ERC721.sol";
 import {Registry} from "../../common/Registry.sol";
 
 contract ExitNFT is ERC721 {

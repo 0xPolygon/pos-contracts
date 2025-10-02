@@ -1,12 +1,11 @@
 pragma solidity ^0.5.2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {SafeMath} from "../common/oz/math/SafeMath.sol";
 
-import {RootChainHeader, RootChainStorage} from "./RootChainStorage.sol";
+import {RootChainStorage} from "./RootChainStorage.sol";
 
 import {IStakeManager} from "../staking/stakeManager/IStakeManager.sol";
 import {IRootChain} from "./IRootChain.sol";
-import {Registry} from "../common/Registry.sol";
 
 
 contract RootChain is RootChainStorage, IRootChain {
@@ -63,10 +62,6 @@ contract RootChain is RootChainStorage, IRootChain {
 
     function getLastChildBlock() external view returns (uint256) {
         return headerBlocks[currentHeaderBlock()].end;
-    }
-
-    function slash() external {
-        //TODO: future implementation
     }
 
     function currentHeaderBlock() public view returns (uint256) {

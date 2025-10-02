@@ -1,7 +1,7 @@
 pragma solidity 0.5.17;
 
 import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
 
 contract StakeManagerStorageExtension {
     address public eventsHub;
@@ -9,7 +9,7 @@ contract StakeManagerStorageExtension {
     address public extensionCode;
     address[] public signers;
 
-    uint256 constant CHK_REWARD_PRECISION = 100;
+    uint256 internal constant CHK_REWARD_PRECISION = 100;
     uint256 public prevBlockInterval;
     // how much less reward per skipped checkpoint, 0 - 100%
     uint256 public rewardDecreasePerCheckpoint;
