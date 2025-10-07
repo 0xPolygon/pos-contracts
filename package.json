@@ -13,6 +13,7 @@
     "test:hardhat": "npx hardhat test",
     "generate:interfaces": "scripts/helpers/generateInterfaces.sh",
     "test:foundry": "forge test",
+    "test:foundry:new": "forge test --match-contract ValidatorShare",
     "test:ci": "scripts/run-test.sh",
     "testrpc": "ganache --chain.hardfork istanbul --wallet.mnemonic 'clock radar mass judge dismiss just intact mind resemble fringe diary casino' -p 8545 --gasLimit 10000000 --gasPrice 0 --chain.allowUnlimitedContractSize --accounts 200",
     "template:process": "node scripts/process-templates.cjs",

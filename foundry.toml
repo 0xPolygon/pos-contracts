@@ -32,7 +32,7 @@ include_push_bytes = true
 runs = 10000
 max_test_rejects = 999999
 
-[lint]
+[profile.lint]
 lint_on_build = false
 
 [fmt]
