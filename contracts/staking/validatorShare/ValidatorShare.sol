@@ -1,7 +1,7 @@
 pragma solidity 0.5.17;
 
 import {Registry} from "../../common/Registry.sol";
-import {ERC20NonTradable} from "../../common/tokens/ERC20NonTradable.sol";
+import {ERC20Permit} from "../../common/tokens/ERC20Permit.sol";
 import {StakingInfo} from "./../StakingInfo.sol";
 import {EventsHub} from "./../EventsHub.sol";
 import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
@@ -10,7 +10,7 @@ import {IValidatorShare} from "./IValidatorShare.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {IERC20Permit} from "./../../common/misc/IERC20Permit.sol";
 
-contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, Initializable {
+contract ValidatorShare is IValidatorShare, ERC20Permit, OwnableLockable, Initializable {
     struct DelegatorUnbond {
         uint256 shares;
         uint256 withdrawEpoch;
@@ -66,6 +66,17 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
 
         minAmount = 10 ** 18;
         delegation = true;
+
+        _cacheDomainSeparatorV4();
+    }
+
+    // ERC20 functions, dynamic
+    function name() public view returns (string memory) {
+        return string(abi.encodePacked("Delegated POL #", _toHexString(validatorId)));
+    }
+
+    function symbol() public view returns (string memory) {
+        return string(abi.encodePacked("dPOL", _toHexString(validatorId)));
     }
 
     /**

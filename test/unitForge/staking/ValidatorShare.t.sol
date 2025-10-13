@@ -50,6 +50,14 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertFalse(defaultValidator.delegation());
     }
 
+    function test_name() public view {
+        assertEq(defaultValidator.name(), "Delegated POL #8");
+    }
+
+    function test_symbol() public view {
+        assertEq(defaultValidator.symbol(), "dPOL8");
+    }
+
     function test_buyVoucherWithPermit() public {
         buyVoucherDefaultPermitTested(defaultAmount, alice, alicePk);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount);
