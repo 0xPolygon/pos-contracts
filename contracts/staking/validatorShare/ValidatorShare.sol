@@ -1,7 +1,7 @@
 pragma solidity 0.5.17;
 
 import {Registry} from "../../common/Registry.sol";
-import {ERC20Permit} from "../../common/tokens/ERC20Permit.sol";
+import {ERC20ValidatorShare} from "../../common/tokens/ERC20ValidatorShare.sol";
 import {StakingInfo} from "./../StakingInfo.sol";
 import {EventsHub} from "./../EventsHub.sol";
 import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
@@ -10,7 +10,7 @@ import {IValidatorShare} from "./IValidatorShare.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {IERC20Permit} from "./../../common/misc/IERC20Permit.sol";
 
-contract ValidatorShare is IValidatorShare, ERC20Permit, OwnableLockable, Initializable {
+contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable, Initializable {
     struct DelegatorUnbond {
         uint256 shares;
         uint256 withdrawEpoch;
@@ -122,6 +122,48 @@ contract ValidatorShare is IValidatorShare, ERC20Permit, OwnableLockable, Initia
     /**
      * Public Methods
      */
+
+    // @todo talk this through with Max
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+        // Sender gets their rewards paid out
+        _withdrawAndTransferReward(from, true);
+
+        // recipient already has POL staked with this validator? restake their rewards
+        if (balanceOf(to) > 0) {
+            // restake rewards to reset initialRewardPerShare value
+            _restake(to, true);
+        } else {
+            // If recipient is new, set their baseline to current to prevent claiming historical rewards
+            // Do this after sender's withdrawal to use the updated rewardPerShare
+            initalRewardPerShare[to] = rewardPerShare;
+        }
+
+        // Call parent's transferFrom which checks allowance and transfers shares
+        bool success = super.transferFrom(from, to, value);
+
+        // Log the transfer event
+        _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
+
+        return success;
+    }
+
+    // @todo just a first rough draft, talk this through with Max
+    function stakeAndRestakePOL(uint256 _amount, uint256 _minSharesToMint) public {
+        // @todo cannot use this as it includes withdrawing rewards, need to go deeper, same with next function
+        _buyVoucher(_amount, _minSharesToMint, true);
+
+        // restake if there are rewards
+        uint256 liquidReward = _calcAndResetReward(msg.sender);
+        if (liquidReward >= minAmount) {
+            _restake(msg.sender, true);
+        }
+    }
+
+    function restakeAndStakePOL(uint256 _amount, uint256 _minSharesToMint) public {
+        _restake(msg.sender, true);
+        _buyVoucher(_amount, _minSharesToMint, true);
+    }
+
     function buyVoucher(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, false);
     }
@@ -166,16 +208,15 @@ contract ValidatorShare is IValidatorShare, ERC20Permit, OwnableLockable, Initia
     }
 
     function restake() public returns (uint256, uint256) {
-        return _restake(false);
+        return _restake(msg.sender, false);
     }
 
     function restakePOL() public returns (uint256, uint256) {
-        return _restake(true);
+        return _restake(msg.sender, true);
     }
 
-    function _restake(bool pol) public returns (uint256, uint256) {
-        address user = msg.sender;
-        uint256 liquidReward = _withdrawReward(user);
+    function _restake(address user, bool pol) private returns (uint256, uint256) {
+        uint256 liquidReward = _calcAndResetReward(user);
         uint256 amountRestaked;
 
         require(liquidReward >= minAmount, "Too small rewards to restake");
@@ -424,7 +465,7 @@ contract ValidatorShare is IValidatorShare, ERC20Permit, OwnableLockable, Initia
         return _rewardPerShare.sub(_initialRewardPerShare).mul(shares).div(REWARD_PRECISION);
     }
 
-    function _withdrawReward(address user) private returns (uint256) {
+    function _calcAndResetReward(address user) private returns (uint256) {
         uint256 _rewardPerShare =
             _calculateRewardPerShareWithRewards(stakeManager.withdrawDelegatorsReward(validatorId));
         uint256 liquidRewards = _calculateReward(user, _rewardPerShare);
@@ -435,7 +476,7 @@ contract ValidatorShare is IValidatorShare, ERC20Permit, OwnableLockable, Initia
     }
 
     function _withdrawAndTransferReward(address user, bool pol) private returns (uint256) {
-        uint256 liquidRewards = _withdrawReward(user);
+        uint256 liquidRewards = _calcAndResetReward(user);
         if (liquidRewards != 0) {
             require(
                 pol
