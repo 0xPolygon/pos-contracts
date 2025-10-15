@@ -2,7 +2,7 @@
 pragma solidity 0.5.17;
 
 import {ECVerify} from "../lib/ECVerify.sol";
-import {ERC20Mintable} from "../oz/token/ERC20/ERC20Mintable.sol";
+import {ERC20} from "../oz/token/ERC20/ERC20.sol";
 import {IERC20Permit} from "./../misc/IERC20Permit.sol";
 
 // only meant for testing, adapted from:
@@ -12,7 +12,7 @@ import {IERC20Permit} from "./../misc/IERC20Permit.sol";
 // - replaced custom errors with strings
 // - compress v,r,s for ECDSA.recover (redundant work, only meant for testing)
 
-contract ERC20Permit is ERC20Mintable, IERC20Permit {
+contract ERC20Permit is ERC20, IERC20Permit {
     // @todo put all of these into a slot to avoid storage collision
     mapping(address => uint256) private _nonces;
 
@@ -20,7 +20,7 @@ contract ERC20Permit is ERC20Mintable, IERC20Permit {
         keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
-    
+
     // EIP712
     /* solhint-disable var-name-mixedcase */
     // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
