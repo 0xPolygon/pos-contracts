@@ -468,6 +468,129 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(maticToken.balanceOf(bob), 0, "Bob must have unchanged matic balance");
     }
 
+    function test_transferFrom_norewards() public {
+        address charlie = makeAddr("charlie");
+        buyVoucherDefaultTested(defaultAmount, alice);
+        assertEq(defaultValidator.balanceOf(alice), defaultAmount);
+        assertEq(defaultValidator.balanceOf(charlie), 0);
+        
+        // Alice approves charlie to transfer her tokens
+        vm.prank(alice);
+        defaultValidator.approve(charlie, defaultAmount);
+        
+        // Charlie transfers from alice to bob
+        vm.prank(charlie);
+        defaultValidator.transferFrom(alice, bob, defaultAmount);
+        
+        assertEq(defaultValidator.balanceOf(alice), 0);
+        assertEq(defaultValidator.balanceOf(bob), defaultAmount);
+        assertEq(polToken.balanceOf(alice), 0);
+        assertEq(polToken.balanceOf(bob), 0);
+    }
+
+    function test_transferFrom_withrewards_existingRecipient() public {
+        address charlie = makeAddr("charlie");
+        buyVoucherDefaultTested(defaultAmount, alice);
+        buyVoucherDefaultTested(bobAmount, bob);
+        
+        uint256 reward = progressCheckpointWithRewardsDefault();
+        
+        uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
+        uint256 bobRewardsBefore = defaultValidator.getLiquidRewards(bob);
+        uint256 bobSharesBefore = defaultValidator.balanceOf(bob);
+        
+        assertEq(
+            aliceRewards,
+            defaultRewardPerfectCheckpoint(reward, defaultAmount, defaultAmount + bobAmount),
+            "Alice reward not as expected"
+        );
+        assertEq(
+            bobRewardsBefore,
+            defaultRewardPerfectCheckpoint(reward, bobAmount, defaultAmount + bobAmount),
+            "Bob reward not as expected"
+        );
+        
+        // Alice approves charlie to transfer her tokens
+        vm.prank(alice);
+        defaultValidator.approve(charlie, defaultAmount);
+        
+        // Expect alice's rewards to be paid out, bob's to be restaked
+        vm.expectEmit(true, true, true, true, address(stakingInfo));
+        emit StakingInfo.DelegatorClaimedRewards(defaultValidatorId, alice, aliceRewards);
+        
+        // Charlie transfers from alice to bob
+        vm.prank(charlie);
+        defaultValidator.transferFrom(alice, bob, defaultAmount);
+        
+        assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
+        // Bob should have original shares + transferred shares + restaked rewards (as shares)
+        assertGt(
+            defaultValidator.balanceOf(bob),
+            defaultAmount + bobSharesBefore,
+            "Bob must have shares from transfer plus restaked rewards"
+        );
+        assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
+        assertEq(defaultValidator.getLiquidRewards(bob), 0, "Bob must have no liquid rewards after transfer (restaked)");
+        assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
+        assertEq(polToken.balanceOf(bob), 0, "Bob's rewards were restaked, not paid out");
+    }
+
+    function test_transferFrom_withrewards_newRecipient() public {
+        address charlie = makeAddr("charlie");
+        address newUser = makeAddr("newUser");
+        
+        buyVoucherDefaultTested(defaultAmount, alice);
+        
+        progressCheckpointWithRewardsDefault();
+        
+        uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
+        
+        // Alice approves charlie to transfer her tokens
+        vm.prank(alice);
+        defaultValidator.approve(charlie, defaultAmount);
+        
+        // Expect alice's rewards to be paid out
+        vm.expectEmit(true, true, true, true, address(stakingInfo));
+        emit StakingInfo.DelegatorClaimedRewards(defaultValidatorId, alice, aliceRewards);
+        
+        // Charlie transfers from alice to new user
+        vm.prank(charlie);
+        defaultValidator.transferFrom(alice, newUser, defaultAmount);
+        
+        assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
+        assertEq(defaultValidator.balanceOf(newUser), defaultAmount, "New user must have transferred shares");
+        assertEq(defaultValidator.getLiquidRewards(newUser), 0, "New user should have no claimable rewards yet");
+        assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
+        assertEq(polToken.balanceOf(newUser), 0, "New user should have no POL");
+        
+        // Verify new user's baseline is set correctly (they shouldn't claim historical rewards)
+        assertEq(defaultValidator.initalRewardPerShare(newUser), defaultValidator.rewardPerShare(), "New user baseline should be current");
+    }
+
+    function test_transferFrom_noApproval() public {
+        address charlie = makeAddr("charlie");
+        buyVoucherDefaultTested(defaultAmount, alice);
+        
+        // Charlie tries to transfer without approval
+        vm.prank(charlie);
+        vm.expectRevert();
+        defaultValidator.transferFrom(alice, bob, defaultAmount);
+    }
+
+    function test_transferFrom_insufficientApproval() public {
+        address charlie = makeAddr("charlie");
+        buyVoucherDefaultTested(defaultAmount, alice);
+        
+        // Alice approves charlie for less than the transfer amount
+        vm.prank(alice);
+        defaultValidator.approve(charlie, defaultAmount / 2);
+        
+        // Charlie tries to transfer more than approved
+        vm.prank(charlie);
+        vm.expectRevert();
+        defaultValidator.transferFrom(alice, bob, defaultAmount);
+    }
+
     // Where do these weird numbers come from?
     // CHECKPOINTREWARD = 20_188 * (10 ** 18); // checkpoint reward
     // 20188000000000000000000  total reward for the checkpoint
