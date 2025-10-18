@@ -122,8 +122,6 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
     /**
      * Public Methods
      */
-
-    // @todo talk this through with Max
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
         // Sender gets their rewards paid out (code from _withdrawAndTransferReward)
         uint256 liquidRewardFrom = _calcAndResetReward(from);
@@ -140,16 +138,12 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
                 // reusing liquidReward saves us a call here
                 // restake rewards to reset initialRewardPerShare value (code from _restake)
                 uint256 amountRestaked;
-
                 require(liquidRewardsTo >= minAmount, "Too small rewards to restake");
                 amountRestaked = _buyShares(liquidRewardsTo, 0, to);
 
                 if (liquidRewardsTo > amountRestaked) {
                     // return change to the user
-                    require(
-                        stakeManager.transferFundsPOL(validatorId, liquidRewardsTo - amountRestaked, to),
-                        "Insufficent rewards"
-                    );
+                    _payout(liquidRewardsTo - amountRestaked, to, "Insufficent rewards", true);
                     stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidRewardsTo - amountRestaked);
                 }
 
@@ -249,12 +243,7 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
 
             if (liquidReward > amountRestaked) {
                 // return change to the user
-                require(
-                    pol
-                        ? stakeManager.transferFundsPOL(validatorId, liquidReward - amountRestaked, user)
-                        : stakeManager.transferFunds(validatorId, liquidReward - amountRestaked, user),
-                    "Insufficent rewards"
-                );
+                _payout(liquidReward - amountRestaked, user, "Insufficent rewards", pol);
                 stakingLogger.logDelegatorClaimRewards(validatorId, user, liquidReward - amountRestaked);
             }
 
@@ -441,12 +430,7 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
         withdrawShares = withdrawShares.sub(shares);
         withdrawPool = withdrawPool.sub(_amount);
 
-        require(
-            pol
-                ? stakeManager.transferFundsPOL(validatorId, _amount, msg.sender)
-                : stakeManager.transferFunds(validatorId, _amount, msg.sender),
-            "Insufficent rewards"
-        );
+        _payout(_amount, msg.sender, "Insufficent rewards", pol);
 
         return _amount;
     }
@@ -501,12 +485,7 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
     function _withdrawAndTransferReward(address user, bool pol) private returns (uint256) {
         uint256 liquidRewards = _calcAndResetReward(user);
         if (liquidRewards != 0) {
-            require(
-                pol
-                    ? stakeManager.transferFundsPOL(validatorId, liquidRewards, user)
-                    : stakeManager.transferFunds(validatorId, liquidRewards, user),
-                "Insufficent rewards"
-            );
+            _payout(liquidRewards, user, "Insufficent rewards", pol);
             stakingLogger.logDelegatorClaimRewards(validatorId, user, liquidRewards);
         }
         return liquidRewards;
@@ -538,6 +517,15 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
         logger.logStakeUpdate(validatorId);
 
         return _amount;
+    }
+
+    function _payout(uint256 amount, address user, string memory message, bool pol) private {
+        require(
+            pol
+                ? stakeManager.transferFundsPOL(validatorId, amount, user)
+                : stakeManager.transferFunds(validatorId, amount, user),
+            message
+        );
     }
 
     function transferPOL(address to, uint256 value) public returns (bool) {
