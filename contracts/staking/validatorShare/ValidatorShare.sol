@@ -125,18 +125,41 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
 
     // @todo talk this through with Max
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        // Sender gets their rewards paid out
-        _withdrawAndTransferReward(from, true);
+        // Sender gets their rewards paid out (code from _withdrawAndTransferReward)
+        uint256 liquidRewardFrom = _calcAndResetReward(from);
+        if (liquidRewardFrom != 0) {
+            require(stakeManager.transferFundsPOL(validatorId, liquidRewardFrom, from), "Insufficent rewards");
+            stakingLogger.logDelegatorClaimRewards(validatorId, from, liquidRewardFrom);
+        }
 
         // recipient already has POL staked with this validator? restake their rewards
         if (balanceOf(to) > 0) {
-            // restake rewards to reset initialRewardPerShare value
-            _restake(to, true);
-        } else {
-            // If recipient is new, set their baseline to current to prevent claiming historical rewards
-            // Do this after sender's withdrawal to use the updated rewardPerShare
-            initalRewardPerShare[to] = rewardPerShare;
+            // rewardPerShare was updated when calling _calcAndResetReward above
+            uint256 liquidRewardsTo = _calculateReward(to, rewardPerShare);
+            if (liquidRewardsTo != 0) {
+                // reusing liquidReward saves us a call here
+                // restake rewards to reset initialRewardPerShare value (code from _restake)
+                uint256 amountRestaked;
+
+                require(liquidRewardsTo >= minAmount, "Too small rewards to restake");
+                amountRestaked = _buyShares(liquidRewardsTo, 0, to);
+
+                if (liquidRewardsTo > amountRestaked) {
+                    // return change to the user
+                    require(
+                        stakeManager.transferFundsPOL(validatorId, liquidRewardsTo - amountRestaked, to),
+                        "Insufficent rewards"
+                    );
+                    stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidRewardsTo - amountRestaked);
+                }
+
+                (uint256 totalStaked,) = getTotalStake(to);
+                stakingLogger.logDelegatorRestaked(validatorId, to, totalStaked);
+            }
         }
+        // set "to" baseline to current to prevent claiming historical rewards
+        // Do this after calling _calcAndResetReward to use the updated rewardPerShare
+        initalRewardPerShare[to] = rewardPerShare;
 
         // Call parent's transferFrom which checks allowance and transfers shares
         bool success = super.transferFrom(from, to, value);
@@ -518,16 +541,16 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
     }
 
     function transferPOL(address to, uint256 value) public returns (bool) {
-        _transfer(to, value, true);
+        _transferShares(to, value, true);
         return true;
     }
 
     function transfer(address to, uint256 value) public returns (bool) {
-        _transfer(to, value, false);
+        _transferShares(to, value, false);
         return true;
     }
 
-    function _transfer(address to, uint256 value, bool pol) internal {
+    function _transferShares(address to, uint256 value, bool pol) internal {
         address from = msg.sender;
         // get rewards for recipient
         _withdrawAndTransferReward(to, pol);
