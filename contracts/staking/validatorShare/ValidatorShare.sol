@@ -1,16 +1,17 @@
 pragma solidity 0.5.17;
 
-import {Registry} from "../../common/Registry.sol";
-import {ERC20ValidatorShare} from "../../common/tokens/ERC20ValidatorShare.sol";
-import {StakingInfo} from "./../StakingInfo.sol";
-import {EventsHub} from "./../EventsHub.sol";
-import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
-import {IStakeManager} from "../stakeManager/IStakeManager.sol";
 import {IValidatorShare} from "./IValidatorShare.sol";
+import {ERC20} from "../../common/oz/token/ERC20/ERC20.sol";
+import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
-import {IERC20Permit} from "./../../common/misc/IERC20Permit.sol";
+import {IERC20Permit} from "../../common/misc/IERC20Permit.sol";
+import {StakingInfo} from "./../StakingInfo.sol";
+import {IStakeManager} from "../stakeManager/IStakeManager.sol";
+import {EventsHub} from "./../EventsHub.sol";
+import {Registry} from "../../common/Registry.sol";
+import {ECVerify} from "../../common/lib/ECVerify.sol";
 
-contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable, Initializable {
+contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializable, IERC20Permit {
     struct DelegatorUnbond {
         uint256 shares;
         uint256 withdrawEpoch;
@@ -22,6 +23,14 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
     uint256 constant EXCHANGE_RATE_HIGH_PRECISION = 10 ** 29;
     uint256 constant MAX_COMMISION_RATE = 100;
     uint256 constant REWARD_PRECISION = 10 ** 25;
+
+    /* solhint-disable var-name-mixedcase */
+    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
+
+    string private constant _VERSION = "1";
+
+    bytes32 private constant PERMIT_TYPEHASH =
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     StakingInfo public stakingLogger;
     IStakeManager public stakeManager;
@@ -51,11 +60,23 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
 
     IERC20Permit public polToken;
 
+    // EIP712 Storage
+    mapping(address => uint256) internal _nonces;
+
+    // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
+    // invalidate the cached domain separator if the chain id changes.
+    bytes32 internal _CACHED_DOMAIN_SEPARATOR;
+    uint256 internal _CACHED_CHAIN_ID;
+
+    bytes32 internal _HASHED_NAME;
+    bytes32 internal _HASHED_VERSION;
+    bytes32 internal _TYPE_HASH;
+    /* solhint-enable var-name-mixedcase */
+
     constructor() public {
         _disableInitializer();
     }
 
-    // onlyOwner will prevent this contract from initializing, since it's owner is going to be 0x0 address
     function initialize(uint256 _validatorId, address _stakingLogger, address _stakeManager) external initializer {
         validatorId = _validatorId;
         stakingLogger = StakingInfo(_stakingLogger);
@@ -547,5 +568,113 @@ contract ValidatorShare is IValidatorShare, ERC20ValidatorShare, OwnableLockable
         // move shares to recipient
         super._transfer(from, to, value);
         _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
+    }
+
+    // ERC20Permit
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public {
+        if (block.timestamp > deadline) {
+            revert("ERC2612ExpiredSignature");
+        }
+
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
+
+        if (_chainId() != _CACHED_CHAIN_ID) {
+            _cacheDomainSeparatorV4();
+        }
+
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        address signer = ECVerify.ecrecovery(hash, v, r, s);
+        if (signer != owner) {
+            revert("ERC2612InvalidSigner");
+        }
+
+        _approve(owner, spender, value);
+    }
+
+    function nonces(address owner) public view returns (uint256) {
+        return _nonces[owner];
+    }
+
+    // solhint-disable-next-line func-name-mixedcase
+    function DOMAIN_SEPARATOR() external view returns (bytes32) {
+        return _CACHED_DOMAIN_SEPARATOR;
+    }
+
+    function _useNonce(address owner) private returns (uint256 current) {
+        current = _nonces[owner];
+        _nonces[owner] = current + 1;
+    }
+
+    function _compress(uint8 v, bytes32 r, bytes32 s) private pure returns (bytes memory) {
+        bytes memory signature = new bytes(65);
+
+        assembly {
+            mstore(add(signature, 0x20), r)
+            mstore(add(signature, 0x40), s)
+            mstore8(add(signature, 0x60), v)
+        }
+
+        return signature;
+    }
+
+    function eip712Version() public view returns (string memory) {
+        return _VERSION;
+    }
+
+    function _chainId() public pure returns (uint256 chainId) {
+        assembly {
+            chainId := chainid()
+        }
+    }
+
+    function _cacheDomainSeparatorV4() public returns (bytes32) {
+        bytes32 hashedName = keccak256(bytes(name()));
+        bytes32 hashedVersion = keccak256(bytes(_VERSION));
+        _TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        _HASHED_NAME = hashedName;
+        _HASHED_VERSION = hashedVersion;
+        _CACHED_CHAIN_ID = _chainId();
+        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator();
+        return _CACHED_DOMAIN_SEPARATOR;
+    }
+
+    function _buildDomainSeparator() private view returns (bytes32) {
+        return keccak256(abi.encode(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION, _chainId(), address(this)));
+    }
+
+    function _hashTypedDataV4(bytes32 structHash) public view returns (bytes32) {
+        return _toTypedDataHash(_CACHED_DOMAIN_SEPARATOR, structHash);
+    }
+
+    function _toTypedDataHash(bytes32 domainSeparator, bytes32 structHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+    }
+
+    // utils
+    function _toHexString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp >>= 4;
+        }
+        bytes memory buffer = new bytes(length);
+        for (uint256 i = length; i > 0; --i) {
+            buffer[i - 1] = _HEX_SYMBOLS[value & 0xf];
+            value >>= 4;
+        }
+        return string(buffer);
     }
 }
