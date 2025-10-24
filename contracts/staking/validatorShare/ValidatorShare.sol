@@ -185,23 +185,6 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         return success;
     }
 
-    // @todo just a first rough draft, talk this through with Max
-    function stakeAndRestakePOL(uint256 _amount, uint256 _minSharesToMint) public {
-        // @todo cannot use this as it includes withdrawing rewards, need to go deeper, same with next function
-        _buyVoucher(_amount, _minSharesToMint, true);
-
-        // restake if there are rewards
-        uint256 liquidReward = _calcAndResetReward(msg.sender);
-        if (liquidReward >= minAmount) {
-            _restake(msg.sender, true);
-        }
-    }
-
-    function restakeAndStakePOL(uint256 _amount, uint256 _minSharesToMint) public {
-        _restake(msg.sender, true);
-        _buyVoucher(_amount, _minSharesToMint, true);
-    }
-
     function buyVoucher(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, false);
     }
@@ -251,6 +234,31 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
 
     function restakePOL() public returns (uint256, uint256) {
         return _restake(msg.sender, true);
+    }
+
+    function restakeAndStakePOL(
+        uint256 _amount,
+        uint256 _minSharesToMint
+    ) public returns (uint256 amountRestaked, uint256 liquidReward, uint256 amountToDeposit) {
+        /* _restake(msg.sender, true);
+        _buyVoucher(_amount, _minSharesToMint, true); */
+
+        liquidReward = _calcAndResetReward(msg.sender);
+
+        require(_amount.add(liquidReward) >= minAmount, "amount plus rewards too small to stake");
+
+        amountToDeposit = _buyShares(_amount.add(liquidReward), _minSharesToMint, msg.sender);
+
+        (uint256 totalStaked,) = getTotalStake(msg.sender);
+        stakingLogger.logDelegatorRestaked(validatorId, msg.sender, totalStaked);
+
+        // transferring POL from sender, total amountToDeposit - liquidReward
+        require(
+            stakeManager.delegationDepositPOL(validatorId, amountToDeposit.sub(liquidReward), msg.sender),
+            "deposit failed"
+        );
+
+        return (amountToDeposit.sub(_amount), liquidReward, amountToDeposit);
     }
 
     function _restake(address user, bool pol) private returns (uint256, uint256) {
