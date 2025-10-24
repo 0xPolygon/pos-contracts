@@ -940,4 +940,84 @@ contract ValidatorShareTest is Test, DeploySystem {
         defaultValidatorArray[0] = createValidator(defaultValidatorId);
         return progressCheckpointWithRewards(defaultValidatorArray, address(defaultValidator));
     }
+
+    function test_restakeAndStakePOL() public {
+        // Setup: Alice stakes initial amount
+        buyVoucherDefaultTested(defaultAmount, alice);
+        uint256 initialShares = defaultValidator.balanceOf(alice);
+        
+        // Generate rewards via checkpoint
+        uint256 checkpointReward = progressCheckpointWithRewardsDefault();
+        uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
+        assertGt(aliceRewards, 0, "Alice should have rewards after checkpoint");
+        
+        // Prepare additional stake amount
+        uint256 additionalStake = defaultAmount * 2;
+        fundAddr(alice, additionalStake, false);
+        
+        vm.prank(alice);
+        polToken.approve(address(stakeManager), additionalStake);
+        
+        // Execute restakeAndStakePOL
+        uint256 polBalanceBefore = polToken.balanceOf(alice);
+        
+        vm.expectEmit(true, true, false, true, address(stakingInfo));
+        emit StakingInfo.DelegatorRestaked(defaultValidatorId, alice, additionalStake + aliceRewards + defaultAmount);
+        
+        vm.prank(alice);
+        (uint256 amountRestaked, uint256 liquidReward, uint256 amountDeposited) = 
+            defaultValidator.restakeAndStakePOL(additionalStake, additionalStake + aliceRewards);
+        
+        // Assertions
+        assertEq(liquidReward, aliceRewards, "Liquid reward should match expected rewards");
+        assertEq(amountDeposited, additionalStake + aliceRewards, "Total deposited should be stake + rewards");
+        assertEq(amountRestaked, aliceRewards, "Restaked amount should equal rewards");
+        assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice should have no remaining rewards");
+        assertEq(
+            defaultValidator.balanceOf(alice), 
+            initialShares + amountDeposited, 
+            "Alice shares should increase by deposited amount"
+        );
+        assertEq(
+            polToken.balanceOf(alice), 
+            polBalanceBefore - additionalStake, 
+            "Alice should only spend the additional stake, not rewards"
+        );
+    }
+
+    function test_restakeAndStakePOL_noRewards() public {
+        // Setup: Alice has no existing stake or rewards
+        uint256 stakeAmount = defaultAmount * 2;
+        fundAddr(alice, stakeAmount, false);
+        
+        vm.prank(alice);
+        polToken.approve(address(stakeManager), stakeAmount);
+        
+        // Execute restakeAndStakePOL with zero rewards
+        vm.prank(alice);
+        (uint256 amountRestaked, uint256 liquidReward, uint256 amountDeposited) = 
+            defaultValidator.restakeAndStakePOL(stakeAmount, stakeAmount);
+        
+        // Assertions
+        assertEq(liquidReward, 0, "Should have no rewards");
+        assertEq(amountRestaked, 0, "Should have no restaked amount");
+        assertEq(amountDeposited, stakeAmount, "Deposited should equal stake amount");
+        assertEq(defaultValidator.balanceOf(alice), stakeAmount, "Alice should have shares equal to stake");
+    }
+
+    function test_restakeAndStakePOL_belowMinAmount() public {
+        // Setup: Alice stakes and earns small rewards
+        buyVoucherDefaultTested(defaultAmount, alice);
+        
+        // Try to restake with amount + rewards below minAmount
+        uint256 tinyAmount = defaultValidator.minAmount() / 10;
+        fundAddr(alice, tinyAmount, false);
+        
+        vm.prank(alice);
+        polToken.approve(address(stakeManager), tinyAmount);
+        
+        vm.expectRevert("amount plus rewards too small to stake");
+        vm.prank(alice);
+        defaultValidator.restakeAndStakePOL(tinyAmount, 0);
+    }
 }
