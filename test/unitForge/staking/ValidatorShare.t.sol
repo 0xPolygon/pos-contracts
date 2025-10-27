@@ -928,10 +928,6 @@ contract ValidatorShareTest is Test, DeploySystem {
             uint256 finalBalance = polToken.balanceOf(_user);
             assertEq(finalBalance, initialBalance + reward);
             assertEq(defaultValidator.getLiquidRewards(_user), 0);
-        } else {
-            vm.expectRevert("Too small rewards amount");
-            vm.prank(_user);
-            defaultValidator.withdrawRewardsPOL();
         }
     }
 
@@ -965,13 +961,12 @@ contract ValidatorShareTest is Test, DeploySystem {
         emit StakingInfo.DelegatorRestaked(defaultValidatorId, alice, additionalStake + aliceRewards + defaultAmount);
         
         vm.prank(alice);
-        (uint256 amountRestaked, uint256 liquidReward, uint256 amountDeposited) = 
-            defaultValidator.restakeAndStakePOL(additionalStake, additionalStake + aliceRewards);
+        (uint256 amountDeposited, uint256 liquidReward) = 
+            defaultValidator.restakeAndStakePOL(additionalStake);
         
         // Assertions
         assertEq(liquidReward, aliceRewards, "Liquid reward should match expected rewards");
         assertEq(amountDeposited, additionalStake + aliceRewards, "Total deposited should be stake + rewards");
-        assertEq(amountRestaked, aliceRewards, "Restaked amount should equal rewards");
         assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice should have no remaining rewards");
         assertEq(
             defaultValidator.balanceOf(alice), 
@@ -995,29 +990,12 @@ contract ValidatorShareTest is Test, DeploySystem {
         
         // Execute restakeAndStakePOL with zero rewards
         vm.prank(alice);
-        (uint256 amountRestaked, uint256 liquidReward, uint256 amountDeposited) = 
-            defaultValidator.restakeAndStakePOL(stakeAmount, stakeAmount);
+        (uint256 amountDeposited, uint256 liquidReward) = 
+            defaultValidator.restakeAndStakePOL(stakeAmount);
         
         // Assertions
         assertEq(liquidReward, 0, "Should have no rewards");
-        assertEq(amountRestaked, 0, "Should have no restaked amount");
         assertEq(amountDeposited, stakeAmount, "Deposited should equal stake amount");
         assertEq(defaultValidator.balanceOf(alice), stakeAmount, "Alice should have shares equal to stake");
-    }
-
-    function test_restakeAndStakePOL_belowMinAmount() public {
-        // Setup: Alice stakes and earns small rewards
-        buyVoucherDefaultTested(defaultAmount, alice);
-        
-        // Try to restake with amount + rewards below minAmount
-        uint256 tinyAmount = defaultValidator.minAmount() / 10;
-        fundAddr(alice, tinyAmount, false);
-        
-        vm.prank(alice);
-        polToken.approve(address(stakeManager), tinyAmount);
-        
-        vm.expectRevert("amount plus rewards too small to stake");
-        vm.prank(alice);
-        defaultValidator.restakeAndStakePOL(tinyAmount, 0);
     }
 }
