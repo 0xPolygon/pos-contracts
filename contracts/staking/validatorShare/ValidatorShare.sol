@@ -137,6 +137,30 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         return _calculateRewardPerShareWithRewards(stakeManager.delegatorsReward(validatorId));
     }
 
+    function getStakeAndRewards(address user) public view returns (uint256 stakeAmount, uint256 liquidRewards) {
+        uint256 shares = balanceOf(user);
+        if (shares == 0) {
+            return (0, 0);
+        }
+
+        uint256 totalShares = totalSupply();
+
+        // stakeAmount = delegatedAmount(of this validator) * shares / totalShares
+        uint256 delegated = stakeManager.delegatedAmount(validatorId);
+        stakeAmount = delegated.mul(shares).div(totalShares);
+
+        uint256 accumulatedReward = stakeManager.delegatorsReward(validatorId);
+        uint256 _rewardPerShare = rewardPerShare;
+        if (accumulatedReward != 0 && totalShares != 0) {
+            _rewardPerShare = _rewardPerShare.add(accumulatedReward.mul(REWARD_PRECISION).div(totalShares));
+        }
+
+        uint256 _initialRewardPerShare = initalRewardPerShare[user];
+        if (_rewardPerShare > _initialRewardPerShare) {
+            liquidRewards = _rewardPerShare.sub(_initialRewardPerShare).mul(shares).div(REWARD_PRECISION);
+        }
+    }
+
     /**
      * Public Methods
      */
