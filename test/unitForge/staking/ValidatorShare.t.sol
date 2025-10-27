@@ -717,6 +717,26 @@ contract ValidatorShareTest is Test, DeploySystem {
         return userReward / VALIDATORSHARE_REWARD_PRECISION;
     }
 
+   /*  function test_getStakeAndRewards_zero() public view {
+        (uint256 stakeAmount, uint256 rewards) = defaultValidator.getStakeAndRewards(alice);
+        assertEq(stakeAmount, 0);
+        assertEq(rewards, 0);
+    }
+
+    function test_getStakeAndRewards_matches_existing_calls() public {
+        buyVoucherDefaultTested(defaultAmount, alice);
+        progressCheckpointWithRewardsDefault();
+        uint256 expectedStake; uint256 rate;
+        (expectedStake, rate) = defaultValidator.getTotalStake(alice);
+        uint256 expectedRewards = defaultValidator.getLiquidRewards(alice);
+
+        (uint256 stakeAmount, uint256 rewards) = defaultValidator.getStakeAndRewards(alice);
+
+        assertEq(stakeAmount, expectedStake, "stake mismatch");
+        assertEq(rewards, expectedRewards, "rewards mismatch");
+        assertEq(rate, defaultValidator.exchangeRate(), "rate sanity");
+    } */
+
     // helpers
     function buyVoucherDefaultTested(uint256 _amount, address _user) public {
         buyVoucherDefaultGenericTested(_amount, _user, false, 0);
