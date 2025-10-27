@@ -38,7 +38,6 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     uint256 public validatorRewards_deprecated; // Now in StakeManager
     uint256 public commissionRate_deprecated; // Now in StakeManager
     uint256 private lastCommissionUpdate_deprecated; // Now in StakeManager
-    uint256 public minAmount;
 
     uint256 private totalStake_deprecated; // Now in StakeManager
     uint256 public rewardPerShare;
@@ -84,8 +83,6 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         _transferOwnership(_stakeManager);
         _getOrCacheEventsHub();
         _getOrCachePOLToken();
-
-        minAmount = 10 ** 18;
         delegation = true;
 
         _cacheDomainSeparatorV4();
@@ -159,7 +156,6 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
                 // reusing liquidReward saves us a call here
                 // restake rewards to reset initialRewardPerShare value (code from _restake)
                 uint256 amountRestaked;
-                require(liquidRewardsTo >= minAmount, "Too small rewards to restake");
                 amountRestaked = _buyShares(liquidRewardsTo, 0, to);
 
                 if (liquidRewardsTo > amountRestaked) {
@@ -237,35 +233,31 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     }
 
     function restakeAndStakePOL(
-        uint256 _amount,
-        uint256 _minSharesToMint
-    ) public returns (uint256 amountRestaked, uint256 liquidReward, uint256 amountToDeposit) {
-        /* _restake(msg.sender, true);
-        _buyVoucher(_amount, _minSharesToMint, true); */
+        uint256 _amount
+    ) public returns (uint256, uint256) {
 
-        liquidReward = _calcAndResetReward(msg.sender);
+        uint256 liquidReward = _calcAndResetReward(msg.sender);
 
-        require(_amount.add(liquidReward) >= minAmount, "amount plus rewards too small to stake");
+        uint256 amountPlusReward = _amount.add(liquidReward);
 
-        amountToDeposit = _buyShares(_amount.add(liquidReward), _minSharesToMint, msg.sender);
+        uint256 amountToDeposit = _buyShares(amountPlusReward, amountPlusReward, msg.sender);
+        require(amountToDeposit == amountPlusReward, "exchange rate not 1");
 
         (uint256 totalStaked,) = getTotalStake(msg.sender);
         stakingLogger.logDelegatorRestaked(validatorId, msg.sender, totalStaked);
 
         // transferring POL from sender, total amountToDeposit - liquidReward
         require(
-            stakeManager.delegationDepositPOL(validatorId, amountToDeposit.sub(liquidReward), msg.sender),
+            stakeManager.delegationDepositPOL(validatorId, _amount, msg.sender),
             "deposit failed"
         );
 
-        return (amountToDeposit.sub(_amount), liquidReward, amountToDeposit);
+        return (amountToDeposit, liquidReward);
     }
 
     function _restake(address user, bool pol) private returns (uint256, uint256) {
         uint256 liquidReward = _calcAndResetReward(user);
         uint256 amountRestaked;
-
-        require(liquidReward >= minAmount, "Too small rewards to restake");
 
         if (liquidReward != 0) {
             amountRestaked = _buyShares(liquidReward, 0, user);
@@ -306,16 +298,11 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     }
 
     function withdrawRewards() public {
-        _withdrawRewards(false);
+        _withdrawAndTransferReward(msg.sender, false);
     }
 
     function withdrawRewardsPOL() public {
-        _withdrawRewards(true);
-    }
-
-    function _withdrawRewards(bool pol) internal {
-        uint256 rewards = _withdrawAndTransferReward(msg.sender, pol);
-        require(rewards >= minAmount, "Too small rewards amount");
+        _withdrawAndTransferReward(msg.sender, true);
     }
 
     function migrateOut(address user, uint256 amount) external onlyOwner {
