@@ -128,7 +128,7 @@ describe('ValidatorShare', async function () {
         await this.polToken
           .connect(this.polToken.provider.getSigner(this.user))
           .approve(this.stakeManager.address, 0)
-        })
+      })
 
       testBuyVoucherWithPermit({
         voucherValue: toWei('100'),
@@ -1022,9 +1022,11 @@ describe('ValidatorShare', async function () {
     function testWithdraw({ label, user, expectedReward, initialBalance }) {
       describe(`when ${label} withdraws`, function () {
         if (expectedReward.toString() === '0') {
-          it('reverts', async function () {
+          it('will return but not withdraw any rewards', async function () {
             const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(user))
-            await expectRevert(validatorUser.withdrawRewards(), 'Too small rewards amount')
+            this.receipt = await (await validatorUser.withdrawRewardsPOL()).wait()
+            const balance = await this.polToken.balanceOf(user)
+            assertBigNumberEquality(balance, new BN(initialBalance))
           })
         } else {
           it('must withdraw rewards', async function () {
@@ -1194,15 +1196,6 @@ describe('ValidatorShare', async function () {
       ])
     })
 
-    describe('when not enough rewards', function () {
-      before(doDeploy)
-
-      it('reverts', async function () {
-        const validatorContractAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(Alice))
-        await expectRevert(validatorContractAlice.withdrawRewards(), 'Too small rewards amount')
-      })
-    })
-
     describe('when Alice withdraws 2 times in a row', async function () {
       runWithdrawRewardsTest([
         { stake: { user: Alice, label: 'Alice', amount: new BN(toWei('100')) } },
@@ -1323,15 +1316,6 @@ describe('ValidatorShare', async function () {
           validatorId: this.validatorId,
           totalStaked: userTotalStaked.toString()
         })
-      })
-    })
-
-    describe('when no liquid rewards', function () {
-      prepareForTest({ skipCheckpoint: true })
-
-      it('reverts', async function () {
-        const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        await expectRevert(validatorUser.restake(), 'Too small rewards to restake')
       })
     })
 
