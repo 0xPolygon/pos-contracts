@@ -169,7 +169,7 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     /**
      * Public Methods
      */
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function restakeAndTransferFrom(address from, address to, uint256 value) public returns (bool) {
         // Sender gets their rewards paid out (code from _withdrawAndTransferReward)
         uint256 liquidRewardFrom = _calcAndResetReward(from);
         if (liquidRewardFrom != 0) {
@@ -207,6 +207,18 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         // Log the transfer event
         _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
 
+        return success;
+    }
+
+    // carefull: this function uses POL
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+        // get rewards for recipient
+        _withdrawAndTransferReward(to, true);
+        // convert rewards to shares
+        _withdrawAndTransferReward(from, true);
+        // move shares to recipient
+        bool success = super.transferFrom(from, to, value);
+        _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
         return success;
     }
 
