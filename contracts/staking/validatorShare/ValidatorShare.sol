@@ -100,6 +100,11 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     /**
      * Public View Methods
      */
+
+    function version() public pure returns (string memory) {
+        return "2.3.0";
+    }
+
     function exchangeRate() public view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 precision = _getRatePrecision();
@@ -277,6 +282,11 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         );
 
         return (amountToDeposit, liquidReward);
+    }
+
+    function restakeAndUnstakePOL(uint256 _amount) public returns (uint256, uint256) {
+        _restake(msg.sender, true);
+        __sellVoucher(_amount, _amount, true);
     }
 
     function _restake(address user, bool pol) private returns (uint256, uint256) {
