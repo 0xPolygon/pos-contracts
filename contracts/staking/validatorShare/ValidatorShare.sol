@@ -38,6 +38,7 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     uint256 public validatorRewards_deprecated; // Now in StakeManager
     uint256 public commissionRate_deprecated; // Now in StakeManager
     uint256 private lastCommissionUpdate_deprecated; // Now in StakeManager
+    uint256 public minAmount;
 
     uint256 private totalStake_deprecated; // Now in StakeManager
     uint256 public rewardPerShare;
