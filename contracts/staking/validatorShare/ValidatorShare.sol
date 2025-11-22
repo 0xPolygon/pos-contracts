@@ -274,10 +274,7 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         return _restake(msg.sender, true);
     }
 
-    function restakeAndStakePOL(
-        uint256 _amount
-    ) public returns (uint256, uint256) {
-
+    function restakeAndStakePOL(uint256 _amount) public returns (uint256, uint256) {
         uint256 liquidReward = _calcAndResetReward(msg.sender);
 
         uint256 amountPlusReward = _amount.add(liquidReward);
@@ -289,10 +286,7 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         stakingLogger.logDelegatorRestaked(validatorId, msg.sender, totalStaked);
 
         // transferring POL from sender, total amountToDeposit - liquidReward
-        require(
-            stakeManager.delegationDepositPOL(validatorId, _amount, msg.sender),
-            "deposit failed"
-        );
+        require(stakeManager.delegationDepositPOL(validatorId, _amount, msg.sender), "deposit failed");
 
         return (amountToDeposit, liquidReward);
     }
