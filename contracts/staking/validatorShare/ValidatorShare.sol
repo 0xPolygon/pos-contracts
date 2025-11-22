@@ -297,9 +297,10 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         return (amountToDeposit, liquidReward);
     }
 
-    function restakeAndUnstakePOL(uint256 _amount) public returns (uint256, uint256) {
-        _restake(msg.sender, true);
-        __sellVoucher(_amount, _amount, true);
+    function restakeAndUnstakePOL(uint256 _amount) public returns (uint256) {
+        (uint256 restaked,) = _restake(msg.sender, true);
+        _sellVoucher_new(_amount, _amount, true);
+        return restaked;
     }
 
     function _restake(address user, bool pol) private returns (uint256, uint256) {
