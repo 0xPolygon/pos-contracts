@@ -17,6 +17,14 @@ contract ValidatorShareTest is Test, DeploySystem {
     uint256 constant STAKEMANAGER_REWARD_PRECISION = 10 ** 25;
     uint256 constant VALIDATORSHARE_REWARD_PRECISION = 10 ** 29;
 
+    uint256 currentStakeManagerStake;
+    uint256 currentUserShares;
+    uint256 polBalanceBefore;
+    uint256 maticBalanceBefore;
+    uint256 rewards;
+    uint256 userNonce;
+    uint256 validatorNonce;
+
     function setUp() public {
         deployAll();
         setTestConfig();
@@ -523,16 +531,16 @@ contract ValidatorShareTest is Test, DeploySystem {
         defaultValidator.transferFrom(alice, bob, defaultAmount);
         
         assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
-        // Bob should have original shares + transferred shares + restaked rewards (as shares)
-        assertGt(
+        // Bob should have original shares + transferred shares 
+        assertEq(
             defaultValidator.balanceOf(bob),
             defaultAmount + bobSharesBefore,
-            "Bob must have shares from transfer plus restaked rewards"
+            "Bob must have shares from transfer"
         );
         assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
         assertEq(defaultValidator.getLiquidRewards(bob), 0, "Bob must have no liquid rewards after transfer (restaked)");
         assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
-        assertEq(polToken.balanceOf(bob), 0, "Bob's rewards were restaked, not paid out");
+        assertEq(polToken.balanceOf(bob), bobRewardsBefore, "Bob's rewards were paid out");
     }
 
     function test_transferFrom_withrewards_newRecipient() public {
@@ -820,13 +828,13 @@ contract ValidatorShareTest is Test, DeploySystem {
         bool _matic,
         bool _newAPI
     ) public {
-        uint256 currentStakeManagerStake = stakeManager.currentValidatorSetTotalStake();
-        uint256 currentUserShares = defaultValidator.balanceOf(_user);
-        uint256 polBalanceBefore = polToken.balanceOf(_user);
-        uint256 maticBalanceBefore = maticToken.balanceOf(_user);
-        uint256 rewards = defaultValidator.getLiquidRewards(_user);
-        uint256 userNonce = defaultValidator.unbondNonces(_user) + 1;
-        uint256 validatorNonce = stakingInfo.validatorNonce(defaultValidatorId);
+        currentStakeManagerStake = stakeManager.currentValidatorSetTotalStake();
+        currentUserShares = defaultValidator.balanceOf(_user);
+        polBalanceBefore = polToken.balanceOf(_user);
+        maticBalanceBefore = maticToken.balanceOf(_user);
+        rewards = defaultValidator.getLiquidRewards(_user);
+        userNonce = defaultValidator.unbondNonces(_user) + 1;
+        validatorNonce = stakingInfo.validatorNonce(defaultValidatorId);
 
         address transferedToken = _matic ? address(maticToken) : address(polToken);
 
