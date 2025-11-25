@@ -31,6 +31,8 @@ struct FileObject {
 contract ForkupgradeMPT is Test {
     using stdJson for string;
 
+    WithdrawManager withdrawManager;
+
     uint256 mainnetFork;
 
     function setUp() public {
@@ -52,7 +54,7 @@ contract ForkupgradeMPT is Test {
 
         vm.prank(address(timelock));
         withdrawManagerProxy.updateImplementation(withdrawManagerImpl);
-        WithdrawManager withdrawManager = WithdrawManager(payable(withdrawManagerProxy));
+        withdrawManager = WithdrawManager(payable(withdrawManagerProxy));
 
         // load tx to be replayed
         string memory txsJson = vm.readFile("test/foundry/batch1withdrawNew.json");

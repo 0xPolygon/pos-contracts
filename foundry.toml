@@ -21,6 +21,7 @@ remappings = [
 fs_permissions = [{ access = "read", path = "./scripts/"}, { access = "read", path = "./test/"},  { access = "read", path = "./out/"}, { access = "read-write", path = "./contractAddresses.json" }]
 auto_detect_solc = true
 
+
 [invariant]
 fail_on_revert = false
 call_override = false
@@ -41,7 +42,10 @@ number_underscore = "thousands"
 multiline_func_header = "params_first_multi"
 wrap_comments = true
 single_line_statement_blocks = "preserve"
-ignore = ["contracts/staking/StakingInfo.sol", "contracts/common/mixin/ChainIdMixin.sol"]
+ignore = [
+  "contracts/staking/StakingInfo.sol",
+  "contracts/common/mixin/ChainIdMixin.sol",
+]
 
 [rpc_endpoints]
 anvil = "http://127.0.0.1:8545"

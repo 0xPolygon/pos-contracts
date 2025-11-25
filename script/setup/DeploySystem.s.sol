@@ -62,12 +62,17 @@ contract DeploySystem is Script, ArtifactPath {
     address owner = makeAddr("owner");
     uint256 defaultStakeVS = 1000 * 10 ** 18;
 
+    address governanceProxy;
+    address stakingNFT;
+    address validatorShareFactory;
+    address stakeManagerExtension;
+
     function run() public {}
 
     function deployAll() public {
         address governanceImpl = deployCode(GovernancePath);
         // Owner is msg.sender
-        address governanceProxy = deployCode(GovernanceProxyPath, abi.encode(governanceImpl));
+        governanceProxy = deployCode(GovernanceProxyPath, abi.encode(governanceImpl));
         governance = Governance(governanceProxy);
 
         registry = Registry(deployCode(RegistryPath, abi.encode(governanceProxy)));
@@ -76,13 +81,12 @@ contract DeploySystem is Script, ArtifactPath {
         // Not sure why, but that's how the old tests do it
         eventsHub = EventsHub(deployCode(EventsHubProxyPath, abi.encode(address(0))));
 
-        EventsHubProxy(payable(address(eventsHub))).updateAndCall(
-            eventsHubImpl, abi.encodeCall(EventsHub.initialize, (address(registry)))
-        );
+        EventsHubProxy(payable(address(eventsHub)))
+            .updateAndCall(eventsHubImpl, abi.encodeCall(EventsHub.initialize, (address(registry))));
 
         updateRegistryContractMap("eventsHub", address(eventsHub));
 
-        address validatorShareFactory = deployCode(ValidatorShareFactoryPath);
+        validatorShareFactory = deployCode(ValidatorShareFactoryPath);
         address validatorShare = deployCode(ValidatorSharePath);
         updateRegistryContractMap("validatorShare", validatorShare);
 
@@ -95,7 +99,7 @@ contract DeploySystem is Script, ArtifactPath {
 
         stakingInfo = StakingInfo(deployCode(StakingInfoPath, abi.encode(registry)));
 
-        address stakingNFT = deployCode(StakingNFTPath, abi.encode("Matic Validator", "MV"));
+        stakingNFT = deployCode(StakingNFTPath, abi.encode("Matic Validator", "MV"));
 
         address rootChainImpl = deployCode(RootChainPath);
         rootChain = RootChain(deployCode(RootChainProxyPath, abi.encode(rootChainImpl, registry, "heimdall-P5rXwg")));
@@ -104,27 +108,28 @@ contract DeploySystem is Script, ArtifactPath {
         address stakeManagerProxy = deployCode(StakeManagerProxyPath, abi.encode(address(0)));
         stakeManager = StakeManager(stakeManagerProxy);
         updateRegistryContractMap("stakeManager", address(stakeManager));
-        address stakeManagerExtension = deployCode(StakeManagerExtensionPath);
+        stakeManagerExtension = deployCode(StakeManagerExtensionPath);
 
-        StakeManagerProxy(payable(stakeManagerProxy)).updateAndCall(
-            stakeManagerImpl,
-            abi.encodeCall(
-                StakeManager.initialize,
-                (
-                    address(registry),
-                    address(rootChain),
-                    address(maticToken),
-                    stakingNFT,
-                    address(stakingInfo),
-                    validatorShareFactory,
-                    governanceProxy,
-                    owner,
-                    stakeManagerExtension,
-                    address(polToken),
-                    address(polygonMigration)
+        StakeManagerProxy(payable(stakeManagerProxy))
+            .updateAndCall(
+                stakeManagerImpl,
+                abi.encodeCall(
+                    StakeManager.initialize,
+                    (
+                        address(registry),
+                        address(rootChain),
+                        address(maticToken),
+                        stakingNFT,
+                        address(stakingInfo),
+                        validatorShareFactory,
+                        governanceProxy,
+                        owner,
+                        stakeManagerExtension,
+                        address(polToken),
+                        address(polygonMigration)
+                    )
                 )
-            )
-        );
+            );
 
         StakingNFT(stakingNFT).transferOwnership(address(stakeManager));
 
@@ -254,27 +259,18 @@ contract DeploySystem is Script, ArtifactPath {
         uint256 _deadline,
         uint256 _pk
     ) public view returns (uint8, bytes32, bytes32) {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            _pk,
-            keccak256(
-                abi.encodePacked(
-                    hex"1901",
-                    polToken.DOMAIN_SEPARATOR(),
-                    keccak256(
-                        abi.encode(
-                            keccak256(
-                                "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
-                            ),
-                            _from,
-                            _spender,
-                            _value,
-                            polToken.nonces(_from),
-                            _deadline
-                        )
-                    )
-                )
+        bytes32 hash = keccak256(
+            abi.encode(
+                keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                _from,
+                _spender,
+                _value,
+                polToken.nonces(_from),
+                _deadline
             )
         );
+        (uint8 v, bytes32 r, bytes32 s) =
+            vm.sign(_pk, keccak256(abi.encodePacked(hex"1901", polToken.DOMAIN_SEPARATOR(), hash)));
         return (v, r, s);
     }
 
@@ -298,10 +294,7 @@ contract DeploySystem is Script, ArtifactPath {
         return ValidatorShare(stakeManager.getValidatorContract(_validatorId));
     }
 
-    function progressCheckpointWithRewards(
-        Validator[] memory _validators,
-        address _proposer
-    ) public returns (uint256) {
+    function progressCheckpointWithRewards(Validator[] memory _validators, address _proposer) public returns (uint256) {
         bytes32 voteHash = keccak256("voteData");
         bytes32 stateRootHash = keccak256("stateRoot");
         uint256[3][] memory sigs = signWithValidators(_validators, voteHash);
