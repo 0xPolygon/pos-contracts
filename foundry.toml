@@ -11,15 +11,19 @@ verbosity = 2
 memory_limit = 40003554432
 gas_limit = "18446744073709551615"
 ignored_warnings_from = ["scripts/helpers/interfaces"]
-
 ffi = true
 remappings = [
   "eth-gas-reporter/=node_modules/eth-gas-reporter/",
   "forge-std/=lib/forge-std/src/",
   "hardhat/=node_modules/hardhat/"
 ]
-fs_permissions = [{ access = "read", path = "./scripts/"}, { access = "read", path = "./test/"},  { access = "read", path = "./out/"}]
+fs_permissions = [
+  { access = "read", path = "./scripts/" },
+  { access = "read", path = "./test/" },
+  { access = "read", path = "./out/" },
+]
 auto_detect_solc = true
+
 
 [invariant]
 fail_on_revert = false
@@ -41,7 +45,10 @@ number_underscore = "thousands"
 multiline_func_header = "params_first_multi"
 wrap_comments = true
 single_line_statement_blocks = "preserve"
-ignore = ["contracts/staking/StakingInfo.sol", "contracts/common/mixin/ChainIdMixin.sol"]
+ignore = [
+  "contracts/staking/StakingInfo.sol",
+  "contracts/common/mixin/ChainIdMixin.sol",
+]
 
 [rpc_endpoints]
 anvil = "http://127.0.0.1:8545"
