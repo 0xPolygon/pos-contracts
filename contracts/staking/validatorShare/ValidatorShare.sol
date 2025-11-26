@@ -170,14 +170,14 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     /**
      * Public Methods
      */
-    function restakeAndTransferFrom(address from, address to, uint256 value) public returns (bool) {
+    function restakeAndTransferFrom(address from, address to, uint256 value) public returns (bool, uint256) {
         // Sender gets their rewards paid out (code from _withdrawAndTransferReward)
         uint256 liquidRewardFrom = _calcAndResetReward(from);
         if (liquidRewardFrom != 0) {
             require(stakeManager.transferFundsPOL(validatorId, liquidRewardFrom, from), "Insufficent rewards");
             stakingLogger.logDelegatorClaimRewards(validatorId, from, liquidRewardFrom);
         }
-
+        uint256 amountRestaked;
         // recipient already has POL staked with this validator? restake their rewards
         if (balanceOf(to) > 0) {
             // rewardPerShare was updated when calling _calcAndResetReward above
@@ -185,7 +185,6 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
             if (liquidRewardsTo != 0) {
                 // reusing liquidReward saves us a call here
                 // restake rewards to reset initialRewardPerShare value (code from _restake)
-                uint256 amountRestaked;
                 amountRestaked = _buyShares(liquidRewardsTo, 0, to);
 
                 if (liquidRewardsTo > amountRestaked) {
@@ -208,7 +207,7 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         // Log the transfer event
         _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
 
-        return success;
+        return (success, amountRestaked);
     }
 
     // carefull: this function uses POL
