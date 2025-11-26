@@ -481,15 +481,15 @@ contract ValidatorShareTest is Test, DeploySystem {
         buyVoucherDefaultTested(defaultAmount, alice);
         assertEq(defaultValidator.balanceOf(alice), defaultAmount);
         assertEq(defaultValidator.balanceOf(charlie), 0);
-        
+
         // Alice approves charlie to transfer her tokens
         vm.prank(alice);
         defaultValidator.approve(charlie, defaultAmount);
-        
+
         // Charlie transfers from alice to bob
         vm.prank(charlie);
         defaultValidator.transferFrom(alice, bob, defaultAmount);
-        
+
         assertEq(defaultValidator.balanceOf(alice), 0);
         assertEq(defaultValidator.balanceOf(bob), defaultAmount);
         assertEq(polToken.balanceOf(alice), 0);
@@ -500,13 +500,13 @@ contract ValidatorShareTest is Test, DeploySystem {
         address charlie = makeAddr("charlie");
         buyVoucherDefaultTested(defaultAmount, alice);
         buyVoucherDefaultTested(bobAmount, bob);
-        
+
         uint256 reward = progressCheckpointWithRewardsDefault();
-        
+
         uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
         uint256 bobRewardsBefore = defaultValidator.getLiquidRewards(bob);
         uint256 bobSharesBefore = defaultValidator.balanceOf(bob);
-        
+
         assertEq(
             aliceRewards,
             defaultRewardPerfectCheckpoint(reward, defaultAmount, defaultAmount + bobAmount),
@@ -517,68 +517,120 @@ contract ValidatorShareTest is Test, DeploySystem {
             defaultRewardPerfectCheckpoint(reward, bobAmount, defaultAmount + bobAmount),
             "Bob reward not as expected"
         );
-        
+
         // Alice approves charlie to transfer her tokens
         vm.prank(alice);
         defaultValidator.approve(charlie, defaultAmount);
-        
+
         // Expect alice's rewards to be paid out, bob's to be restaked
         vm.expectEmit(true, true, true, true, address(stakingInfo));
         emit StakingInfo.DelegatorClaimedRewards(defaultValidatorId, alice, aliceRewards);
-        
+
         // Charlie transfers from alice to bob
         vm.prank(charlie);
         defaultValidator.transferFrom(alice, bob, defaultAmount);
-        
+
         assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
-        // Bob should have original shares + transferred shares 
-        assertEq(
-            defaultValidator.balanceOf(bob),
-            defaultAmount + bobSharesBefore,
-            "Bob must have shares from transfer"
-        );
+        // Bob should have original shares + transferred shares
+        assertEq(defaultValidator.balanceOf(bob), defaultAmount + bobSharesBefore, "Bob must have shares from transfer");
         assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
         assertEq(defaultValidator.getLiquidRewards(bob), 0, "Bob must have no liquid rewards after transfer (restaked)");
         assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
         assertEq(polToken.balanceOf(bob), bobRewardsBefore, "Bob's rewards were paid out");
     }
 
-    function test_transferFrom_withrewards_newRecipient() public {
+    function test_restakeAndTransferFrom_withrewards_existingRecipient() public {
         address charlie = makeAddr("charlie");
-        address newUser = makeAddr("newUser");
-        
         buyVoucherDefaultTested(defaultAmount, alice);
-        
-        progressCheckpointWithRewardsDefault();
-        
+        buyVoucherDefaultTested(bobAmount, bob);
+
+        uint256 reward = progressCheckpointWithRewardsDefault();
+
         uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
-        
+        uint256 bobRewardsBefore = defaultValidator.getLiquidRewards(bob);
+        uint256 bobSharesBefore = defaultValidator.balanceOf(bob);
+
+        assertEq(
+            aliceRewards,
+            defaultRewardPerfectCheckpoint(reward, defaultAmount, defaultAmount + bobAmount),
+            "Alice reward not as expected"
+        );
+        assertEq(
+            bobRewardsBefore,
+            defaultRewardPerfectCheckpoint(reward, bobAmount, defaultAmount + bobAmount),
+            "Bob reward not as expected"
+        );
+
         // Alice approves charlie to transfer her tokens
         vm.prank(alice);
         defaultValidator.approve(charlie, defaultAmount);
-        
+
+        // Expect alice's rewards to be paid out, bob's to be restaked
+        vm.expectEmit(true, true, true, true, address(stakingInfo));
+        emit StakingInfo.DelegatorClaimedRewards(defaultValidatorId, alice, aliceRewards);
+
+        // Charlie transfers from alice to bob
+        vm.prank(charlie);
+        (bool success, uint256 liquidRewardsTo, uint256 amountRestaked) =
+            defaultValidator.restakeAndTransferFrom(alice, bob, defaultAmount);
+
+        assertEq(success, true, "Transfer was successful");
+        assertEq(bobRewardsBefore, liquidRewardsTo, "Bobs rewards were correctly calculated");
+        assertEq(bobRewardsBefore, amountRestaked, "Bob's rewards were restaked");
+
+        assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
+        // Bob should have original shares + transferred shares + restaked rewards
+        assertEq(
+            defaultValidator.balanceOf(bob),
+            defaultAmount + bobSharesBefore + liquidRewardsTo,
+            "Bob must have shares from transfer + restaked rewards"
+        );
+        assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
+        assertEq(defaultValidator.getLiquidRewards(bob), 0, "Bob must have no liquid rewards after transfer (restaked)");
+        assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
+        assertEq(polToken.balanceOf(bob), 0, "Bob did not get paid out, but restaked");
+    }
+
+    function test_transferFrom_withrewards_newRecipient() public {
+        address charlie = makeAddr("charlie");
+        address newUser = makeAddr("newUser");
+
+        buyVoucherDefaultTested(defaultAmount, alice);
+
+        progressCheckpointWithRewardsDefault();
+
+        uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
+
+        // Alice approves charlie to transfer her tokens
+        vm.prank(alice);
+        defaultValidator.approve(charlie, defaultAmount);
+
         // Expect alice's rewards to be paid out
         vm.expectEmit(true, true, true, true, address(stakingInfo));
         emit StakingInfo.DelegatorClaimedRewards(defaultValidatorId, alice, aliceRewards);
-        
+
         // Charlie transfers from alice to new user
         vm.prank(charlie);
         defaultValidator.transferFrom(alice, newUser, defaultAmount);
-        
+
         assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
         assertEq(defaultValidator.balanceOf(newUser), defaultAmount, "New user must have transferred shares");
         assertEq(defaultValidator.getLiquidRewards(newUser), 0, "New user should have no claimable rewards yet");
         assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
         assertEq(polToken.balanceOf(newUser), 0, "New user should have no POL");
-        
+
         // Verify new user's baseline is set correctly (they shouldn't claim historical rewards)
-        assertEq(defaultValidator.initalRewardPerShare(newUser), defaultValidator.rewardPerShare(), "New user baseline should be current");
+        assertEq(
+            defaultValidator.initalRewardPerShare(newUser),
+            defaultValidator.rewardPerShare(),
+            "New user baseline should be current"
+        );
     }
 
     function test_transferFrom_noApproval() public {
         address charlie = makeAddr("charlie");
         buyVoucherDefaultTested(defaultAmount, alice);
-        
+
         // Charlie tries to transfer without approval
         vm.prank(charlie);
         vm.expectRevert();
@@ -588,11 +640,11 @@ contract ValidatorShareTest is Test, DeploySystem {
     function test_transferFrom_insufficientApproval() public {
         address charlie = makeAddr("charlie");
         buyVoucherDefaultTested(defaultAmount, alice);
-        
+
         // Alice approves charlie for less than the transfer amount
         vm.prank(alice);
         defaultValidator.approve(charlie, defaultAmount / 2);
-        
+
         // Charlie tries to transfer more than approved
         vm.prank(charlie);
         vm.expectRevert();
@@ -703,7 +755,9 @@ contract ValidatorShareTest is Test, DeploySystem {
         //uint256 lastRewardPerShare
         public
         view
-        returns (uint256 delReward /*, uint256 rewardPerShare*/ )
+        returns (
+            uint256 delReward /*, uint256 rewardPerShare*/
+        )
     {
         uint256 currentTotalStake = stakeManager.currentValidatorSetTotalStake();
         uint256 proposerBonus = (_reward * stakeManager.proposerBonus()) / 100;
@@ -725,25 +779,25 @@ contract ValidatorShareTest is Test, DeploySystem {
         return userReward / VALIDATORSHARE_REWARD_PRECISION;
     }
 
-   /*  function test_getStakeAndRewards_zero() public view {
-        (uint256 stakeAmount, uint256 rewards) = defaultValidator.getStakeAndRewards(alice);
-        assertEq(stakeAmount, 0);
-        assertEq(rewards, 0);
-    }
+    /*  function test_getStakeAndRewards_zero() public view {
+         (uint256 stakeAmount, uint256 rewards) = defaultValidator.getStakeAndRewards(alice);
+         assertEq(stakeAmount, 0);
+         assertEq(rewards, 0);
+     }
 
-    function test_getStakeAndRewards_matches_existing_calls() public {
-        buyVoucherDefaultTested(defaultAmount, alice);
-        progressCheckpointWithRewardsDefault();
-        uint256 expectedStake; uint256 rate;
-        (expectedStake, rate) = defaultValidator.getTotalStake(alice);
-        uint256 expectedRewards = defaultValidator.getLiquidRewards(alice);
+     function test_getStakeAndRewards_matches_existing_calls() public {
+         buyVoucherDefaultTested(defaultAmount, alice);
+         progressCheckpointWithRewardsDefault();
+         uint256 expectedStake; uint256 rate;
+         (expectedStake, rate) = defaultValidator.getTotalStake(alice);
+         uint256 expectedRewards = defaultValidator.getLiquidRewards(alice);
 
-        (uint256 stakeAmount, uint256 rewards) = defaultValidator.getStakeAndRewards(alice);
+         (uint256 stakeAmount, uint256 rewards) = defaultValidator.getStakeAndRewards(alice);
 
-        assertEq(stakeAmount, expectedStake, "stake mismatch");
-        assertEq(rewards, expectedRewards, "rewards mismatch");
-        assertEq(rate, defaultValidator.exchangeRate(), "rate sanity");
-    } */
+         assertEq(stakeAmount, expectedStake, "stake mismatch");
+         assertEq(rewards, expectedRewards, "rewards mismatch");
+         assertEq(rate, defaultValidator.exchangeRate(), "rate sanity");
+     } */
 
     // helpers
     function buyVoucherDefaultTested(uint256 _amount, address _user) public {
@@ -969,41 +1023,40 @@ contract ValidatorShareTest is Test, DeploySystem {
         // Setup: Alice stakes initial amount
         buyVoucherDefaultTested(defaultAmount, alice);
         uint256 initialShares = defaultValidator.balanceOf(alice);
-        
+
         // Generate rewards via checkpoint
-        uint256 checkpointReward = progressCheckpointWithRewardsDefault();
+        progressCheckpointWithRewardsDefault();
         uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
         assertGt(aliceRewards, 0, "Alice should have rewards after checkpoint");
-        
+
         // Prepare additional stake amount
         uint256 additionalStake = defaultAmount * 2;
         fundAddr(alice, additionalStake, false);
-        
+
         vm.prank(alice);
         polToken.approve(address(stakeManager), additionalStake);
-        
+
         // Execute restakeAndStakePOL
-        uint256 polBalanceBefore = polToken.balanceOf(alice);
-        
+        polBalanceBefore = polToken.balanceOf(alice);
+
         vm.expectEmit(true, true, false, true, address(stakingInfo));
         emit StakingInfo.DelegatorRestaked(defaultValidatorId, alice, additionalStake + aliceRewards + defaultAmount);
-        
+
         vm.prank(alice);
-        (uint256 amountDeposited, uint256 liquidReward) = 
-            defaultValidator.restakeAndStakePOL(additionalStake);
-        
+        (uint256 amountDeposited, uint256 liquidReward) = defaultValidator.restakeAndStakePOL(additionalStake);
+
         // Assertions
         assertEq(liquidReward, aliceRewards, "Liquid reward should match expected rewards");
         assertEq(amountDeposited, additionalStake + aliceRewards, "Total deposited should be stake + rewards");
         assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice should have no remaining rewards");
         assertEq(
-            defaultValidator.balanceOf(alice), 
-            initialShares + amountDeposited, 
+            defaultValidator.balanceOf(alice),
+            initialShares + amountDeposited,
             "Alice shares should increase by deposited amount"
         );
         assertEq(
-            polToken.balanceOf(alice), 
-            polBalanceBefore - additionalStake, 
+            polToken.balanceOf(alice),
+            polBalanceBefore - additionalStake,
             "Alice should only spend the additional stake, not rewards"
         );
     }
@@ -1012,18 +1065,60 @@ contract ValidatorShareTest is Test, DeploySystem {
         // Setup: Alice has no existing stake or rewards
         uint256 stakeAmount = defaultAmount * 2;
         fundAddr(alice, stakeAmount, false);
-        
+
         vm.prank(alice);
         polToken.approve(address(stakeManager), stakeAmount);
-        
+
         // Execute restakeAndStakePOL with zero rewards
         vm.prank(alice);
-        (uint256 amountDeposited, uint256 liquidReward) = 
-            defaultValidator.restakeAndStakePOL(stakeAmount);
-        
+        (uint256 amountDeposited, uint256 liquidReward) = defaultValidator.restakeAndStakePOL(stakeAmount);
+
         // Assertions
         assertEq(liquidReward, 0, "Should have no rewards");
         assertEq(amountDeposited, stakeAmount, "Deposited should equal stake amount");
         assertEq(defaultValidator.balanceOf(alice), stakeAmount, "Alice should have shares equal to stake");
+    }
+
+    function test_restakeAndUnstakePOL() public {
+        // Setup: Alice stakes initial amount
+        buyVoucherDefaultTested(defaultAmount, alice);
+        uint256 initialShares = defaultValidator.balanceOf(alice);
+
+        // Generate rewards via checkpoint
+        progressCheckpointWithRewardsDefault();
+        uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
+        assertGt(aliceRewards, 0, "Alice should have rewards after checkpoint");
+
+        // Execute restakeAndStakePOL
+        polBalanceBefore = polToken.balanceOf(alice);
+
+        vm.expectEmit(true, true, false, true, address(stakingInfo));
+        emit StakingInfo.DelegatorRestaked(defaultValidatorId, alice, aliceRewards);
+
+        vm.prank(alice);
+        uint256 restaked = defaultValidator.restakeAndUnstakePOL(initialShares + aliceRewards);
+
+        // Assertions
+        assertEq(restaked, aliceRewards, "Liquid reward should match expected rewards");
+        assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice should have no remaining rewards");
+        assertEq(defaultValidator.balanceOf(alice), 0, "Alice shares should have been unstaked");
+
+        uint256 unboundNonce = defaultValidator.unbondNonces(alice);
+        (uint256 shares, uint256 withdrawEpoch) = defaultValidator.unbonds_new(alice, unboundNonce);
+
+        assertEq(shares, initialShares + aliceRewards, "Unbond shares should match initial shares plus rewards");
+
+        uint256 delay = stakeManager.withdrawalDelay();
+        vm.prank(stakeManager.governance());
+        stakeManager.setCurrentEpoch(withdrawEpoch + delay + 1);
+
+        vm.prank(alice);
+        defaultValidator.unstakeClaimTokens_newPOL(unboundNonce);
+
+        assertEq(
+            polToken.balanceOf(alice),
+            polBalanceBefore + initialShares + aliceRewards,
+            "Alice should have received her stake and rewards"
+        );
     }
 }
