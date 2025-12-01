@@ -63,8 +63,6 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
     // EIP712 Storage
     mapping(address => uint256) internal _nonces;
 
-    // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
-    // invalidate the cached domain separator if the chain id changes.
     bytes32 internal _CACHED_DOMAIN_SEPARATOR;
     uint256 internal _CACHED_CHAIN_ID;
 
@@ -96,6 +94,10 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
 
     function symbol() public view returns (string memory) {
         return string(abi.encodePacked("dPOL", _toHexString(validatorId)));
+    }
+
+    function decimals() public pure returns (uint8) {
+        return 18;
     }
 
     /**
