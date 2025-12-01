@@ -11,16 +11,33 @@ contract UpgradeValidatorShare_sPOL is Script {
     using stdJson for string;
 
     function run() public {
-        vm.selectFork(vm.createFork(vm.rpcUrl("mainnet")));
-
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         string memory input = vm.readFile("scripts/deployers/input.json");
         string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
 
+        string memory artifactInput =
+            vm.readFile("out/ValidatorShare.sol/ValidatorShare.json");
+        bytes memory bytecode = vm.parseJsonBytes(artifactInput, ".bytecode.object");
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        deployCode(ValidatorShare);
+
         // deploy new impl
-        address newImpl = new ValidatorShare();
+        address newImpl;
+
+        assembly {
+            // create(value, offset, size)
+            // value = 0 (no ETH), offset = bytecode data start, size = bytecode length
+            newImpl := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
+
+        console.log(newImpl); 
 
         // update address in registry
-        Registry registry = Registry(input.readJson(chainIdSlug).readString("registry"));
-        registry.setAddress("ValidatorShare", newImpl);
+        /* Registry registry = Registry(input.readJson(chainIdSlug).readString("registry"));
+        registry.setAddress("ValidatorShare", newImpl); */
+
+        vm.stopBroadcast();
     }
 }
