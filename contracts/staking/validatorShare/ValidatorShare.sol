@@ -624,10 +624,8 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
 
         bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
 
-        if (_chainId() != _CACHED_CHAIN_ID) {
-            _cacheDomainSeparatorV4();
-        }
-
+        // @dev for existing validators, _CACHED_DOMAIN_SEPARATOR needs to be set
+        // by calling _cacheDomainSeparatorV4() once before this will work
         bytes32 hash = _hashTypedDataV4(structHash);
 
         address signer = ECVerify.ecrecovery(hash, v, r, s);
@@ -664,6 +662,7 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         return signature;
     }
 
+    // @dev leaving the original state mutability to adhere strictly to the EIP712 interface
     function eip712Version() public view returns (string memory) {
         return _VERSION;
     }

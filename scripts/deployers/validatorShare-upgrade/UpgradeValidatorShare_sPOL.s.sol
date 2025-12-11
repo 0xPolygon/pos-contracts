@@ -15,8 +15,7 @@ contract UpgradeValidatorShare_sPOL is Script {
         string memory input = vm.readFile("scripts/deployers/input.json");
         string memory chainIdSlug = string(abi.encodePacked('["', vm.toString(block.chainid), '"]'));
 
-        string memory artifactInput =
-            vm.readFile("out/ValidatorShare.sol/ValidatorShare.json");
+        string memory artifactInput = vm.readFile("out/ValidatorShare.sol/ValidatorShare.json");
         bytes memory bytecode = vm.parseJsonBytes(artifactInput, ".bytecode.object");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -32,11 +31,13 @@ contract UpgradeValidatorShare_sPOL is Script {
             newImpl := create(0, add(bytecode, 0x20), mload(bytecode))
         }
 
-        console.log(newImpl); 
+        console.log(newImpl);
 
-        // update address in registry
+        // Multisig: update address in registry
         /* Registry registry = Registry(input.readJson(chainIdSlug).readString("registry"));
         registry.setAddress("ValidatorShare", newImpl); */
+
+        // Script: call _cacheDomainSeparatorV4 on existing validators
 
         vm.stopBroadcast();
     }
