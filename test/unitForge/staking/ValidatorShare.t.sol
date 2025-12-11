@@ -571,18 +571,17 @@ contract ValidatorShareTest is Test, DeploySystem {
 
         // Charlie transfers from alice to bob
         vm.prank(charlie);
-        (bool success, uint256 liquidRewardsTo, uint256 amountRestaked) =
+        (bool success, uint256 amountRestaked) =
             defaultValidator.restakeAndTransferFrom(alice, bob, defaultAmount);
 
         assertEq(success, true, "Transfer was successful");
-        assertEq(bobRewardsBefore, liquidRewardsTo, "Bobs rewards were correctly calculated");
         assertEq(bobRewardsBefore, amountRestaked, "Bob's rewards were restaked");
 
         assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
         // Bob should have original shares + transferred shares + restaked rewards
         assertEq(
             defaultValidator.balanceOf(bob),
-            defaultAmount + bobSharesBefore + liquidRewardsTo,
+            defaultAmount + bobSharesBefore + amountRestaked,
             "Bob must have shares from transfer + restaked rewards"
         );
         assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
@@ -814,10 +813,10 @@ contract ValidatorShareTest is Test, DeploySystem {
 
     // if userPk is 0, then no permit is used and it uses regular approve
     function buyVoucherDefaultGenericTested(uint256 _amount, address _user, bool matic, uint256 _userPk) public {
-        uint256 currentStakeManagerStake = stakeManager.currentValidatorSetTotalStake();
-        uint256 currentUserShares = defaultValidator.balanceOf(_user);
+        currentStakeManagerStake = stakeManager.currentValidatorSetTotalStake();
+        currentUserShares = defaultValidator.balanceOf(_user);
         uint256 currentActiveAmount = defaultValidator.activeAmount();
-        uint256 validatorNonce = stakingInfo.validatorNonce(defaultValidatorId);
+        validatorNonce = stakingInfo.validatorNonce(defaultValidatorId);
 
         // Ensure allowance is zero
         assertEq(polToken.allowance(_user, address(stakeManager)), 0, "initial user allowance not zero");
