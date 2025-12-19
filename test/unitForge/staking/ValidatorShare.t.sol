@@ -566,28 +566,25 @@ contract ValidatorShareTest is Test, DeploySystem {
         defaultValidator.approve(charlie, defaultAmount);
 
         // Expect alice's rewards to be paid out, bob's to be restaked
-        vm.expectEmit(true, true, true, true, address(stakingInfo));
-        emit StakingInfo.DelegatorClaimedRewards(defaultValidatorId, alice, aliceRewards);
+        vm.expectEmit(true, true, true, true, address(eventsHub));
+        emit EventsHub.SharesTransfer(defaultValidatorId, alice, charlie, defaultAmount);
 
         // Charlie transfers from alice to bob
         vm.prank(charlie);
         (bool success, uint256 amountRestaked) =
-            defaultValidator.restakeAndTransferFrom(alice, bob, defaultAmount);
+            defaultValidator.restakeAndTransferFrom(alice, defaultAmount);
 
         assertEq(success, true, "Transfer was successful");
-        assertEq(bobRewardsBefore, amountRestaked, "Bob's rewards were restaked");
 
         assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
-        // Bob should have original shares + transferred shares + restaked rewards
+        // Charlie should have transferred shares + restaked rewards
         assertEq(
-            defaultValidator.balanceOf(bob),
-            defaultAmount + bobSharesBefore + amountRestaked,
-            "Bob must have shares from transfer + restaked rewards"
+            defaultValidator.balanceOf(charlie),
+            defaultAmount + amountRestaked,
+            "Charlie must have shares from transfer + restaked rewards"
         );
         assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
-        assertEq(defaultValidator.getLiquidRewards(bob), 0, "Bob must have no liquid rewards after transfer (restaked)");
         assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
-        assertEq(polToken.balanceOf(bob), 0, "Bob did not get paid out, but restaked");
     }
 
     function test_transferFrom_withrewards_newRecipient() public {
