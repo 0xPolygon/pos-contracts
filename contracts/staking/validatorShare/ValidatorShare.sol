@@ -184,8 +184,11 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
             uint256 liquidReward = _calculateReward(to, rewardPerShare);
 
             if (liquidReward != 0) {
+                // reset initial reward
+                initalRewardPerShare[to] = rewardPerShare;
+
                 if (!locked) {
-                    // _minSharesToMint
+                    // restake
                     amountRestaked = _buyShares(liquidReward, liquidReward, to);
 
                     if (liquidReward > amountRestaked) {
