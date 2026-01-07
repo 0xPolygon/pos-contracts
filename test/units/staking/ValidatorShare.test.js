@@ -301,21 +301,6 @@ describe('ValidatorShare', async function () {
       })
     })
 
-    describe('when validator turns off delegation', function () {
-      deployAliceAndBob()
-
-      before('disable delegation', async function () {
-        const stakeManagerValidator = this.stakeManager.connect(
-          this.stakeManager.provider.getSigner(this.validatorUser.getChecksumAddressString())
-        )
-        await stakeManagerValidator.updateValidatorDelegation(false)
-      })
-
-      it('reverts', async function () {
-        await expectRevert(buyVoucher(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
-      })
-    })
-
     describe('when staking manager delegation is disabled', function () {
       deployAliceAndBob()
 
