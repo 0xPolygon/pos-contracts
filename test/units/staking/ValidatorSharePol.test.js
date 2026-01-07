@@ -95,13 +95,13 @@ describe('ValidatorSharePOL', function () {
       })
 
       testbuyVoucherPOL({
-        voucherValue: toWei('100'),
-        voucherValueExpected: toWei('100'),
-        userTotalStaked: toWei('100'),
-        totalStaked: toWei('200'),
-        shares: toWei('100'),
+        initialBalance: toWei('70705'),
         reward: '0',
-        initialBalance: toWei('70705')
+        shares: toWei('100'),
+        totalStaked: toWei('200'),
+        userTotalStaked: toWei('100'),
+        voucherValueExpected: toWei('100'),
+        voucherValue: toWei('100')
       })
     })
 
@@ -117,6 +117,10 @@ describe('ValidatorSharePOL', function () {
 
       it('reverts', async function () {
         await expectRevert(buyVoucherPOL(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
+      })
+
+      it('reverts', async function () {
+        await expectRevert(buyVoucher(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
       })
     })
 
@@ -147,36 +151,36 @@ describe('ValidatorSharePOL', function () {
 
       describe('1st purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
+          voucherValue: toWei('100'),
           totalStaked: toWei('200'),
-          shares: toWei('100'),
+          userTotalStaked: toWei('100'),
           reward: '0',
+          shares: toWei('100'),
           initialBalance: toWei('70705')
         })
       })
 
       describe('2nd purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('150'),
           voucherValueExpected: toWei('150'),
-          userTotalStaked: toWei('250'),
+          voucherValue: toWei('150'),
           totalStaked: toWei('350'),
-          shares: toWei('150'),
+          userTotalStaked: toWei('250'),
           reward: '0',
+          shares: toWei('150'),
           initialBalance: toWei('70555')
         })
       })
 
       describe('3rd purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('250'),
           voucherValueExpected: toWei('250'),
-          userTotalStaked: toWei('500'),
+          voucherValue: toWei('250'),
           totalStaked: toWei('600'),
-          shares: toWei('250'),
+          userTotalStaked: toWei('500'),
           reward: '0',
+          shares: toWei('250'),
           initialBalance: toWei('70305')
         })
       })
@@ -245,12 +249,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
+          voucherValue: toWei('100'),
           totalStaked: toWei('200'),
-          shares: toWei('100'),
+          userTotalStaked: toWei('100'),
           reward: '0',
+          shares: toWei('100'),
           initialBalance: toWei('70705')
         })
       })
@@ -261,12 +265,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
+          voucherValue: toWei('100'),
           totalStaked: toWei('300'),
-          shares: toWei('100'),
+          userTotalStaked: toWei('100'),
           reward: '0',
+          shares: toWei('100'),
           initialBalance: toWei('70750')
         })
       })
@@ -277,12 +281,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
-          userTotalStaked: toWei('300'),
+          voucherValue: toWei('200'),
           totalStaked: toWei('500'),
-          shares: toWei('200'),
+          userTotalStaked: toWei('300'),
           reward: '0',
+          shares: toWei('200'),
           initialBalance: toWei('70505')
         })
       })
@@ -293,12 +297,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
-          userTotalStaked: toWei('300'),
+          voucherValue: toWei('200'),
           totalStaked: toWei('700'),
-          shares: toWei('200'),
+          userTotalStaked: toWei('300'),
           reward: '0',
+          shares: toWei('200'),
           initialBalance: toWei('70550')
         })
       })
