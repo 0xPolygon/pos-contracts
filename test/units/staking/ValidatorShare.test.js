@@ -131,12 +131,12 @@ describe('ValidatorShare', async function () {
       })
 
       testBuyVoucherWithPermit({
-        voucherValue: toWei('100'),
-        voucherValueExpected: toWei('100'),
         userTotalStaked: toWei('100'),
-        totalStaked: toWei('200'),
-        shares: toWei('100'),
+        voucherValue: toWei('100'),
         reward: '0',
+        totalStaked: toWei('200'),
+        voucherValueExpected: toWei('100'),
+        shares: toWei('100'),
         initialBalance: toWei('705')
       })
     })
@@ -273,11 +273,11 @@ describe('ValidatorShare', async function () {
       })
 
       testBuyVoucher({
-        voucherValue: toWei('100'),
-        voucherValueExpected: toWei('100'),
-        userTotalStaked: toWei('100'),
-        totalStaked: toWei('200'),
         shares: toWei('100'),
+        voucherValue: toWei('100'),
+        userTotalStaked: toWei('100'),
+        voucherValueExpected: toWei('100'),
+        totalStaked: toWei('200'),
         reward: '0',
         initialBalance: toWei('70705')
       })
@@ -291,12 +291,12 @@ describe('ValidatorShare', async function () {
       })
 
       testBuyVoucher({
+        userTotalStaked: toWei('100'),
         voucherValue: toWei('100'),
         voucherValueExpected: toWei('100'),
-        userTotalStaked: toWei('100'),
         totalStaked: toWei('200'),
-        shares: toWei('100'),
         reward: '0',
+        shares: toWei('100'),
         initialBalance: toWei('70705')
       })
     })
@@ -329,35 +329,35 @@ describe('ValidatorShare', async function () {
       describe('1st purchase', async function () {
         testBuyVoucher({
           voucherValue: toWei('100'),
-          voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
-          totalStaked: toWei('200'),
-          shares: toWei('100'),
           reward: '0',
+          userTotalStaked: toWei('100'),
+          shares: toWei('100'),
+          totalStaked: toWei('200'),
+          voucherValueExpected: toWei('100'),
           initialBalance: toWei('70705')
         })
       })
 
       describe('2nd purchase', async function () {
         testBuyVoucher({
-          voucherValue: toWei('150'),
           voucherValueExpected: toWei('150'),
-          userTotalStaked: toWei('250'),
-          totalStaked: toWei('350'),
           shares: toWei('150'),
+          userTotalStaked: toWei('250'),
+          voucherValue: toWei('150'),
           reward: '0',
+          totalStaked: toWei('350'),
           initialBalance: toWei('70555')
         })
       })
 
       describe('3rd purchase', async function () {
         testBuyVoucher({
+          totalStaked: toWei('600'),
           voucherValue: toWei('250'),
           voucherValueExpected: toWei('250'),
           userTotalStaked: toWei('500'),
-          totalStaked: toWei('600'),
-          shares: toWei('250'),
           reward: '0',
+          shares: toWei('250'),
           initialBalance: toWei('70305')
         })
       })
