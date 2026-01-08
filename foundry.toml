@@ -16,7 +16,7 @@ ffi = true
 remappings = [
   "eth-gas-reporter/=node_modules/eth-gas-reporter/",
   "forge-std/=lib/forge-std/src/",
-  "hardhat/=node_modules/hardhat/"
+  "hardhat/=node_modules/hardhat/",
 ]
 fs_permissions = [{ access = "read", path = "./scripts/"}, { access = "read", path = "./test/"},  { access = "read", path = "./out/"}, { access = "read-write", path = "./contractAddresses.json" }]
 auto_detect_solc = true
