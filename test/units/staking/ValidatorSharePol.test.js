@@ -7,7 +7,7 @@ import {
 import testHelpers from '@openzeppelin/test-helpers'
 import { checkPoint, assertBigNumberEquality, assertInTransaction } from '../../helpers/utils.js'
 import { wallets } from './deployment.js'
-import { buyVoucherPOL, sellVoucherPOL, sellVoucherNewPOL, doDeployPOL, ValidatorDefaultStake, Dynasty } from './ValidatorShareHelper.js'
+import { buyVoucher, buyVoucherPOL, sellVoucherPOL, sellVoucherNewPOL, doDeployPOL, ValidatorDefaultStake, Dynasty } from './ValidatorShareHelper.js'
 
 const BN = testHelpers.BN
 const expectRevert = testHelpers.expectRevert
