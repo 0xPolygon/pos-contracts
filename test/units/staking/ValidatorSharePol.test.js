@@ -7,7 +7,7 @@ import {
 import testHelpers from '@openzeppelin/test-helpers'
 import { checkPoint, assertBigNumberEquality, assertInTransaction } from '../../helpers/utils.js'
 import { wallets } from './deployment.js'
-import { buyVoucherPOL, sellVoucherPOL, sellVoucherNewPOL, doDeployPOL, ValidatorDefaultStake, Dynasty } from './ValidatorShareHelper.js'
+import { buyVoucher, buyVoucherPOL, sellVoucherPOL, sellVoucherNewPOL, doDeployPOL, ValidatorDefaultStake, Dynasty } from './ValidatorShareHelper.js'
 
 const BN = testHelpers.BN
 const expectRevert = testHelpers.expectRevert
@@ -95,13 +95,13 @@ describe('ValidatorSharePOL', function () {
       })
 
       testbuyVoucherPOL({
-        voucherValue: toWei('100'),
-        voucherValueExpected: toWei('100'),
-        userTotalStaked: toWei('100'),
-        totalStaked: toWei('200'),
-        shares: toWei('100'),
+        initialBalance: toWei('70705'),
         reward: '0',
-        initialBalance: toWei('70705')
+        shares: toWei('100'),
+        totalStaked: toWei('200'),
+        userTotalStaked: toWei('100'),
+        voucherValueExpected: toWei('100'),
+        voucherValue: toWei('100')
       })
     })
 
@@ -117,6 +117,10 @@ describe('ValidatorSharePOL', function () {
 
       it('reverts', async function () {
         await expectRevert(buyVoucherPOL(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
+      })
+
+      it('reverts', async function () {
+        await expectRevert(buyVoucher(this.validatorContract, toWei('150'), this.alice), 'Delegation is disabled')
       })
     })
 
@@ -147,36 +151,36 @@ describe('ValidatorSharePOL', function () {
 
       describe('1st purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
+          voucherValue: toWei('100'),
           totalStaked: toWei('200'),
-          shares: toWei('100'),
+          userTotalStaked: toWei('100'),
           reward: '0',
+          shares: toWei('100'),
           initialBalance: toWei('70705')
         })
       })
 
       describe('2nd purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('150'),
           voucherValueExpected: toWei('150'),
-          userTotalStaked: toWei('250'),
+          voucherValue: toWei('150'),
           totalStaked: toWei('350'),
-          shares: toWei('150'),
+          userTotalStaked: toWei('250'),
           reward: '0',
+          shares: toWei('150'),
           initialBalance: toWei('70555')
         })
       })
 
       describe('3rd purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('250'),
           voucherValueExpected: toWei('250'),
-          userTotalStaked: toWei('500'),
+          voucherValue: toWei('250'),
           totalStaked: toWei('600'),
-          shares: toWei('250'),
+          userTotalStaked: toWei('500'),
           reward: '0',
+          shares: toWei('250'),
           initialBalance: toWei('70305')
         })
       })
@@ -199,10 +203,10 @@ describe('ValidatorSharePOL', function () {
         advanceCheckpointAfter()
 
         testbuyVoucherPOL({
+          totalStaked: toWei('200'),
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
-          totalStaked: toWei('200'),
           shares: toWei('100'),
           reward: '0',
           initialBalance: toWei('70705')
@@ -213,24 +217,24 @@ describe('ValidatorSharePOL', function () {
         advanceCheckpointAfter()
 
         testbuyVoucherPOL({
-          voucherValue: toWei('150'),
           voucherValueExpected: toWei('150'),
+          voucherValue: toWei('150'),
           userTotalStaked: toWei('250'),
           totalStaked: toWei('350'),
-          shares: toWei('150'),
           reward: toWei('4500'),
+          shares: toWei('150'),
           initialBalance: toWei('70555')
         })
       })
 
       describe('3rd purchase', async function () {
         testbuyVoucherPOL({
-          voucherValue: toWei('250'),
           voucherValueExpected: toWei('250'),
+          voucherValue: toWei('250'),
           userTotalStaked: toWei('500'),
           totalStaked: toWei('600'),
-          shares: toWei('250'),
           reward: '6428571428571428571428',
+          shares: toWei('250'),
           initialBalance: toWei('74805')
         })
       })
@@ -245,11 +249,11 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('100'),
-          voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
           totalStaked: toWei('200'),
+          voucherValueExpected: toWei('100'),
+          voucherValue: toWei('100'),
           shares: toWei('100'),
+          userTotalStaked: toWei('100'),
           reward: '0',
           initialBalance: toWei('70705')
         })
@@ -262,11 +266,11 @@ describe('ValidatorSharePOL', function () {
 
         testbuyVoucherPOL({
           voucherValue: toWei('100'),
-          voucherValueExpected: toWei('100'),
-          userTotalStaked: toWei('100'),
           totalStaked: toWei('300'),
-          shares: toWei('100'),
+          voucherValueExpected: toWei('100'),
           reward: '0',
+          shares: toWei('100'),
+          userTotalStaked: toWei('100'),
           initialBalance: toWei('70750')
         })
       })
@@ -277,9 +281,9 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('200'),
-          voucherValueExpected: toWei('200'),
           userTotalStaked: toWei('300'),
+          voucherValueExpected: toWei('200'),
+          voucherValue: toWei('200'),
           totalStaked: toWei('500'),
           shares: toWei('200'),
           reward: '0',
@@ -293,12 +297,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('200'),
           voucherValueExpected: toWei('200'),
-          userTotalStaked: toWei('300'),
+          voucherValue: toWei('200'),
           totalStaked: toWei('700'),
-          shares: toWei('200'),
+          userTotalStaked: toWei('300'),
           reward: '0',
+          shares: toWei('200'),
           initialBalance: toWei('70550')
         })
       })
@@ -320,12 +324,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
-          voucherValue: toWei('100'),
-          voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
-          totalStaked: toWei('200'),
+          voucherValue: toWei('100'),
           shares: toWei('100'),
+          totalStaked: toWei('200'),
           reward: '0',
+          voucherValueExpected: toWei('100'),
           initialBalance: toWei('70705')
         })
       })
@@ -337,12 +341,12 @@ describe('ValidatorSharePOL', function () {
         })
 
         testbuyVoucherPOL({
+          totalStaked: toWei('300'),
           voucherValue: toWei('100'),
           voucherValueExpected: toWei('100'),
           userTotalStaked: toWei('100'),
-          totalStaked: toWei('300'),
-          shares: toWei('100'),
           reward: '0',
+          shares: toWei('100'),
           initialBalance: toWei('70750')
         })
       })
@@ -826,9 +830,11 @@ describe('ValidatorSharePOL', function () {
     function testWithdraw({ label, user, expectedReward, initialBalance }) {
       describe(`when ${label} withdraws`, function () {
         if (expectedReward.toString() === '0') {
-          it('reverts', async function () {
+          it('will return but not withdraw any rewards', async function () {
             const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(user))
-            await expectRevert(validatorUser.withdrawRewardsPOL(), 'Too small rewards amount')
+            this.receipt = await (await validatorUser.withdrawRewardsPOL()).wait()
+            const balance = await this.polToken.balanceOf(user)
+            assertBigNumberEquality(balance, new BN(initialBalance))
           })
         } else {
           it('must withdraw rewards', async function () {
@@ -998,21 +1004,12 @@ describe('ValidatorSharePOL', function () {
       ])
     })
 
-    describe('when not enough rewards', function () {
-      before(doDeployPOL)
-
-      it('reverts', async function () {
-        const validatorContractAlice = this.validatorContract.connect(this.validatorContract.provider.getSigner(Alice))
-        await expectRevert(validatorContractAlice.withdrawRewardsPOL(), 'Too small rewards amount')
-      })
-    })
-
     describe('when Alice withdraws 2 times in a row', async function () {
       runWithdrawRewardsTest([
         { stake: { user: Alice, label: 'Alice', amount: new BN(toWei('100')) } },
         { checkpoints: 1 },
         { withdraw: { user: Alice, label: 'Alice', expectedReward: toWei('4500') } },
-        { withdraw: { user: Alice, label: 'Alice', expectedReward: '0' } }
+        { withdraw: { user: Alice, label: 'Alice', expectedReward: '0', initialBalance: toWei('4500') } }
       ])
     })
 
@@ -1127,15 +1124,6 @@ describe('ValidatorSharePOL', function () {
           validatorId: this.validatorId,
           totalStaked: userTotalStaked.toString()
         })
-      })
-    })
-
-    describe('when no liquid rewards', function () {
-      prepareForTest({ skipCheckpoint: true })
-
-      it('reverts', async function () {
-        const validatorUser = this.validatorContract.connect(this.validatorContract.provider.getSigner(this.user))
-        await expectRevert(validatorUser.restakePOL(), 'Too small rewards to restake')
       })
     })
 
@@ -1427,7 +1415,7 @@ describe('ValidatorSharePOL', function () {
         assertBigNumberEquality(
           await this.stakeToken.balanceOf(this.alice),
           initialAliceStakeBalance
-          )
+        )
       })
 
       it('Alice must have 0 liquid rewards', async function () {

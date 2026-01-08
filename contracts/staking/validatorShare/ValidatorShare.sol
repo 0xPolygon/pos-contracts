@@ -1,16 +1,17 @@
 pragma solidity 0.5.17;
 
-import {Registry} from "../../common/Registry.sol";
-import {ERC20NonTradable} from "../../common/tokens/ERC20NonTradable.sol";
-import {StakingInfo} from "./../StakingInfo.sol";
-import {EventsHub} from "./../EventsHub.sol";
-import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
-import {IStakeManager} from "../stakeManager/IStakeManager.sol";
 import {IValidatorShare} from "./IValidatorShare.sol";
+import {ERC20} from "../../common/oz/token/ERC20/ERC20.sol";
+import {OwnableLockable} from "../../common/mixin/OwnableLockable.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
-import {IERC20Permit} from "./../../common/misc/IERC20Permit.sol";
+import {IERC20Permit} from "../../common/misc/IERC20Permit.sol";
+import {StakingInfo} from "./../StakingInfo.sol";
+import {IStakeManager} from "../stakeManager/IStakeManager.sol";
+import {EventsHub} from "./../EventsHub.sol";
+import {Registry} from "../../common/Registry.sol";
+import {ECVerify} from "../../common/lib/ECVerify.sol";
 
-contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, Initializable {
+contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializable, IERC20Permit {
     struct DelegatorUnbond {
         uint256 shares;
         uint256 withdrawEpoch;
@@ -22,6 +23,14 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     uint256 constant EXCHANGE_RATE_HIGH_PRECISION = 10 ** 29;
     uint256 constant MAX_COMMISION_RATE = 100;
     uint256 constant REWARD_PRECISION = 10 ** 25;
+
+    /* solhint-disable var-name-mixedcase */
+    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
+
+    string private constant _VERSION = "1";
+
+    bytes32 private constant PERMIT_TYPEHASH =
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     StakingInfo public stakingLogger;
     IStakeManager public stakeManager;
@@ -51,11 +60,21 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
 
     IERC20Permit public polToken;
 
+    // EIP712 Storage
+    mapping(address => uint256) internal _nonces;
+
+    bytes32 internal _CACHED_DOMAIN_SEPARATOR;
+    uint256 internal _CACHED_CHAIN_ID;
+
+    bytes32 internal _HASHED_NAME;
+    bytes32 internal _HASHED_VERSION;
+    bytes32 internal _TYPE_HASH;
+    /* solhint-enable var-name-mixedcase */
+
     constructor() public {
         _disableInitializer();
     }
 
-    // onlyOwner will prevent this contract from initializing, since it's owner is going to be 0x0 address
     function initialize(uint256 _validatorId, address _stakingLogger, address _stakeManager) external initializer {
         validatorId = _validatorId;
         stakingLogger = StakingInfo(_stakingLogger);
@@ -63,14 +82,32 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         _transferOwnership(_stakeManager);
         _getOrCacheEventsHub();
         _getOrCachePOLToken();
-
-        minAmount = 10 ** 18;
         delegation = true;
+
+        _cacheDomainSeparatorV4();
+    }
+
+    // ERC20 functions, dynamic
+    function name() public view returns (string memory) {
+        return string(abi.encodePacked("Delegated POL #", _toHexString(validatorId)));
+    }
+
+    function symbol() public view returns (string memory) {
+        return string(abi.encodePacked("dPOL", _toHexString(validatorId)));
+    }
+
+    function decimals() public pure returns (uint8) {
+        return 18;
     }
 
     /**
      * Public View Methods
      */
+
+    function version() public pure returns (string memory) {
+        return "2.3.0";
+    }
+
     function exchangeRate() public view returns (uint256) {
         uint256 totalShares = totalSupply();
         uint256 precision = _getRatePrecision();
@@ -108,9 +145,88 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _calculateRewardPerShareWithRewards(stakeManager.delegatorsReward(validatorId));
     }
 
+    function getStakeAndRewards(address user) public view returns (uint256 stakeAmount, uint256 liquidRewards) {
+        uint256 shares = balanceOf(user);
+        if (shares == 0) {
+            return (0, 0);
+        }
+
+        uint256 totalShares = totalSupply();
+
+        // stakeAmount = delegatedAmount(of this validator) * shares / totalShares
+        uint256 delegated = stakeManager.delegatedAmount(validatorId);
+        stakeAmount = delegated.mul(shares).div(totalShares);
+
+        uint256 accumulatedReward = stakeManager.delegatorsReward(validatorId);
+        uint256 _rewardPerShare = rewardPerShare;
+        if (accumulatedReward != 0 && totalShares != 0) {
+            _rewardPerShare = _rewardPerShare.add(accumulatedReward.mul(REWARD_PRECISION).div(totalShares));
+        }
+
+        uint256 _initialRewardPerShare = initalRewardPerShare[user];
+        if (_rewardPerShare > _initialRewardPerShare) {
+            liquidRewards = _rewardPerShare.sub(_initialRewardPerShare).mul(shares).div(REWARD_PRECISION);
+        }
+    }
+
     /**
      * Public Methods
      */
+    function restakeAndTransferFrom(address from, uint256 value) public returns (bool, uint256) {
+        address to = msg.sender;
+        uint256 amountRestaked;
+
+        // Sender's rewards are returned
+        _withdrawAndTransferReward(from, true);
+
+        // recipient already has POL staked with this validator? reset their rewards
+        if (balanceOf(to) > 0) {
+            uint256 liquidReward = _calculateReward(to, rewardPerShare);
+
+            if (liquidReward != 0) {
+                // reset initial reward
+                initalRewardPerShare[to] = rewardPerShare;
+
+                if (!locked) {
+                    // restake
+                    amountRestaked = _buyShares(liquidReward, liquidReward, to);
+
+                    if (liquidReward > amountRestaked) {
+                        // return change to the user
+                        _payout(liquidReward - amountRestaked, to, "Insufficent rewards", true);
+                        stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidReward - amountRestaked);
+                    }
+
+                    (uint256 totalStaked,) = getTotalStake(to);
+                    stakingLogger.logDelegatorRestaked(validatorId, to, totalStaked);
+                } else {
+                    _payout(liquidReward, to, "Insufficent rewards", true);
+                    stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidReward);
+                }
+            }
+        }
+
+        // Call parent's transferFrom which checks allowance and transfers shares
+        bool success = super.transferFrom(from, to, value);
+
+        // Log the transfer event
+        _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
+
+        return (success, amountRestaked);
+    }
+
+    // carefull: this function uses POL
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+        // send rewards to sender
+        _withdrawAndTransferReward(to, true);
+        // send rewards to receiver
+        _withdrawAndTransferReward(from, true);
+        // move shares to recipient
+        bool success = super.transferFrom(from, to, value);
+        _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
+        return success;
+    }
+
     function buyVoucher(uint256 _amount, uint256 _minSharesToMint) public returns (uint256 amountToDeposit) {
         return _buyVoucher(_amount, _minSharesToMint, false);
     }
@@ -155,31 +271,46 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     }
 
     function restake() public returns (uint256, uint256) {
-        return _restake(false);
+        return _restake(msg.sender, false);
     }
 
     function restakePOL() public returns (uint256, uint256) {
-        return _restake(true);
+        return _restake(msg.sender, true);
     }
 
-    function _restake(bool pol) public returns (uint256, uint256) {
-        address user = msg.sender;
-        uint256 liquidReward = _withdrawReward(user);
-        uint256 amountRestaked;
+    function restakeAndStakePOL(uint256 _amount) public returns (uint256, uint256) {
+        uint256 liquidReward = _calcAndResetReward(msg.sender);
 
-        require(liquidReward >= minAmount, "Too small rewards to restake");
+        uint256 amountPlusReward = _amount.add(liquidReward);
+
+        uint256 amountToDeposit = _buyShares(amountPlusReward, amountPlusReward, msg.sender);
+        require(amountToDeposit == amountPlusReward, "exchange rate not 1");
+
+        (uint256 totalStaked,) = getTotalStake(msg.sender);
+        stakingLogger.logDelegatorRestaked(validatorId, msg.sender, totalStaked);
+
+        // transferring POL from sender, total amountToDeposit - liquidReward
+        require(stakeManager.delegationDepositPOL(validatorId, _amount, msg.sender), "deposit failed");
+
+        return (amountToDeposit, liquidReward);
+    }
+
+    function restakeAndUnstakePOL(uint256 _amount) public returns (uint256) {
+        (uint256 restaked,) = _restake(msg.sender, true);
+        _sellVoucher_new(_amount, _amount, true);
+        return restaked;
+    }
+
+    function _restake(address user, bool pol) private returns (uint256, uint256) {
+        uint256 liquidReward = _calcAndResetReward(user);
+        uint256 amountRestaked;
 
         if (liquidReward != 0) {
             amountRestaked = _buyShares(liquidReward, 0, user);
 
             if (liquidReward > amountRestaked) {
                 // return change to the user
-                require(
-                    pol
-                        ? stakeManager.transferFundsPOL(validatorId, liquidReward - amountRestaked, user)
-                        : stakeManager.transferFunds(validatorId, liquidReward - amountRestaked, user),
-                    "Insufficent rewards"
-                );
+                _payout(liquidReward - amountRestaked, user, "Insufficent rewards", pol);
                 stakingLogger.logDelegatorClaimRewards(validatorId, user, liquidReward - amountRestaked);
             }
 
@@ -213,16 +344,11 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     }
 
     function withdrawRewards() public {
-        _withdrawRewards(false);
+        _withdrawAndTransferReward(msg.sender, false);
     }
 
     function withdrawRewardsPOL() public {
-        _withdrawRewards(true);
-    }
-
-    function _withdrawRewards(bool pol) internal {
-        uint256 rewards = _withdrawAndTransferReward(msg.sender, pol);
-        require(rewards >= minAmount, "Too small rewards amount");
+        _withdrawAndTransferReward(msg.sender, true);
     }
 
     function migrateOut(address user, uint256 amount) external onlyOwner {
@@ -366,12 +492,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         withdrawShares = withdrawShares.sub(shares);
         withdrawPool = withdrawPool.sub(_amount);
 
-        require(
-            pol
-                ? stakeManager.transferFundsPOL(validatorId, _amount, msg.sender)
-                : stakeManager.transferFunds(validatorId, _amount, msg.sender),
-            "Insufficent rewards"
-        );
+        _payout(_amount, msg.sender, "Insufficent rewards", pol);
 
         return _amount;
     }
@@ -413,7 +534,7 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _rewardPerShare.sub(_initialRewardPerShare).mul(shares).div(REWARD_PRECISION);
     }
 
-    function _withdrawReward(address user) private returns (uint256) {
+    function _calcAndResetReward(address user) private returns (uint256) {
         uint256 _rewardPerShare =
             _calculateRewardPerShareWithRewards(stakeManager.withdrawDelegatorsReward(validatorId));
         uint256 liquidRewards = _calculateReward(user, _rewardPerShare);
@@ -424,14 +545,9 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
     }
 
     function _withdrawAndTransferReward(address user, bool pol) private returns (uint256) {
-        uint256 liquidRewards = _withdrawReward(user);
+        uint256 liquidRewards = _calcAndResetReward(user);
         if (liquidRewards != 0) {
-            require(
-                pol
-                    ? stakeManager.transferFundsPOL(validatorId, liquidRewards, user)
-                    : stakeManager.transferFunds(validatorId, liquidRewards, user),
-                "Insufficent rewards"
-            );
+            _payout(liquidRewards, user, "Insufficent rewards", pol);
             stakingLogger.logDelegatorClaimRewards(validatorId, user, liquidRewards);
         }
         return liquidRewards;
@@ -465,17 +581,26 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         return _amount;
     }
 
+    function _payout(uint256 amount, address user, string memory message, bool pol) private {
+        require(
+            pol
+                ? stakeManager.transferFundsPOL(validatorId, amount, user)
+                : stakeManager.transferFunds(validatorId, amount, user),
+            message
+        );
+    }
+
     function transferPOL(address to, uint256 value) public returns (bool) {
-        _transfer(to, value, true);
+        _transferShares(to, value, true);
         return true;
     }
 
     function transfer(address to, uint256 value) public returns (bool) {
-        _transfer(to, value, false);
+        _transferShares(to, value, false);
         return true;
     }
 
-    function _transfer(address to, uint256 value, bool pol) internal {
+    function _transferShares(address to, uint256 value, bool pol) internal {
         address from = msg.sender;
         // get rewards for recipient
         _withdrawAndTransferReward(to, pol);
@@ -484,5 +609,112 @@ contract ValidatorShare is IValidatorShare, ERC20NonTradable, OwnableLockable, I
         // move shares to recipient
         super._transfer(from, to, value);
         _getOrCacheEventsHub().logSharesTransfer(validatorId, from, to, value);
+    }
+
+    // ERC20Permit
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public {
+        if (block.timestamp > deadline) {
+            revert("ERC2612ExpiredSignature");
+        }
+
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
+
+        // @dev for existing validators, _CACHED_DOMAIN_SEPARATOR needs to be set
+        // by calling _cacheDomainSeparatorV4() once before this will work
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        address signer = ECVerify.ecrecovery(hash, v, r, s);
+        if (signer != owner) {
+            revert("ERC2612InvalidSigner");
+        }
+
+        _approve(owner, spender, value);
+    }
+
+    function nonces(address owner) public view returns (uint256) {
+        return _nonces[owner];
+    }
+
+    // solhint-disable-next-line func-name-mixedcase
+    function DOMAIN_SEPARATOR() external view returns (bytes32) {
+        return _CACHED_DOMAIN_SEPARATOR;
+    }
+
+    function _useNonce(address owner) private returns (uint256 current) {
+        current = _nonces[owner];
+        _nonces[owner] = current + 1;
+    }
+
+    function _compress(uint8 v, bytes32 r, bytes32 s) private pure returns (bytes memory) {
+        bytes memory signature = new bytes(65);
+
+        assembly {
+            mstore(add(signature, 0x20), r)
+            mstore(add(signature, 0x40), s)
+            mstore8(add(signature, 0x60), v)
+        }
+
+        return signature;
+    }
+
+    // @dev leaving the original state mutability to adhere strictly to the EIP712 interface
+    function eip712Version() public view returns (string memory) {
+        return _VERSION;
+    }
+
+    function _chainId() public pure returns (uint256 chainId) {
+        assembly {
+            chainId := chainid()
+        }
+    }
+
+    function _cacheDomainSeparatorV4() public returns (bytes32) {
+        bytes32 hashedName = keccak256(bytes(name()));
+        bytes32 hashedVersion = keccak256(bytes(_VERSION));
+        _TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        _HASHED_NAME = hashedName;
+        _HASHED_VERSION = hashedVersion;
+        _CACHED_CHAIN_ID = _chainId();
+        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator();
+        return _CACHED_DOMAIN_SEPARATOR;
+    }
+
+    function _buildDomainSeparator() private view returns (bytes32) {
+        return keccak256(abi.encode(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION, _chainId(), address(this)));
+    }
+
+    function _hashTypedDataV4(bytes32 structHash) public view returns (bytes32) {
+        return _toTypedDataHash(_CACHED_DOMAIN_SEPARATOR, structHash);
+    }
+
+    function _toTypedDataHash(bytes32 domainSeparator, bytes32 structHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+    }
+
+    // utils
+    function _toHexString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp >>= 4;
+        }
+        bytes memory buffer = new bytes(length);
+        for (uint256 i = length; i > 0; --i) {
+            buffer[i - 1] = _HEX_SYMBOLS[value & 0xf];
+            value >>= 4;
+        }
+        return string(buffer);
     }
 }
