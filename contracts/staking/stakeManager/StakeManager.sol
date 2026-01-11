@@ -574,7 +574,7 @@ contract StakeManager is
         } else if (deactivationEpoch > currentEpoch) { // validator just unstaked, need to wait till next checkpoint
             revert("unstaking");
         }
-        
+
 
         if (amount >= 0) {
             increaseValidatorDelegatedAmount(validatorId, uint256(amount));
@@ -594,13 +594,13 @@ contract StakeManager is
     function updateSigner(uint256 validatorId, bytes memory signerPubkey) public onlyStaker(validatorId) {
         address signer = _getAndAssertSigner(signerPubkey);
         uint256 _currentEpoch = currentEpoch;
-        require(_currentEpoch >= latestSignerUpdateEpoch[validatorId].add(signerUpdateLimit), "Not allowed");
+        // require(_currentEpoch >= latestSignerUpdateEpoch[validatorId].add(signerUpdateLimit), "Not allowed");
 
         address currentSigner = validators[validatorId].signer;
         // update signer event
         logger.logSignerChange(validatorId, currentSigner, signer, signerPubkey);
-        
-        if (validators[validatorId].deactivationEpoch == 0) { 
+
+        if (validators[validatorId].deactivationEpoch == 0) {
             // didn't unstake, swap signer in the list
             _removeSigner(currentSigner);
             _insertSigner(signer);
@@ -837,7 +837,7 @@ contract StakeManager is
             if (prevBlockInterval != 0) {
                 // give more reward for faster and less for slower checkpoint
                 uint256 delta = (ckpReward * checkpointRewardDelta / CHK_REWARD_PRECISION);
-                
+
                 if (prevBlockInterval > fullIntervals) {
                     // checkpoint is faster
                     ckpReward += delta;
@@ -845,7 +845,7 @@ contract StakeManager is
                     ckpReward -= delta;
                 }
             }
-            
+
             prevBlockInterval = fullIntervals;
         }
 
