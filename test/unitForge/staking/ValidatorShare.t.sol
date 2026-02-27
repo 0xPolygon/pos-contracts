@@ -587,6 +587,51 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
     }
 
+    function test_restakeAndTransferFrom_noRecipientRewards() public {
+        address charlie = makeAddr("charlie");
+        buyVoucherDefaultTested(defaultAmount, alice);
+
+        uint256 reward = progressCheckpointWithRewardsDefault();
+
+        uint256 aliceRewards = defaultValidator.getLiquidRewards(alice);
+        uint256 charlieRewards = defaultValidator.getLiquidRewards(charlie);
+        assertEq(charlieRewards, 0, "Bob should have no rewards");
+        uint256 charlieShares = defaultValidator.balanceOf(charlie);
+        assertEq(charlieShares, 0, "Bob should have no shares");
+
+        assertEq(
+            aliceRewards,
+            defaultRewardPerfectCheckpoint(reward, defaultAmount, defaultAmount),
+            "Alice reward not as expected"
+        );
+
+        // Alice approves charlie to transfer her tokens
+        vm.prank(alice);
+        defaultValidator.approve(charlie, defaultAmount);
+
+        // Expect alice's rewards to be paid out, bob's to be restaked
+        vm.expectEmit(true, true, true, true, address(eventsHub));
+        emit EventsHub.SharesTransfer(defaultValidatorId, alice, charlie, defaultAmount);
+
+        // Charlie transfers from alice to himself
+        vm.prank(charlie);
+        (bool success, uint256 amountRestaked) =
+            defaultValidator.restakeAndTransferFrom(alice, defaultAmount);
+
+        assertEq(success, true, "Transfer was successful");
+
+        assertEq(defaultValidator.balanceOf(alice), 0, "Alice must have no shares after transfer");
+        // Charlie should have transferred shares + restaked rewards
+        assertEq(
+            defaultValidator.balanceOf(charlie),
+            defaultAmount + amountRestaked,
+            "Charlie must have shares from transfer + restaked rewards"
+        );
+        assertEq(defaultValidator.getLiquidRewards(alice), 0, "Alice must have no liquid rewards after transfer");
+        assertEq(polToken.balanceOf(alice), aliceRewards, "Alice must have her rewards as POL");
+        assertEq(defaultValidator.getLiquidRewards(charlie), 0, "Charlie must have no liquid rewards after transfer");
+    }
+
     function test_transferFrom_withrewards_newRecipient() public {
         address charlie = makeAddr("charlie");
         address newUser = makeAddr("newUser");
