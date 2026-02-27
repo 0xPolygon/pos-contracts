@@ -180,8 +180,8 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         _withdrawAndTransferReward(from, true);
 
         // reset recipient rewards, rewardPerShare was calculated in _withdrawAndTransferReward
-        initalRewardPerShare[to] = rewardPerShare;
         uint256 liquidReward = _calculateReward(to, rewardPerShare);
+        initalRewardPerShare[to] = rewardPerShare;
 
         if (liquidReward != 0) {
             if (!locked) {
