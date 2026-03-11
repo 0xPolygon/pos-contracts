@@ -179,30 +179,26 @@ contract ValidatorShare is IValidatorShare, ERC20, OwnableLockable, Initializabl
         // Sender's rewards are returned
         _withdrawAndTransferReward(from, true);
 
-        // recipient already has POL staked with this validator? reset their rewards
-        if (balanceOf(to) > 0) {
-            uint256 liquidReward = _calculateReward(to, rewardPerShare);
+        // reset recipient rewards, rewardPerShare was calculated in _withdrawAndTransferReward
+        uint256 liquidReward = _calculateReward(to, rewardPerShare);
+        initalRewardPerShare[to] = rewardPerShare;
 
-            if (liquidReward != 0) {
-                // reset initial reward
-                initalRewardPerShare[to] = rewardPerShare;
+        if (liquidReward != 0) {
+            if (!locked) {
+                // restake
+                amountRestaked = _buyShares(liquidReward, liquidReward, to);
 
-                if (!locked) {
-                    // restake
-                    amountRestaked = _buyShares(liquidReward, liquidReward, to);
-
-                    if (liquidReward > amountRestaked) {
-                        // return change to the user
-                        _payout(liquidReward - amountRestaked, to, "Insufficent rewards", true);
-                        stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidReward - amountRestaked);
-                    }
-
-                    (uint256 totalStaked,) = getTotalStake(to);
-                    stakingLogger.logDelegatorRestaked(validatorId, to, totalStaked);
-                } else {
-                    _payout(liquidReward, to, "Insufficent rewards", true);
-                    stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidReward);
+                if (liquidReward > amountRestaked) {
+                    // return change to the user
+                    _payout(liquidReward - amountRestaked, to, "Insufficent rewards", true);
+                    stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidReward - amountRestaked);
                 }
+
+                (uint256 totalStaked,) = getTotalStake(to);
+                stakingLogger.logDelegatorRestaked(validatorId, to, totalStaked);
+            } else {
+                _payout(liquidReward, to, "Insufficent rewards", true);
+                stakingLogger.logDelegatorClaimRewards(validatorId, to, liquidReward);
             }
         }
 
