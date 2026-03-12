@@ -92,6 +92,8 @@ describe('StakeManager', function (accounts) {
             ZeroAddr,
             ZeroAddr,
             ZeroAddr,
+            ZeroAddr,
+            ZeroAddr,
             ZeroAddr
           ),
           'already inited'
@@ -276,7 +278,7 @@ describe('StakeManager', function (accounts) {
 
     function doDeploy(acceptDelegation) {
       before('Fresh deploy', async function() {
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       before('Approve and stake', async function () {
         await approveAndStake.call(this, { wallet: staker, stakeAmount: stakeAmount, acceptDelegation })
@@ -332,7 +334,7 @@ describe('StakeManager', function (accounts) {
   describe('checkSignatures', function () {
     function prepareToTest(stakers, checkpointBlockInterval = 1) {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       before('updateCheckPointBlockInterval', async function () {
         await this.governance.update(
@@ -819,7 +821,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when payload is invalid', function () {
       beforeEach('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       beforeEach('Prepare to test', async function () {
         this.amount = new BN(web3.utils.toWei('200'))
@@ -920,7 +922,7 @@ describe('StakeManager', function (accounts) {
       }
 
       async function doDeploy() {
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
 
         this.checkpointIndex = 0
         this.validators = []
@@ -985,7 +987,7 @@ describe('StakeManager', function (accounts) {
 
     describe("when trying to checkpoint when 1 of the validators unstakes with more than 1/3 stake and don't sign", function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       before('Alice And Bob Stake', async function () {
         for (const wallet of [wallets[2], wallets[3]]) {
@@ -1007,31 +1009,10 @@ describe('StakeManager', function (accounts) {
     })
   })
 
-  describe('dethroneAndStake', function () {
-    describe('when from is not stake manager', function () {
-      before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
-      })
-      it('reverts', async function () {
-        await expectRevert(
-          this.stakeManager.dethroneAndStake(
-            wallets[2].getAddressString(),
-            this.defaultHeimdallFee.toString(),
-            '1',
-            '1000',
-            true,
-            wallets[2].getPublicKeyString()
-          ),
-          'not allowed'
-        )
-      })
-    })
-  })
-
   describe('setDelegationEnabled', function () {
     describe('when from is governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must disable delegation', async function () {
@@ -1059,7 +1040,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when from is not governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
       it('reverts', async function () {
         await expectRevert(this.stakeManager.setDelegationEnabled(false), 'Only governance contract is authorized')
@@ -1073,7 +1054,7 @@ describe('StakeManager', function (accounts) {
     const userOriginalPubKey = wallets[3].getPublicKeyString()
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
 
       const amount = web3.utils.toWei('200')
       for (const wallet of w) {
@@ -1277,7 +1258,7 @@ describe('StakeManager', function (accounts) {
   describe('updateDynastyValue', function () {
     describe('when set dynasty to 10', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must update dynasty', async function () {
@@ -1302,19 +1283,11 @@ describe('StakeManager', function (accounts) {
       it('dynasty must be 10', async function () {
         assertBigNumberEquality('10', await this.stakeManager.dynasty())
       })
-
-      it('auctionPeriod must be 2', async function () {
-        assertBigNumberEquality('2', await this.stakeManager.auctionPeriod())
-      })
-
-      it('replacementCooldown must be 3', async function () {
-        assertBigNumberEquality('3', await this.stakeManager.replacementCoolDown())
-      })
     })
 
     describe('when set dynasty to 0', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must revert', async function () {
@@ -1324,7 +1297,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when from is not governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('reverts', async function () {
@@ -1337,7 +1310,7 @@ describe('StakeManager', function (accounts) {
   describe('updateCheckpointReward', function () {
     describe('when set reward to 20', function () {
         before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must update', async function () {
@@ -1360,7 +1333,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when set reward to 0', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('must revert', async function () {
@@ -1370,7 +1343,7 @@ describe('StakeManager', function (accounts) {
 
     describe('when from is not governance', function () {
       before('Fresh deploy', async function(){
-        await freshDeploy.call(this, true)
+        await freshDeploy.call(this)
       })
 
       it('reverts', async function () {
@@ -1387,7 +1360,7 @@ describe('StakeManager', function (accounts) {
     let _wallets = [Alice, Bob]
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
 
       this.amount = new BN(web3.utils.toWei('200'))
       this.totalStaked = new BN(0)
@@ -1492,7 +1465,7 @@ describe('StakeManager', function (accounts) {
     const fee = new BN(web3.utils.toWei('50')).toString()
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
       await approveAndStake.call(this, { wallet, stakeAmount: amount })
     }
 
@@ -1645,7 +1618,7 @@ describe('StakeManager', function (accounts) {
     }
 
     async function doDeploy() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
 
       this.checkpointIndex = 0
       this.validators = []
@@ -1928,469 +1901,6 @@ describe('StakeManager', function (accounts) {
     })
   })
 
-  describe('startAuction', function () {
-    const _initialStakers = [wallets[1], wallets[2]]
-    const initialStakeAmount = web3.utils.toWei('200')
-
-    describe('Alice and Bob bid', function () {
-      const Alice = wallets[3]
-      const Bob = wallets[4]
-
-      let aliceBidAmount = web3.utils.toWei('1200')
-      let bobBidAmount = web3.utils.toWei('1250')
-
-      before('deploy', doDeploy)
-      before(async function () {
-        await this.polToken.mint(Alice.getAddressString(), aliceBidAmount)
-        const polTokenAlice = this.polToken.connect(this.polToken.provider.getSigner(Alice.getAddressString()))
-        await polTokenAlice.approve(this.stakeManager.address, aliceBidAmount)
-
-        await this.polToken.mint(Bob.getAddressString(), bobBidAmount)
-        const polTokenBob = this.polToken.connect(this.polToken.provider.getSigner(Bob.getAddressString()))
-        await polTokenBob.approve(this.stakeManager.address, bobBidAmount)
-
-        this.userOldBalance = await this.polToken.balanceOf(Alice.getAddressString())
-        this.bobOldBalance = await this.polToken.balanceOf(Bob.getAddressString())
-
-        this.validatorId = '1'
-        this.initialStakeAmount = initialStakeAmount
-      })
-
-      describe('when Alice bids', function () {
-        testStartAuction(Alice.getChecksumAddressString(), Alice.getPrivateKeyString(), aliceBidAmount)
-      })
-
-      describe('when Bob bids', function () {
-        testStartAuction(Bob.getChecksumAddressString(), Bob.getPublicKeyString(), bobBidAmount)
-
-        it('Alice must get her bid back', async function () {
-          const currentBalance = await this.polToken.balanceOf(Alice.getAddressString())
-          assertBigNumberEquality(this.userOldBalance, currentBalance)
-        })
-      })
-    })
-
-    describe('reverts', function () {
-      beforeEach('deploy', doDeploy)
-
-      it('when bid during non-auction period', async function () {
-        let auctionPeriod = await this.stakeManager.auctionPeriod()
-        await this.stakeManager.advanceEpoch(auctionPeriod.toNumber())
-        const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-        await expectRevert(
-          stakeManager3.startAuction(1, this.amount, false, wallets[3].getPrivateKeyString()),
-          'Invalid auction period'
-        )
-      })
-
-      it('when trying to start and confirm in last epoch', async function () {
-        this.validatorId = 1
-        await this.stakeManager.advanceEpoch(1)
-        const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-        await stakeManager3.startAuction(this.validatorId, this.amount, false, wallets[3].getPublicKeyString())
-
-        const polToken3 = this.polToken.connect(this.polToken.provider.getSigner(3))
-        await polToken3.approve(this.stakeManager.address, web3.utils.toWei('1'))
-        await expectRevert(
-          stakeManager3.confirmAuctionBid(this.validatorId, web3.utils.toWei('1')),
-          'Not allowed before auctionPeriod'
-        )
-        await stakeManager3.advanceEpoch(1)
-        await stakeManager3.confirmAuctionBid(this.validatorId, web3.utils.toWei('1'))
-        assert.ok(!(await this.stakeManager.isValidator(this.validatorId)))
-      })
-
-      it('when bid during replacement cooldown', async function () {
-        await this.governance.update(
-          this.stakeManager.address,
-          this.stakeManager.interface.encodeFunctionData('updateDynastyValue', ['7'])
-        )
-
-        const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-        await expectRevert(
-          stakeManager3.startAuction(1, this.amount, false, wallets[3].getPrivateKeyString()),
-          'Cooldown period'
-        )
-      })
-
-      it('when bid on unstaking validator', async function () {
-        const stakeManagerStaker = this.stakeManager.connect(
-          this.stakeManager.provider.getSigner(_initialStakers[0].getAddressString())
-        )
-        await stakeManagerStaker.unstake(1)
-        const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-        await expectRevert(
-          stakeManager3.startAuction(1, this.amount, false, wallets[3].getPrivateKeyString()),
-          'Invalid validator for an auction'
-        )
-      })
-
-      it('when restake on unstaking validator', async function () {
-        const stakeManagerStaker = this.stakeManager.connect(
-          this.stakeManager.provider.getSigner(_initialStakers[0].getAddressString())
-        )
-        await (await stakeManagerStaker.unstake(1)).wait()
-        await expectRevert(stakeManagerStaker.restake(1, this.amount, false), 'No restaking')
-      })
-
-      // since all the rewards are given in unstake already
-      it('Must not transfer any rewards after unstaking', async function () {
-        const stakeManagerStaker = this.stakeManager.connect(
-          this.stakeManager.provider.getSigner(_initialStakers[0].getAddressString())
-        )
-        await stakeManagerStaker.unstake(1)
-        const receipt = await (await stakeManagerStaker.withdrawRewards(1)).wait()
-        await assertInTransaction(receipt, StakingInfo, 'ClaimRewards', {
-          validatorId: '1',
-          amount: '0',
-          totalAmount: await this.stakeManager.totalRewardsLiquidated()
-        })
-      })
-
-      it('when validatorId is invalid', async function () {
-        const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-        await expectRevert.unspecified(
-          stakeManager3.startAuction(0, this.amount, false, wallets[3].getPrivateKeyString())
-        )
-      })
-
-      it('when bid is too low', async function () {
-        const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-        await expectRevert(
-          stakeManager3.startAuction(1, web3.utils.toWei('100'), false, wallets[3].getPrivateKeyString()),
-          'Must bid higher'
-        )
-      })
-    })
-
-    async function doDeploy() {
-      await Staking.prepareForTest(8, 10).call(this)
-
-      for (const wallet of _initialStakers) {
-        await approveAndStake.call(this, { wallet, stakeAmount: initialStakeAmount })
-      }
-
-      // cooldown period
-      let auctionPeriod = (await this.stakeManager.auctionPeriod()).toNumber()
-      let currentEpoch = (await this.stakeManager.currentEpoch()).toNumber()
-      for (let i = currentEpoch; i <= auctionPeriod + (await this.stakeManager.dynasty()).toNumber(); i++) {
-        await checkPoint(_initialStakers, this.rootChainOwner, this.stakeManager)
-      }
-      this.amount = web3.utils.toWei('500')
-      const polToken3 = this.polToken.connect(this.polToken.provider.getSigner(3))
-      await polToken3.approve(this.stakeManager.address, this.amount)
-    }
-  })
-
-  describe.skip('confirmAuctionBid', function () {
-    const initialStakers = [wallets[1], wallets[2]]
-    const bidAmount = new BN(web3.utils.toWei('1200'))
-    const initialStakeAmount = web3.utils.toWei('200')
-
-    function doDeploy(skipAuctionPeriod = true) {
-      return async function () {
-        await Staking.prepareForTest(8, 10).call(this)
-
-        // cooldown period
-        const replacementCooldown = await this.stakeManager.replacementCoolDown()
-        await this.stakeManager.advanceEpoch(replacementCooldown.toString())
-
-        for (const wallet of initialStakers) {
-          await approveAndStake.call(this, { wallet, stakeAmount: initialStakeAmount })
-        }
-
-        const polToken3 = this.polToken.connect(this.polToken.provider.getSigner(3))
-        this.amount = web3.utils.toWei('500')
-        await polToken3.approve(this.stakeManager.address, this.amount)
-
-        // bid
-        const mintAmount = bidAmount.add(new BN(this.heimdallFee || this.defaultHeimdallFee)).toString()
-        await this.polToken.mint(this.bidder, mintAmount)
-        const polTokenBidder = this.polToken.connect(this.polToken.provider.getSigner(this.bidder))
-        await polTokenBidder.approve(this.stakeManager.address, mintAmount)
-
-        this.bidderBalanceBeforeAuction = await this.polToken.balanceOf(this.bidder)
-        this.totalStakedBeforeAuction = await this.stakeManager.totalStaked()
-
-        const stakeManagerBidder = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.bidder))
-        await stakeManagerBidder.startAuction(this.validatorId, bidAmount.toString(), false, this.bidderPubKey)
-
-        if (skipAuctionPeriod) {
-          const auction = await this.stakeManager.validatorAuction(this.validatorId)
-          const currentEpoch = await this.stakeManager.currentEpoch()
-          const dynasty = await this.stakeManager.dynasty()
-
-          const end = auction.startEpoch.add(dynasty).toNumber()
-          for (let i = currentEpoch.toNumber(); i <= end; i++) {
-            await checkPoint(initialStakers, this.rootChainOwner, this.stakeManager)
-          }
-        }
-      }
-    }
-
-    describe('when last auctioner is not validator', function () {
-      const heimdallFee = web3.utils.toWei('100')
-
-      function prepareToTest() {
-        before(async function () {
-          this.validatorId = '1'
-          this.newValidatorId = '3'
-          this.bidder = wallets[4].getChecksumAddressString()
-          this.bidderPubKey = wallets[4].getPublicKeyString()
-          this.heimdallFee = heimdallFee
-          this.bidAmount = bidAmount
-        })
-
-        before(doDeploy())
-
-        before(async function () {
-          this.prevValidatorAddr = initialStakers[0].getChecksumAddressString()
-          this.prevValidatorOldBalance = await this.polToken.balanceOf(this.prevValidatorAddr)
-
-          this.validator = await this.stakeManager.validators(this.validatorId)
-          this.reward = await this.stakeManager.validatorReward(this.validatorId)
-        })
-      }
-
-      describe('when 0 dynasties has passed', function () {
-        prepareToTest()
-        testConfirmAuctionBidForNewValidator()
-      })
-      describe('when 10 dynasties has passed', function () {
-        prepareToTest()
-        before(async function () {
-          const currentDynasty = await this.stakeManager.dynasty()
-          await this.stakeManager.advanceEpoch(currentDynasty.mul(10))
-        })
-
-        testConfirmAuctionBidForNewValidator()
-      })
-      describe('when validator has more stake then last bid', function () {
-        prepareToTest()
-        before(async function () {
-          let restakeAmount = web3.utils.toWei('10000')
-          await this.polToken.mint(this.prevValidatorAddr, restakeAmount)
-
-          const stakeTokenValidator = this.polToken.connect(
-            this.polToken.provider.getSigner(this.prevValidatorAddr)
-          )
-          await stakeTokenValidator.approve(this.stakeManager.address, restakeAmount)
-
-          // restake
-          const stakeManagerValidator = this.stakeManager.connect(
-            this.stakeManager.provider.getSigner(this.prevValidatorAddr)
-          )
-          await stakeManagerValidator.restake(this.validatorId, restakeAmount, false)
-          this.validator = await this.stakeManager.validators(this.validatorId)
-        })
-
-        testConfirmAuctionBidForOldValidator()
-      })
-    })
-
-    describe("when auction period hasn't been passed after initial stake", function () {
-      before(async function () {
-        this.validatorId = '1'
-        this.bidder = wallets[3].getChecksumAddressString()
-        this.bidderPubKey = wallets[3].getPublicKeyString()
-        this.bidAmount = bidAmount
-      })
-
-      beforeEach(doDeploy(false))
-
-      describe('when 0 dynasties has passed', function () {
-        it('reverts', async function () {
-          const stakeManagerBidder = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.bidder))
-          await expectRevert(
-            stakeManagerBidder.confirmAuctionBid(this.validatorId, this.defaultHeimdallFee.toString()),
-            'Not allowed before auctionPeriod'
-          )
-        })
-      })
-
-      describe('when 10 dynasties has passed', function () {
-        beforeEach(async function () {
-          const currentDynasty = await this.stakeManager.dynasty()
-          await this.stakeManager.advanceEpoch(currentDynasty.mul(10))
-        })
-
-        it('reverts', async function () {
-          const stakeManagerBidder = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.bidder))
-          await expectRevert(
-            stakeManagerBidder.confirmAuctionBid(this.validatorId, this.defaultHeimdallFee.toString()),
-            'Not allowed before auctionPeriod'
-          )
-        })
-      })
-    })
-
-    describe('when from is not bidder', function () {
-      before(async function () {
-        this.validatorId = '1'
-        this.bidder = wallets[3].getChecksumAddressString()
-        this.bidderPubKey = wallets[3].getPublicKeyString()
-        this.bidAmount = bidAmount
-      })
-
-      before(doDeploy())
-
-      it('reverts', async function () {
-        const stakeManager4 = this.stakeManager.connect(this.stakeManager.provider.getSigner(4))
-        await expectRevert.unspecified(stakeManager4.confirmAuctionBid(this.validatorId, 0))
-      })
-    })
-  })
-
-  describe('auction with delegator, 3 validators initially',  function () {
-    const initialStakers = [wallets[1], wallets[2]]
-    const delegatedValidatorId = '3'
-    const delegator = wallets[3].getChecksumAddressString()
-    const validatorUser = wallets[4]
-    const validatorUserAddr = wallets[4].getChecksumAddressString()
-    const auctionValidatorAddr = wallets[5].getChecksumAddressString()
-    const auctionValidatorPubKey = wallets[5].getPublicKeyString()
-    const stakeAmount = web3.utils.toWei('1250').toString()
-    const bidAmount = web3.utils.toWei('2555').toString()
-
-    function doDeploy() {
-      return async function () {
-        await Staking.prepareForTest(8, 10).call(this)
-
-        for (const wallet of initialStakers) {
-          await approveAndStake.call(this, { wallet, stakeAmount })
-        }
-      }
-    }
-
-    before('fresh deploy', doDeploy())
-    before(async function () {
-      await this.stakeToken.mint(this.stakeManager.address, web3.utils.toWei('1000000')) // rewards amount
-
-      await approveAndStake.call(this, { wallet: validatorUser, stakeAmount, acceptDelegation: true })
-
-      let validator = await this.stakeManager.validators(delegatedValidatorId)
-
-      this.validatorContract = await ValidatorShare.attach(validator.contractAddress)
-
-      await this.stakeToken.mint(delegator, stakeAmount)
-      const stakeTokenDelegator = this.stakeToken.connect(this.stakeToken.provider.getSigner(delegator))
-      await stakeTokenDelegator.approve(this.stakeManager.address, stakeAmount)
-
-      // cooldown period
-      let auctionPeriod = (await this.stakeManager.auctionPeriod()).toNumber()
-      let currentEpoch = (await this.stakeManager.currentEpoch()).toNumber()
-      for (let i = currentEpoch; i <= auctionPeriod + (await this.stakeManager.dynasty()).toNumber(); i++) {
-        await checkPoint([...initialStakers, validatorUser], this.rootChainOwner, this.stakeManager)
-      }
-
-      await buyVoucher(this.validatorContract, stakeAmount, delegator)
-
-      this.heimdallFee = this.defaultHeimdallFee
-
-      const approveAmount = new BN(bidAmount).add(this.heimdallFee).toString()
-      await this.polToken.mint(auctionValidatorAddr, approveAmount)
-      const polTokenValidator = this.polToken.connect(this.polToken.provider.getSigner(auctionValidatorAddr))
-      await polTokenValidator.approve(this.stakeManager.address, approveAmount)
-
-      this.totalStakedBeforeAuction = await this.stakeManager.totalStaked()
-      this.bidderBalanceBeforeAuction = await this.polToken.balanceOf(auctionValidatorAddr)
-    })
-
-    describe('when new validator bids', function () {
-      before(async function () {
-        this.initialStakeAmount = stakeAmount
-        this.validatorId = delegatedValidatorId
-        this.userOldBalance = this.bidderBalanceBeforeAuction
-      })
-
-      after('skip auction', async function () {
-        let auctionPeriod = (await this.stakeManager.auctionPeriod()).toNumber()
-        for (let i = 0; i <= auctionPeriod; i++) {
-          await checkPoint([...initialStakers, validatorUser], this.rootChainOwner, this.stakeManager)
-        }
-      })
-
-      testStartAuction(auctionValidatorAddr, auctionValidatorPubKey, bidAmount)
-    })
-
-    describe('when new validator confirm auction', function () {
-      before(async function () {
-        this.validatorId = delegatedValidatorId
-        this.bidderPubKey = auctionValidatorPubKey
-        this.bidder = auctionValidatorAddr
-        this.newValidatorId = '4'
-        this.bidAmount = bidAmount
-        this.prevValidatorAddr = validatorUserAddr
-        this.prevValidatorOldBalance = await this.stakeToken.balanceOf(validatorUserAddr)
-        this.validator = await this.stakeManager.validators(delegatedValidatorId)
-        this.reward = await this.stakeManager.validatorReward(delegatedValidatorId)
-      })
-
-      testConfirmAuctionBidForNewValidator()
-    })
-  })
-
-  describe('stopAuctions', function () {
-    const initialStakers = [wallets[1], wallets[2]]
-    const stakeAmount = web3.utils.toWei('1250').toString()
-    const bidAmount = web3.utils.toWei('1350').toString()
-    const bidder = wallets[3].getChecksumAddressString()
-    const bidderPubKey = wallets[3].getPublicKeyString()
-
-    async function doDeploy() {
-      await Staking.prepareForTest(8, 10).call(this)
-
-      for (const wallet of initialStakers) {
-        await approveAndStake.call(this, { wallet, stakeAmount, approveAmount: web3.utils.toWei('12500') })
-      }
-    }
-
-    before(doDeploy)
-    before(async function () {
-      this.initialStakeAmount = stakeAmount
-      this.validatorId = '1'
-      this.oldReplacementCoolDownPeriod = await this.stakeManager.replacementCoolDown()
-      this.newReplacementCoolDownPeriod = new BN(100)
-    })
-
-    it('must increase replacement cooldown', async function () {
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('stopAuctions', [this.newReplacementCoolDownPeriod.toString()])
-      )
-      const currentReplacementCooldown = await this.stakeManager.replacementCoolDown()
-      assertBigNumberEquality(
-        currentReplacementCooldown,
-        this.newReplacementCoolDownPeriod.add(new BN((await this.stakeManager.epoch()).toString()))
-      )
-    })
-
-    it('bid must revert', async function () {
-      const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-      await expectRevert(
-        stakeManager3.startAuction(this.validatorId, bidAmount, false, bidderPubKey),
-        'Cooldown period'
-      )
-    })
-
-    it('must reset replacement cooldown to current epoch', async function () {
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('stopAuctions', [0])
-      )
-      const currentReplacementCooldown = await this.stakeManager.replacementCoolDown()
-      assertBigNumberEquality(currentReplacementCooldown, await this.stakeManager.epoch())
-    })
-
-    it('must bid', async function () {
-      await this.polToken.mint(bidder, bidAmount)
-      const polToken3 = this.polToken.connect(this.polToken.provider.getSigner(3))
-      await polToken3.approve(this.stakeManager.address, bidAmount)
-      const stakeManager3 = this.stakeManager.connect(this.stakeManager.provider.getSigner(3))
-      await stakeManager3.startAuction(this.validatorId, bidAmount, false, bidderPubKey)
-    })
-  })
-
   describe('stake migration', function () {
     const initialStakers = [
       wallets[1],
@@ -2413,7 +1923,7 @@ describe('StakeManager', function (accounts) {
     let stakeToken9, stakeManager9
 
     async function prepareForTest() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
       stakeManager9 = this.stakeManager.connect(this.stakeManager.provider.getSigner(9))
       stakeToken9 = this.stakeToken.connect(this.stakeToken.provider.getSigner(9))
       await this.governance.update(
@@ -2748,125 +2258,5 @@ describe('StakeManager', function (accounts) {
 
     let expectedBalance = amount.mul(new BN(expectedCheckpointReward.toString())).div(totalAmount)
     return expectedBalance.mul(new BN(checkpointsPassed))
-  }
-
-  function testStartAuction(address, signerPubkey, bidAmount) {
-    it('should bid', async function () {
-      const stakeManagerX = this.stakeManager.connect(this.stakeManager.provider.getSigner(address))
-      this.receipt = await (await stakeManagerX.startAuction(this.validatorId, bidAmount, false, signerPubkey)).wait()
-    })
-
-    it('must emit StartAuction', async function () {
-      await assertInTransaction(this.receipt, StakingInfo, 'StartAuction', {
-        validatorId: this.validatorId,
-        amount: this.initialStakeAmount.toString(),
-        auctionAmount: bidAmount
-      })
-    })
-
-    it('validator auction must have correct balance equal to bid amount', async function () {
-      let auctionData = await this.stakeManager.validatorAuction(this.validatorId)
-      assertBigNumberEquality(auctionData.amount, bidAmount)
-    })
-
-    it('validator auction must have correct user', async function () {
-      let auctionData = await this.stakeManager.validatorAuction(this.validatorId)
-      assert(auctionData.user === address)
-    })
-
-    it('balance must decrease by bid amount', async function () {
-      assertBigNumberEquality(await this.polToken.balanceOf(address), this.userOldBalance.sub(bidAmount).toString())
-    })
-  }
-
-  function testConfirmAuctionBidForNewValidator() {
-    it('must confirm auction with heimdall fee', async function () {
-      const stakeManagerBidder = this.stakeManager.connect(this.stakeManager.provider.getSigner(this.bidder))
-      this.receipt = await (
-        await stakeManagerBidder.confirmAuctionBid(this.validatorId, this.heimdallFee.toString())
-      ).wait()
-    })
-
-    it('must emit Staked', async function () {
-      await assertInTransaction(this.receipt, StakingInfo, 'Staked', {
-        signer: this.bidder,
-        signerPubkey: this.bidderPubKey,
-        activationEpoch: await this.stakeManager.currentEpoch(),
-        validatorId: this.newValidatorId,
-        amount: this.bidAmount.toString(),
-        total: this.totalStakedBeforeAuction.add(this.bidAmount.toString())
-      })
-    })
-
-    it('must emit UnstakeInit', async function () {
-      await assertInTransaction(this.receipt, StakingInfo, 'UnstakeInit', {
-        user: this.prevValidatorAddr,
-        validatorId: this.validatorId,
-        deactivationEpoch: await this.stakeManager.currentEpoch(),
-        amount: this.validator.amount
-      })
-    })
-
-    it('must emit ConfirmAuction', async function () {
-      await assertInTransaction(this.receipt, StakingInfo, 'ConfirmAuction', {
-        newValidatorId: this.newValidatorId,
-        oldValidatorId: this.validatorId,
-        amount: this.bidAmount.toString()
-      })
-    })
-
-    it('must emit TopUpFee', async function () {
-      await assertInTransaction(this.receipt, StakingInfo, 'TopUpFee', {
-        user: this.bidder,
-        fee: this.heimdallFee.toString()
-      })
-    })
-
-    it('previous validator must get his reward', async function () {
-      let prevValidatorBalance = await this.polToken.balanceOf(this.prevValidatorAddr)
-      assertBigNumberEquality(prevValidatorBalance, this.prevValidatorOldBalance.add(this.reward))
-    })
-
-    it('previous validator is not validator anymore', async function () {
-      assert.ok(!(await this.stakeManager.isValidator(this.validatorId)))
-    })
-
-    it('new validator is validator', async function () {
-      assert.ok(await this.stakeManager.isValidator(this.newValidatorId))
-    })
-
-    it('bidder balance must be correct', async function () {
-      const currentBalance = await this.polToken.balanceOf(this.bidder)
-      assertBigNumberEquality(
-        this.bidderBalanceBeforeAuction.sub(this.bidAmount.toString()).sub(this.heimdallFee.toString()),
-        currentBalance
-      )
-    })
-  }
-
-  function testConfirmAuctionBidForOldValidator() {
-    it('must confirm auction', async function () {
-      const stakeManager_prevValidator = this.stakeManager.connect(
-        this.stakeManager.provider.getSigner(this.prevValidatorAddr)
-      )
-      this.receipt = await (await stakeManager_prevValidator.confirmAuctionBid(this.validatorId, 0)).wait()
-    })
-
-    it('must emit ConfirmAuction', async function () {
-      await assertInTransaction(this.receipt, StakingInfo, 'ConfirmAuction', {
-        newValidatorId: this.validatorId,
-        oldValidatorId: this.validatorId,
-        amount: this.validator.amount
-      })
-    })
-
-    it('validator is still a validator', async function () {
-      assert.ok(await this.stakeManager.isValidator(this.validatorId))
-    })
-
-    it('bidder balance must be correct', async function () {
-      const currentBalance = await this.stakeToken.balanceOf(this.bidder)
-      assertBigNumberEquality(this.bidderBalanceBeforeAuction, currentBalance)
-    })
   }
 })

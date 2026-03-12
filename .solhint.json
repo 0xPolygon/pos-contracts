@@ -1,0 +1,8 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+      "compiler-version": "off",
+      "max-states-count": "off",
+      "reason-string": "off"
+    }
+}
