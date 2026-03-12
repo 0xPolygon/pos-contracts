@@ -1,14 +1,11 @@
 pragma solidity ^0.5.2;
 
-import "./BytesLib.sol";
+import {BytesLib} from "./BytesLib.sol";
 
 library Common {
     function getV(bytes memory v, uint16 chainId) public pure returns (uint8) {
         if (chainId > 0) {
-            return
-                uint8(
-                    BytesLib.toUint(BytesLib.leftPad(v), 0) - (chainId * 2) - 8
-                );
+            return uint8(BytesLib.toUint(BytesLib.leftPad(v), 0) - (chainId * 2) - 8);
         } else {
             return uint8(BytesLib.toUint(BytesLib.leftPad(v), 0));
         }

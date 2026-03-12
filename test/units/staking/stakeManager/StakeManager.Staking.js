@@ -42,7 +42,7 @@ export function doUnstake(wallet) {
 
 export function prepareForTest(dynastyValue, validatorThreshold) {
   return async function () {
-    await freshDeploy.call(this, true)
+    await freshDeploy.call(this)
 
     await this.governance.update(
       this.stakeManager.address,
@@ -209,7 +209,7 @@ describe('stake', function () {
 
   describe('double stake', async function () {
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     describe('when stakes first time', function () {
@@ -235,7 +235,7 @@ describe('stake', function () {
 
   describe('stake and restake following by another stake', function () {
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     const amounts = walletAmounts[wallets[2].getAddressString()]
@@ -258,27 +258,6 @@ describe('stake', function () {
         web3.utils.toWei('250'),
         web3.utils.toWei('150')
       )
-    })
-    describe('when reStakes while on going auction', function () {
-      it('when auction is active', async function () {
-        let auctionBid = web3.utils.toWei('10000')
-        const auctionUser = wallets[4].getAddressString()
-        await this.polToken.mint(auctionUser, auctionBid)
-
-        const polTokenUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
-        const stakeManagerUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
-
-        await polTokenUser.approve(this.stakeManager.address, auctionBid)
-        const validatorId = await this.stakeManager.getValidatorId(wallets[2].getChecksumAddressString())
-        await stakeManagerUser.startAuction(validatorId, auctionBid, false, wallets[4].getPublicKeyString())
-        testRestake(
-          wallets[2].getChecksumAddressString(),
-          amounts.restakeAmonut,
-          amounts.amount,
-          amounts.restakeAmonut,
-          amounts.amount
-        )
-      })
     })
   })
 
@@ -309,7 +288,7 @@ describe('stake', function () {
 
   describe('consecutive stakes', function () {
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     it('validatorId must increment 1 by 1', async function () {
@@ -329,7 +308,7 @@ describe('stake', function () {
 
   describe('stake with heimdall fee', function () {
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
 
     testStake(
@@ -347,7 +326,7 @@ describe('stake', function () {
     const newSigner = wallets[2].getPublicKeyString()
 
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     before(doStake(AliceWallet))
     before('Change signer', async function () {
@@ -376,7 +355,7 @@ describe('unstake', function () {
     let stakeManagerAlice
 
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     before(doStake(AliceWallet))
     before(doStake(BobWallet))
@@ -415,7 +394,7 @@ describe('unstake', function () {
     const others = [wallets[2], wallets[3]]
 
     before(async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     before(doStake(AliceWallet))
     before(doStake(others[0]))
@@ -611,7 +590,7 @@ describe('unstake', function () {
 
   describe('reverts', function () {
     beforeEach('Fresh Deploy', async function() {
-      await freshDeploy.call(this, true)
+      await freshDeploy.call(this)
     })
     const user = wallets[2].getChecksumAddressString()
     let stakeManagerUser
@@ -635,20 +614,6 @@ describe('unstake', function () {
       const validatorId = await this.stakeManager.getValidatorId(user)
       await stakeManagerUser.unstake(validatorId)
 
-      await expectRevert.unspecified(stakeManagerUser.unstake(validatorId))
-    })
-
-    it('when unstakes during auction', async function () {
-      const amount = web3.utils.toWei('1200').toString()
-      const auctionUser = wallets[4].getAddressString()
-      await this.polToken.mint(auctionUser, amount)
-
-      const polTokenAuctionUser = this.polToken.connect(this.polToken.provider.getSigner(auctionUser))
-      const stakeManagerAuctionUser = this.stakeManager.connect(this.stakeManager.provider.getSigner(auctionUser))
-
-      await polTokenAuctionUser.approve(this.stakeManager.address, amount)
-      const validatorId = await this.stakeManager.getValidatorId(user)
-      await stakeManagerAuctionUser.startAuction(validatorId, amount, false, wallets[4].getPublicKeyString())
       await expectRevert.unspecified(stakeManagerUser.unstake(validatorId))
     })
   })
@@ -887,18 +852,15 @@ describe('restake', function () {
         await approveAndStake.call(this, { wallet, stakeAmount: initialStake, acceptDelegation })
       }
 
-      // cooldown period
-      let auctionPeriod = (await this.stakeManager.auctionPeriod()).toNumber()
-      let currentEpoch = (await this.stakeManager.currentEpoch()).toNumber()
-
-      for (let i = currentEpoch; i <= auctionPeriod; i++) {
+      // wait two checkpoints for some rewards
+      for (let i = 0; i < 2; i++) {        
         await checkPoint(initialStakers, this.rootChainOwner, this.stakeManager)
       }
       // without 10% proposer bonus
       this.validatorReward = checkpointReward
         .mul(new BN(100 - proposerBonus))
         .div(new BN(100))
-        .mul(new BN(auctionPeriod - currentEpoch))
+        .mul(new BN(1))
       this.validatorId = '1'
       this.user = initialStakers[0].getAddressString()
       this.amount = web3.utils.toWei('100')
