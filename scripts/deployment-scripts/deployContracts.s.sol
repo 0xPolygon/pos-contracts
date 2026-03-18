@@ -29,6 +29,8 @@ import {StakeManager} from "../helpers/interfaces/StakeManager.generated.sol";
 import {StakeManagerProxy} from "../helpers/interfaces/StakeManagerProxy.generated.sol";
 import {StakeManagerExtension} from "../helpers/interfaces/StakeManagerExtension.generated.sol";
 import {MaticWETH} from "../helpers/interfaces/MaticWETH.generated.sol";
+import {ERC20Permit} from "../helpers/interfaces/ERC20Permit.generated.sol";
+import {PolygonMigration} from "../helpers/interfaces/PolygonMigration.generated.sol";
 import {ERC20PredicateBurnOnly} from "../helpers/interfaces/ERC20PredicateBurnOnly.generated.sol";
 import {ERC721PredicateBurnOnly} from "../helpers/interfaces/ERC721PredicateBurnOnly.generated.sol";
 import {Marketplace} from "../helpers/interfaces/Marketplace.generated.sol";
@@ -60,6 +62,8 @@ contract DeploymentScript is Script {
     StakeManager stakeManager;
     StakeManagerProxy stakeManagerProxy;
     StakeManagerExtension auctionImpl;
+    ERC20Permit polToken;
+    PolygonMigration migration;
     MaticWETH maticWETH;
     ERC20PredicateBurnOnly erc20Predicate;
     ERC721PredicateBurnOnly erc721Predicate;
@@ -101,6 +105,12 @@ contract DeploymentScript is Script {
         // Deploying test token:
         maticToken = TestToken(payable(deployCode("out/TestToken.sol/TestToken.json", abi.encode("MATIC", "MATIC"))));
         vm.serializeAddress(tokenJson, "MaticToken", address(maticToken));
+
+        polToken = ERC20Permit(payable(deployCode("out/ERC20Permit.sol/ERC20Permit.json", abi.encode("POL", "POL", "1"))));
+        vm.serializeAddress(tokenJson, "PolToken", address(polToken));
+
+        migration = PolygonMigration(payable(deployCode("out/PolygonMigration.sol/PolygonMigration.json", abi.encode(address(maticToken), address(polToken)))));
+        vm.serializeAddress(tokenJson, "PolygonMigration", address(migration));
 
         erc20Token = TestToken(payable(deployCode("out/TestToken.sol/TestToken.json", abi.encode("Test ERC20", "TEST20"))));
         vm.serializeAddress(tokenJson, "TestToken", address(erc20Token));
@@ -201,7 +211,9 @@ contract DeploymentScript is Script {
             address(validatorShareFactory),
             address(governanceProxy),
             owner,
-            address(auctionImpl)
+            address(auctionImpl),
+            address(polToken),
+            address(migration)
         );
 
         stakeManagerProxy.updateAndCall(address(stakeManager), stakeManagerProxyCallData);
