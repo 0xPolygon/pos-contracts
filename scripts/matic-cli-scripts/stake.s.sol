@@ -4,9 +4,8 @@ pragma solidity ^0.8.4;
 
 import {Script, stdJson, console} from "forge-std/Script.sol";
 
-import {TestToken} from "../helpers/interfaces/TestToken.generated.sol";
+import {ERC20Permit} from "../helpers/interfaces/ERC20Permit.generated.sol";
 import {StakeManager} from "../helpers/interfaces/StakeManager.generated.sol";
-import {IERC20} from "../helpers/interfaces/IERC20.generated.sol";
 
 contract MaticStake is Script {
     string path = "contractAddresses.json";
@@ -32,10 +31,10 @@ contract MaticStake is Script {
 
         StakeManager stakeManager = StakeManager(vm.parseJsonAddress(json, ".root.StakeManagerProxy"));
         console.log("StakeManager address: ", address(stakeManager));
-        TestToken maticToken = TestToken(vm.parseJsonAddress(json, ".root.tokens.MaticToken"));
-        console.log("Sender account has a balance of: ", maticToken.balanceOf(validatorAccount));
+        ERC20Permit polToken = ERC20Permit(vm.parseJsonAddress(json, ".root.tokens.PolToken"));
+        console.log("Sender account POL balance: ", polToken.balanceOf(validatorAccount));
 
-        maticToken.approve(address(stakeManager), type(uint256).max);
+        polToken.approve(address(stakeManager), type(uint256).max);
         console.log("Sent approve tx, staking now...");
 
         console.log("Validator set size: ", stakeManager.currentValidatorSetSize());
