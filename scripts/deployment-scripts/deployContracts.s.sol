@@ -28,11 +28,9 @@ import {EventsHubProxy} from "../helpers/interfaces/EventsHubProxy.generated.sol
 import {StakeManager} from "../helpers/interfaces/StakeManager.generated.sol";
 import {StakeManagerProxy} from "../helpers/interfaces/StakeManagerProxy.generated.sol";
 import {StakeManagerExtension} from "../helpers/interfaces/StakeManagerExtension.generated.sol";
-import {SlashingManager} from "../helpers/interfaces/SlashingManager.generated.sol";
 import {MaticWETH} from "../helpers/interfaces/MaticWETH.generated.sol";
-import {ERC20Predicate} from "../helpers/interfaces/ERC20Predicate.generated.sol";
-import {ERC721Predicate} from "../helpers/interfaces/ERC721Predicate.generated.sol";
-import {MintableERC721Predicate} from "../helpers/interfaces/MintableERC721Predicate.generated.sol";
+import {ERC20PredicateBurnOnly} from "../helpers/interfaces/ERC20PredicateBurnOnly.generated.sol";
+import {ERC721PredicateBurnOnly} from "../helpers/interfaces/ERC721PredicateBurnOnly.generated.sol";
 import {Marketplace} from "../helpers/interfaces/Marketplace.generated.sol";
 import {MarketplacePredicate} from "../helpers/interfaces/MarketplacePredicate.generated.sol";
 
@@ -62,11 +60,9 @@ contract DeploymentScript is Script {
     StakeManager stakeManager;
     StakeManagerProxy stakeManagerProxy;
     StakeManagerExtension auctionImpl;
-    SlashingManager slashingManager;
     MaticWETH maticWETH;
-    ERC20Predicate erc20Predicate;
-    ERC721Predicate erc721Predicate;
-    MintableERC721Predicate mintableERC721Predicate;
+    ERC20PredicateBurnOnly erc20Predicate;
+    ERC721PredicateBurnOnly erc721Predicate;
     Marketplace marketplace;
 
     address ZeroAddress = 0x0000000000000000000000000000000000000000;
@@ -210,14 +206,6 @@ contract DeploymentScript is Script {
 
         stakeManagerProxy.updateAndCall(address(stakeManager), stakeManagerProxyCallData);
 
-        slashingManager = SlashingManager(
-            payable(
-                deployCode("out/SlashingManager.sol/SlashingManager.json", abi.encode(address(registry), address(stakingInfo), vm.envString("HEIMDALL_ID")))
-            )
-        );
-
-        vm.serializeAddress(rootJson, "SlashingManager", address(slashingManager));
-
         // Flag.
         stakingNFT.transferOwnership(address(stakeManagerProxy));
 
@@ -225,29 +213,20 @@ contract DeploymentScript is Script {
         string memory outToken = vm.serializeAddress(tokenJson, "MaticWeth", address(maticWETH));
 
         // ERC20 Predicate:
-
-        erc20Predicate = ERC20Predicate(
+        erc20Predicate = ERC20PredicateBurnOnly(
             payable(
                 deployCode(
-                    "out/ERC20Predicate.sol/ERC20Predicate.json", abi.encode(address(withdrawManagerProxy), address(depositManagerProxy), address(registry))
+                    "out/ERC20PredicateBurnOnly.sol/ERC20PredicateBurnOnly.json", abi.encode(address(withdrawManagerProxy), address(depositManagerProxy))
                 )
             )
         );
         vm.serializeAddress(predicateJson, "ERC20Predicate", address(erc20Predicate));
 
         // ERC721 Predicate:
-        erc721Predicate = ERC721Predicate(
-            payable(deployCode("out/ERC721Predicate.sol/ERC721Predicate.json", abi.encode(address(withdrawManagerProxy), address(depositManagerProxy))))
+        erc721Predicate = ERC721PredicateBurnOnly(
+            payable(deployCode("out/ERC721PredicateBurnOnly.sol/ERC721PredicateBurnOnly.json", abi.encode(address(withdrawManagerProxy), address(depositManagerProxy))))
         );
         vm.serializeAddress(predicateJson, "ERC721Predicate", address(erc721Predicate));
-
-        mintableERC721Predicate = MintableERC721Predicate(
-            payable(
-                deployCode(
-                    "out/MintableERC721Predicate.sol/MintableERC721Predicate.json", abi.encode(address(withdrawManagerProxy), address(depositManagerProxy))
-                )
-            )
-        );
 
         marketplace = Marketplace(payable(deployCode("out/Marketplace.sol/Marketplace.json")));
         console.log("Marketplace address: ", address(marketplace));
