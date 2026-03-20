@@ -55,7 +55,6 @@
     "openzeppelin-solidity": "2.2.0",
     "solidity-rlp": "^2.0.0"
   },
-  "dependencies": {},
   "eslintConfig": {
     "env": {
       "browser": false,
