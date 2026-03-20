@@ -1,8 +1,6 @@
 pragma solidity ^0.5.2;
 
-import {ERC20} from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import {ERC721} from "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
-import {Math} from "openzeppelin-solidity/contracts/math/Math.sol";
+import {Math} from "../../common/oz/math/Math.sol";
 
 import {Merkle} from "../../common/lib/Merkle.sol";
 import {MerklePatriciaProof} from "../../common/lib/MerklePatriciaProof.sol";
@@ -13,10 +11,8 @@ import {ExitNFT} from "./ExitNFT.sol";
 import {DepositManager} from "../depositManager/DepositManager.sol";
 import {IPredicate} from "../predicates/IPredicate.sol";
 import {IWithdrawManager} from "./IWithdrawManager.sol";
-import {RootChainHeader} from "../RootChainStorage.sol";
 import {Registry} from "../../common/Registry.sol";
 import {WithdrawManagerStorage} from "./WithdrawManagerStorage.sol";
-
 
 contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
     using Merkle for bytes32;
@@ -61,7 +57,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
     }
 
     /**
-     During coverage tests verifyInclusion fails co compile with "stack too deep" error.
+     * During coverage tests verifyInclusion fails co compile with "stack too deep" error.
      */
     struct VerifyInclusionVars {
         uint256 headerNumber;
@@ -94,13 +90,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         bytes calldata data,
         uint8 offset,
         bool verifyTxInclusion
-    )
-        external
-        view
-        returns (
-            uint256 /* ageOfInput */
-        )
-    {
+    ) external view returns (uint256 /* ageOfInput */ ) {
         ExitPayloadReader.ExitPayload memory payload = data.toExitPayload();
         VerifyInclusionVars memory vars;
 
@@ -111,22 +101,14 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         vars.receiptRoot = payload.getReceiptRoot();
         require(
             MerklePatriciaProof.verify(
-                payload.getReceipt().toBytes(),
-                vars.branchMaskBytes,
-                payload.getReceiptProof(),
-                vars.receiptRoot
+                payload.getReceipt().toBytes(), vars.branchMaskBytes, payload.getReceiptProof(), vars.receiptRoot
             ),
             "INVALID_RECEIPT_MERKLE_PROOF"
         );
 
         if (verifyTxInclusion) {
             require(
-                MerklePatriciaProof.verify(
-                    payload.getTx(),
-                    vars.branchMaskBytes,
-                    payload.getTxProof(), 
-                    vars.txRoot
-                ),
+                MerklePatriciaProof.verify(payload.getTx(), vars.branchMaskBytes, payload.getTxProof(), vars.txRoot),
                 "INVALID_TX_MERKLE_PROOF"
             );
         }
@@ -152,7 +134,8 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         // 95 bits for child block number
         // 32 bits for receiptPos + logIndex * MAX_LOGS + oIndex
         // In predicates, the exitId will be evaluated by shifting the ageOfInput left by 1 bit
-        // (Only in erc20Predicate) Last bit is to differentiate whether the sender or receiver of the in-flight tx is starting an exit
+        // (Only in erc20Predicate) Last bit is to differentiate whether the sender or receiver of the in-flight tx is
+        // starting an exit
         return (getExitableAt(vars.createdAt) << 127) | (vars.blockNumber << 32) | vars.branchMask;
     }
 
@@ -209,9 +192,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         require(registry.predicates(adjudicatorPredicate) != Registry.Type.Invalid, "INVALID_PREDICATE");
         require(
             IPredicate(adjudicatorPredicate).verifyDeprecation(
-                encodeExit(exit),
-                encodeInputUtxo(inputId, input),
-                challengeData
+                encodeExit(exit), encodeInputUtxo(inputId, input), challengeData
             ),
             "Challenge failed"
         );
@@ -275,12 +256,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
      * (alternate expression) User who could have potentially spent this UTXO
      * @param token Token (Think of it like Utxo color)
      */
-    function addInput(
-        uint256 exitId,
-        uint256 age,
-        address utxoOwner,
-        address token
-    ) external isPredicateAuthorized {
+    function addInput(uint256 exitId, uint256 age, address utxoOwner, address token) external isPredicateAuthorized {
         PlasmaExit storage exitObject = exits[exitId];
         require(exitObject.owner != address(0x0), "INVALID_EXIT_ID");
         _addInput(
@@ -293,26 +269,19 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         );
     }
 
-    function _addInput(
-        uint256 exitId,
-        uint256 age,
-        address utxoOwner,
-        address predicate,
-        address token
-    ) internal {
+    function _addInput(uint256 exitId, uint256 age, address utxoOwner, address predicate, address token) internal {
         exits[exitId].inputs[age] = Input(utxoOwner, predicate, token);
         emit ExitUpdated(exitId, age, utxoOwner);
     }
 
     function encodeExit(PlasmaExit storage exit) internal view returns (bytes memory) {
-        return
-            abi.encode(
-                exit.owner,
-                registry.rootToChildToken(exit.token),
-                exit.receiptAmountOrNFTId,
-                exit.txHash,
-                exit.isRegularExit
-            );
+        return abi.encode(
+            exit.owner,
+            registry.rootToChildToken(exit.token),
+            exit.receiptAmountOrNFTId,
+            exit.txHash,
+            exit.isRegularExit
+        );
     }
 
     function encodeExitForProcessExit(uint256 exitId) internal view returns (bytes memory) {
@@ -334,14 +303,7 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         address predicate
     ) internal {
         require(exits[exitId].token == address(0x0), "EXIT_ALREADY_EXISTS");
-        exits[exitId] = PlasmaExit(
-            exitAmountOrTokenId,
-            txHash,
-            exitor,
-            rootToken,
-            isRegularExit,
-            predicate
-        );
+        exits[exitId] = PlasmaExit(exitAmountOrTokenId, txHash, exitor, rootToken, isRegularExit, predicate);
         PlasmaExit storage _exitObject = exits[exitId];
 
         bytes32 key = getKey(_exitObject.token, _exitObject.owner, _exitObject.receiptAmountOrNFTId);
@@ -357,7 +319,8 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
 
         PriorityQueue queue = PriorityQueue(exitsQueues[_exitObject.token]);
 
-        // Way priority queue is implemented is such that it expects 2 uint256 params with most significant 128 bits masked out
+        // Way priority queue is implemented is such that it expects 2 uint256 params with most significant 128 bits
+        // masked out
         // This is a workaround to split exitId, which otherwise is conclusive in itself
         // exitId >> 128 gives 128 most significant bits
         // uint256(uint128(exitId)) gives 128 least significant bits
@@ -376,30 +339,18 @@ contract WithdrawManager is WithdrawManagerStorage, IWithdrawManager {
         bytes32 receiptRoot,
         uint256 headerNumber,
         bytes memory blockProof
-    )
-        internal
-        view
-        returns (
-            uint256 /* createdAt */
-        )
-    {
-        (bytes32 headerRoot, uint256 startBlock, , uint256 createdAt, ) = rootChain.headerBlocks(headerNumber);
+    ) internal view returns (uint256 /* createdAt */ ) {
+        (bytes32 headerRoot, uint256 startBlock,, uint256 createdAt,) = rootChain.headerBlocks(headerNumber);
         require(
             keccak256(abi.encodePacked(blockNumber, blockTime, txRoot, receiptRoot)).checkMembership(
-                blockNumber - startBlock,
-                headerRoot,
-                blockProof
+                blockNumber - startBlock, headerRoot, blockProof
             ),
             "WITHDRAW_BLOCK_NOT_A_PART_OF_SUBMITTED_HEADER"
         );
         return createdAt;
     }
 
-    function getKey(
-        address token,
-        address exitor,
-        uint256 amountOrToken
-    ) internal view returns (bytes32 key) {
+    function getKey(address token, address exitor, uint256 amountOrToken) internal view returns (bytes32 key) {
         if (registry.isERC721(token)) {
             key = keccak256(abi.encodePacked(token, exitor, amountOrToken));
         } else {

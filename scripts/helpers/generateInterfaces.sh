@@ -10,7 +10,7 @@ forge compile --skip test script
 
 mkdir -p scripts/helpers/interfaces
 
-find out -type f -print0 | while read -d $'\0' file
+find out -type f -not -path "*.generated*" -print0 | while read -d $'\0' file
 do
   echo $file
   create_interface 

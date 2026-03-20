@@ -34,8 +34,8 @@ export const walletAmounts = {
   }
 }
 
-export async function freshDeploy(pol = false) {
-  let contracts = await deployer.deployStakeManager(wallets, pol)
+export async function freshDeploy() {
+  let contracts = await deployer.deployStakeManager(wallets)
   this.stakeToken = contracts.stakeToken
   this.polToken = contracts.polToken
   this.stakeManager = contracts.stakeManager
@@ -44,7 +44,6 @@ export async function freshDeploy(pol = false) {
   this.registry = contracts.registry
   this.governance = contracts.governance
   this.validatorShare = deployer.validatorShare
-  this.slashingManager = contracts.slashingManager
 
   await this.governance.update(
     this.stakeManager.address,
@@ -57,9 +56,7 @@ export async function freshDeploy(pol = false) {
 
   for (const walletAddr in walletAmounts) {
     await this.stakeToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
-    if (pol) {
-      await this.polToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
-    }
+    await this.polToken.mint(walletAddr, walletAmounts[walletAddr].initialBalance)
   }
 
   this.defaultHeimdallFee = new BN(web3.utils.toWei('1'))

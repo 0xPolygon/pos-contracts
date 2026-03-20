@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.5.17;
 
-import {IERC20} from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
+import {IERC20} from "../oz/token/ERC20/IERC20.sol";
+import {SafeERC20} from "../oz/token/ERC20/SafeERC20.sol";
 import {IPolygonMigration} from "./IPolygonMigration.sol";
 
 /// @title Polygon Migration
@@ -23,7 +23,7 @@ contract PolygonMigration is IPolygonMigration {
         _;
     }
 
-     modifier onlyOwner() {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Only owner");
         _;
     }

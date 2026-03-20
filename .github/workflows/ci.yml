@@ -38,11 +38,14 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
+
+      - name: Generate Interfaces
+        continue-on-error: true
+        run: npm run generate:interfaces
 
       - name: Run Forge build
         run: |
-          npm run generate:interfaces
           forge --version
           forge build --sizes
         id: build
