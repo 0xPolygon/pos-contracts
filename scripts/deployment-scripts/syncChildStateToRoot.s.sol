@@ -42,6 +42,19 @@ contract SyncChildStateToRootScript is Script {
 
         console.log("Success!");
 
+        // Map PolToken to the same L2 native token (0x1010) so that POL can be deposited
+        // directly via DepositManager.depositERC20. The DepositManager remaps POL→MATIC
+        // internally before the state sync, so L2 behaviour is identical to bridging MATIC.
+        tokenData = abi.encodeWithSelector(
+            bytes4(keccak256("mapToken(address,address,bool)")),
+            vm.parseJsonAddress(json, ".root.tokens.PolToken"),
+            vm.parseJsonAddress(json, ".child.tokens.MaticToken"),
+            false
+        );
+        governance.update(registryAddress, tokenData);
+
+        console.log("Success!");
+
         tokenData = abi.encodeWithSelector(
             bytes4(keccak256("mapToken(address,address,bool)")),
             vm.parseJsonAddress(json, ".root.tokens.TestToken"),
