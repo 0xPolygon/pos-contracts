@@ -41,7 +41,7 @@ contract InitializeStateScript is Script {
         updateContractMap(keccak256("eventsHub"), vm.parseJsonAddress(json, ".root.EventsHubProxy"));
 
         // Set the WithdrawManager exit period to zero to allow immediate exits in the devnet.
-        WithdrawManager withdrawManager = WithdrawManager(vm.parseJsonAddress(json, ".root.WithdrawManagerProxy"));
+        WithdrawManager withdrawManager = WithdrawManager(payable(vm.parseJsonAddress(json, ".root.WithdrawManagerProxy")));
         withdrawManager.updateExitPeriod(0);
 
         bytes memory erc20PredicateData = abi.encodeCall(registry.addErc20Predicate, (vm.parseJsonAddress(json, ".root.predicates.ERC20Predicate")));
