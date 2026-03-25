@@ -35,6 +35,7 @@ contract InitializeStateScript is Script {
         updateContractMap(keccak256("stateSender"), vm.parseJsonAddress(json, ".root.StateSender"));
         updateContractMap(keccak256("matic"), vm.parseJsonAddress(json, ".root.tokens.MaticToken"));
         updateContractMap(keccak256("pol"), vm.parseJsonAddress(json, ".root.tokens.PolToken"));
+        updateContractMap(keccak256("polygonMigration"), vm.parseJsonAddress(json, ".root.tokens.PolygonMigration"));
         updateContractMap(keccak256("wethToken"), vm.parseJsonAddress(json, ".root.tokens.MaticWeth"));
         updateContractMap(keccak256("eventsHub"), vm.parseJsonAddress(json, ".root.EventsHubProxy"));
 

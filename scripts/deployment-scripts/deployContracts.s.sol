@@ -112,6 +112,13 @@ contract DeploymentScript is Script {
         migration = PolygonMigration(payable(deployCode("out/PolygonMigration.sol/PolygonMigration.json", abi.encode(address(maticToken), address(polToken)))));
         vm.serializeAddress(tokenJson, "PolygonMigration", address(migration));
 
+        // Fund PolygonMigration with the full POL supply so it can exchange MATIC 1:1 for POL.
+        // Then migrate a small amount of MATIC back so the deployer has POL for testing.
+        polToken.transfer(address(migration), polToken.totalSupply());
+        uint256 deployerTestPol = 10_000 * 1e18;
+        maticToken.approve(address(migration), deployerTestPol);
+        migration.migrate(deployerTestPol);
+
         erc20Token = TestToken(payable(deployCode("out/TestToken.sol/TestToken.json", abi.encode("Test ERC20", "TEST20"))));
         vm.serializeAddress(tokenJson, "TestToken", address(erc20Token));
 
