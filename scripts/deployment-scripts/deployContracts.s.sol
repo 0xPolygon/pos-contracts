@@ -113,9 +113,10 @@ contract DeploymentScript is Script {
         vm.serializeAddress(tokenJson, "PolygonMigration", address(migration));
 
         // Fund PolygonMigration with the full POL supply so it can exchange MATIC 1:1 for POL.
-        // Then migrate a small amount of MATIC back so the deployer has POL for testing.
+        // Then migrate enough MATIC back so the deployer has POL to stake all validators.
+        // Each validator requires stakeAmount + heimdallFee POL; 10M gives ample headroom.
         polToken.transfer(address(migration), polToken.totalSupply());
-        uint256 deployerTestPol = 10_000 * 1e18;
+        uint256 deployerTestPol = 10_000_000 * 1e18;
         maticToken.approve(address(migration), deployerTestPol);
         migration.migrate(deployerTestPol);
 
