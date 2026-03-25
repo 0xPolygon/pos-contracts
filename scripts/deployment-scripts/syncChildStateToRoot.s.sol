@@ -30,8 +30,6 @@ contract SyncChildStateToRootScript is Script {
         );
         governance.update(registryAddress, tokenData);
 
-        console.log("Success!");
-
         tokenData = abi.encodeWithSelector(
             bytes4(keccak256("mapToken(address,address,bool)")),
             vm.parseJsonAddress(json, ".root.tokens.MaticToken"),
@@ -39,8 +37,6 @@ contract SyncChildStateToRootScript is Script {
             false
         );
         governance.update(registryAddress, tokenData);
-
-        console.log("Success!");
 
         // Map PolToken to the same L2 native token (0x1010) so that POL can be deposited
         // directly via DepositManager.depositERC20. The DepositManager remaps POL→MATIC
@@ -53,8 +49,6 @@ contract SyncChildStateToRootScript is Script {
         );
         governance.update(registryAddress, tokenData);
 
-        console.log("Success!");
-
         tokenData = abi.encodeWithSelector(
             bytes4(keccak256("mapToken(address,address,bool)")),
             vm.parseJsonAddress(json, ".root.tokens.TestToken"),
@@ -62,8 +56,6 @@ contract SyncChildStateToRootScript is Script {
             false
         );
         governance.update(registryAddress, tokenData);
-
-        console.log("Success!");
 
         tokenData = abi.encodeWithSelector(
             bytes4(keccak256("mapToken(address,address,bool)")),
