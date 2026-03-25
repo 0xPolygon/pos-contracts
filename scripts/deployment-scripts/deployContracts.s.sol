@@ -225,6 +225,14 @@ contract DeploymentScript is Script {
 
         stakeManagerProxy.updateAndCall(address(stakeManager), stakeManagerProxyCallData);
 
+        // Seed StakeManagerProxy with a POL reward pool.
+        // In production the StakeManager receives POL from protocol inflation; in this devnet
+        // it must be pre-funded so that reward withdrawals and unstaking do not revert.
+        uint256 stakeManagerRewardPool = 10_000_000 * 1e18;
+        maticToken.approve(address(migration), stakeManagerRewardPool);
+        migration.migrate(stakeManagerRewardPool);
+        polToken.transfer(address(stakeManagerProxy), stakeManagerRewardPool);
+
         // Flag.
         stakingNFT.transferOwnership(address(stakeManagerProxy));
 
