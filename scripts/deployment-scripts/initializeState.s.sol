@@ -6,7 +6,6 @@ import {Script, stdJson, console} from "forge-std/Script.sol";
 
 import {Registry} from "../helpers/interfaces/Registry.generated.sol";
 import {Governance} from "../helpers/interfaces/Governance.generated.sol";
-import {WithdrawManager} from "../helpers/interfaces/WithdrawManager.generated.sol";
 
 contract InitializeStateScript is Script {
     string path = "contractAddresses.json";
@@ -39,10 +38,6 @@ contract InitializeStateScript is Script {
         updateContractMap(keccak256("polygonMigration"), vm.parseJsonAddress(json, ".root.tokens.PolygonMigration"));
         updateContractMap(keccak256("wethToken"), vm.parseJsonAddress(json, ".root.tokens.MaticWeth"));
         updateContractMap(keccak256("eventsHub"), vm.parseJsonAddress(json, ".root.EventsHubProxy"));
-
-        // Set the WithdrawManager exit period to zero to allow immediate exits in the devnet.
-        WithdrawManager withdrawManager = WithdrawManager(payable(vm.parseJsonAddress(json, ".root.WithdrawManagerProxy")));
-        withdrawManager.updateExitPeriod(0);
 
         bytes memory erc20PredicateData = abi.encodeCall(registry.addErc20Predicate, (vm.parseJsonAddress(json, ".root.predicates.ERC20Predicate")));
         governance.update(registryAddress, erc20PredicateData);
