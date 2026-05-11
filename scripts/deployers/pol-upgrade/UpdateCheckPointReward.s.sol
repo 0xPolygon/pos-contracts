@@ -32,7 +32,8 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         governance = input.readAddress(string.concat(chainIdSlug, ".governance"));
         timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
 
-        uint256 NEW_REWARD = 37108000000000000000000;
+        uint256 NEW_REWARD = 29414916286149162861491;
+        address polygonBridgeMultisig = input.readAddress(string.concat(chainIdSlug, ".gSafe"));
 
         // create payload
         bytes memory payload = abi.encodeCall(Governance.update, (stakeManagerProxy, abi.encodeCall(StakeManager.updateCheckpointReward, (NEW_REWARD))));
@@ -40,10 +41,12 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         bytes memory schedulePayload = abi.encodeCall(Timelock.schedule, (governance, 0, payload, "", "", 0));
         bytes memory executePayload = abi.encodeCall(Timelock.execute, (governance, 0, payload, "", ""));
 
+        console.log("use polygonBridgeMultisig: ", polygonBridgeMultisig);
+        console.log("send to: ", address(timelock));
         console.log("Scheduling payload: ", vm.toString(schedulePayload));
         console.log("Executing payload: ", vm.toString(executePayload));
 
-        vm.startPrank(0xFa7D2a996aC6350f4b56C043112Da0366a59b74c);
+        vm.startPrank(polygonBridgeMultisig);
         
         address(timelock).call(schedulePayload);
         address(timelock).call(executePayload);
