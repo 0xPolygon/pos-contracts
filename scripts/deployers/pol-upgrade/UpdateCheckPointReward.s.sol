@@ -32,7 +32,7 @@ contract UpgradeStake_DepositManager_Mainnet is Script {
         governance = input.readAddress(string.concat(chainIdSlug, ".governance"));
         timelock = Timelock(payable(input.readAddress(string.concat(chainIdSlug, ".timelock"))));
 
-        uint256 NEW_REWARD = 29414916286149162861491;
+        uint256 NEW_REWARD = 25212785388127853881278;
         address polygonBridgeMultisig = input.readAddress(string.concat(chainIdSlug, ".gSafe"));
 
         // create payload
