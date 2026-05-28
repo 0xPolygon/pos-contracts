@@ -5,17 +5,18 @@
 Ethereum smart contracts that power the [Matic Network](https://polygon.technology/polygon-pos).
 
 ## Development
-### Install dependencies with
+
+### Install foundry
+
+Follow the [foundry installation guide](https://book.getfoundry.sh/getting-started/installation).
+
+### Install dependencies
 
 ```
 npm install
 ```
 
-### Setup git hooks
-
-```
-pre-commit install
-```
+Contributors should additionally set up pre-commit hooks — see [CONTRIBUTING.md](CONTRIBUTING.md#setup).
 
 ### Prepare templates
 
@@ -26,7 +27,7 @@ npm run template:process -- --bor-chain-id 15001
 bor-chain-id should be:  
 **local: 15001**  
 Mainnet = 137  
-TestnetV4 (Mumbai) = 80001
+Amoy = 80002
 
 ### Generate interfaces
 
