@@ -6,7 +6,7 @@
 #   - single `bor server` invocation (no separate `init` step; -chain handles it)
 #   - `-miner.etherbase` must be explicit (v1 implicitly used the first unlocked account)
 #   - `-bor.devfakeauthor` required to mine without a validator set
-docker run --name bor-test --platform linux/amd64 -it -d -p 9545:9545 \
+docker run --name bor-test -it -d -p 9545:9545 \
   -v "$(pwd):/bordata" \
   ghcr.io/0xpolygon/bor:latest \
   server \
