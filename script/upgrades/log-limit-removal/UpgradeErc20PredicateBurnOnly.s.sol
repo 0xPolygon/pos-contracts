@@ -51,6 +51,46 @@ import {Timelock} from "../../../contracts/common/misc/ITimelock.sol";
  * TX 2 schedule+execute) plus both rollback batches (schedule+execute each)
  * and exercises every trajectory against a mainnet fork using vm snapshots.
  */
+
+/**
+ * Alt verification approach (not used here — preserved so we don't lose the
+ * technique when the original file goes away):
+ *
+ * `test/foundry/ForkupgradeMPT.t.sol` replayed a JSON batch of historical
+ * mainnet exits against a fresh impl by:
+ *   - forking mainnet at a single chosen block (block-pinned)
+ *   - using `vm.store` to wipe `isKnownExit`, `exits[idx]`, and ExitNFT's
+ *     `_tokenOwner` slot for each exit so the same calldata could be
+ *     re-submitted through the new predicate
+ *   - pranking the original sender and re-running each tx's input_proof
+ *     against a hardcoded RootChain proxy address
+ *
+ * Pros: scales to N txs against a SINGLE forked block — no rollFork churn,
+ * cheap on RPCs, useful when the batch is large or the endpoint is
+ * rate-limited.
+ *
+ * Cons: storage-slot encoding is brittle (any proxy layout change silently
+ * breaks the rewind); pranks the Timelock directly so bugs in the real
+ * Governance/Safe auth chain stay invisible; and only checks a single event
+ * per replayed tx — no semantic post-state diff, no storage-write
+ * fingerprint, so mechanism changes that emit the right event but write the
+ * wrong slots slip through.
+ *
+ * Why this script chose differently:
+ *   - `_verifyExitStillWorks` does deep verification of ONE exit (events,
+ *     semantic post-state, per-contract storage-write counts, stray-write
+ *     detection) — catches mechanism changes that single-event checks miss.
+ *   - `RegressionReplay.s.sol` covers the many-exits case via `rollFork`
+ *     per-tx + `makePersistent` for the upgrade artifacts; uses real
+ *     mainnet state at the right block instead of hand-rewinding storage.
+ *   - Both go through `Governance.update` via `Timelock.schedule/execute`
+ *     pranked from `gSafe`, exercising the actual multisig auth path.
+ *
+ * When the storage-rewind technique would be worth reaching for again:
+ * very large historical batches against a single block, where rollFork
+ * cost (RPC roundtrips, refetch) dominates and the proxy's storage layout
+ * is stable enough to encode confidently.
+ */
 contract UpgradeErc20PredicateBurnOnly is Script {
     using stdJson for string;
 
