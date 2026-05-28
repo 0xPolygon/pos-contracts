@@ -22,7 +22,7 @@ export default class StatefulUtils {
     }
 
     // rootChain expects the first checkpoint to start from block 0.
-    // However, ganache would already be running and would be much ahead of block 0.
+    // However, the local test rpc (anvil) would already be running and would be much ahead of block 0.
     // offset is used to treat the block of the first checkpoint to be 0
     if (offset == null) {
       offset = event.block.number
