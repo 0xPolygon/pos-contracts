@@ -11,7 +11,7 @@ const baseConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_TOKEN}`,
+        url: `https://mainnet.gateway.tenderly.co`,
         blockNumber: 18364580,
       },
       // set this here because it is the limit of the bor testchain
@@ -68,7 +68,7 @@ const networks = () => {
     return {
       ...baseConfig.networks,
       sepolia: {
-        url: "https://sepolia.infura.io/v3/" + process.env.INFURA_TOKEN,
+        url: "https://sepolia.gateway.tenderly.co",
         accounts: {
           mnemonic: process.env.MNEMONIC_DEV,
         },
@@ -78,7 +78,7 @@ const networks = () => {
     return {
       ...baseConfig.networks,
       mainnet: {
-        url: "https://mainnet.infura.io/v3/" + process.env.INFURA_TOKEN,
+        url: "https://mainnet.gateway.tenderly.co",
         accounts: [process.env.PK_MAINNET],
       },
     };
