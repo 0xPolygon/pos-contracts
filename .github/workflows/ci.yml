@@ -37,7 +37,7 @@ jobs:
       - name: Process templates
         run: npm run template:process
 
-      - name: Run Coverage and Hardhat tests
+      - name: Run Hardhat tests
         run: npm run test:ci
 
       - name: Generate Interfaces

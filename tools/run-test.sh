@@ -65,5 +65,4 @@ wait_for_rpc anvil http://localhost:8545 30
 wait_for_rpc bor http://localhost:9545 60
 
 export LOCAL_NETWORK=true
-npm run coverage "$@"
 npm run test:hardhat "$@"

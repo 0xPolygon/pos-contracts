@@ -84,11 +84,13 @@ npm run test:hardhat
 
 ### Coverage
 
-Run coverage with
+Coverage is not part of CI — run it locally on demand:
 
 ```
 npm run coverage
 ```
+
+The report is written to `coverage/` (gitignored). Open `coverage/index.html` to browse.
 
 ## Contact
 
