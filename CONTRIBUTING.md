@@ -1,10 +1,9 @@
 # Contributing
 
-- [Install](#install)
+- [Setup](#setup)
 - [Pre-commit Hooks](#pre-commit-hooks)
 - [Branching](#branching)
   - [Main](#main)
-  - [Staging](#staging)
   - [Dev](#dev)
   - [Feature](#feature)
   - [Fix](#fix)
@@ -14,31 +13,23 @@
   - [NatSpec \& Comments](#natspec--comments)
 - [Versioning](#versioning)
 - [Testing](#testing)
-  - [Deployer Template](#deployer-template)
 - [Deployment](#deployment)
-  - [Deployer Template](#deployer-template-1)
-  - [Deployment](#deployment-1)
-  - [Deployment Info Generation](#deployment-info-generation)
-- [Deployer Template Script](#deployer-template-script)
 - [Releases](#releases)
 
-## Install
+## Setup
 
-Follow these steps to set up your local environment for development:
+See the [README](README.md#development) for local environment setup (foundry, npm dependencies, interface generation, build). In addition, contributors should install pre-commit:
 
-- [Install foundry](https://book.getfoundry.sh/getting-started/installation)
-- Install dependencies: `forge install`
 - [Install pre-commit](https://pre-commit.com/#installation)
-- Install pre commit hooks: `pre-commit install`
+- Enable the hooks: `pre-commit install`
 
 ## Pre-commit Hooks
 
-Follow the [installation steps](#install) to enable pre-commit hooks. To ensure consistency in our formatting `pre-commit` is used to check whether code was formatted properly and the documentation is up to date. Whenever a commit does not meet the checks implemented by pre-commit, the commit will fail and the pre-commit checks will modify the files to make the commits pass. Include these changes in your commit for the next commit attempt to succeed. On pull requests the CI checks whether all pre-commit hooks were run correctly.
+Follow the [setup steps](#setup) to enable pre-commit hooks. To ensure consistency in our formatting `pre-commit` is used to check whether code was formatted properly and the documentation is up to date. Whenever a commit does not meet the checks implemented by pre-commit, the commit will fail and the pre-commit checks will modify the files to make the commits pass. Include these changes in your commit for the next commit attempt to succeed. On pull requests the CI checks whether all pre-commit hooks were run correctly.
 This repo includes the following pre-commit hooks that are defined in the `.pre-commit-config.yaml`:
 
 - `mixed-line-ending`: This hook ensures that all files have the same line endings (LF).
 - `format`: This hook uses `forge fmt` to format all Solidity files.
-- `doc`: This hook uses `forge doc` to automatically generate documentation for all Solidity files whenever the NatSpec documentation changes. The `script/util/doc_gen.sh` script is used to generate documentation. Forge updates the commit hash in the documentation automatically. To only generate new documentation when the documentation has actually changed, the script checks whether more than just the hash has changed in the documentation and discard all changes if only the hash has changed.
 - `prettier`: All remaining files are formatted using prettier.
 
 ## Branching
@@ -47,15 +38,11 @@ This section outlines the branching strategy of this repo.
 
 ### Main
 
-The main branch is supposed to reflect the deployed state on all networks. Any pull requests into this branch MUST come from the staging branch. The main branch is protected and requires a separate code review by the security team. Whenever the main branch is updated, a new release is created with the latest version. For more information on versioning, check [here](#versioning).
-
-### Staging
-
-The staging branch reflects new code complete deployments or upgrades containing fixes and/or features. Any pull requests into this branch MUST come from the dev branch. The staging branch is used for security audits and deployments. Once the deployment is complete and deployment log files are generated, the branch can be merged into main. For more information on the deployment and log file generation check [here](#deployment--versioning).
+The main branch reflects the deployed state on all networks. Any pull requests into this branch MUST come from the dev branch. The main branch is protected and requires a separate code review by the security team. Whenever the main branch is updated, a new release is created with the latest version. For more information on versioning, check [here](#versioning).
 
 ### Dev
 
-This is the active development branch. All pull requests into this branch MUST come from fix or feature branches. Upon code completion this branch is merged into staging for auditing and deployment.
+This is the active development branch. All pull requests into this branch MUST come from fix or feature branches. Once code is complete and audited, dev is merged into main for release.
 
 ### Feature
 
@@ -118,43 +105,30 @@ Interfaces should be the entrypoint for all contracts. When exploring the a cont
 
 ## Versioning
 
-This repo utilizes [semantic versioning](https://semver.org/) for smart contracts. An `IVersioned` interface is included in the [interfaces directory](src/interface/IVersioned.sol) exposing a unified versioning interface for all contracts. This version MUST be included in all contracts, whether they are upgradeable or not, to be able to easily match deployed versions. For example, in the case of a non-upgradeable contract one version could be deployed to a network and later a new version might be deployed to another network. The exposed `version()` function is also used by the [Deployment Log Generator](https://github.com/0xPolygon/deployment-log-generator#readme) to extract information about the version.
-
-Whenever contracts are modified, only the version of the changed contracts should be updated. Unmodified contracts should remain on the version of their last change.
+This repo utilizes [semantic versioning](https://semver.org/) for smart contracts. When contracts are modified, only the version of the changed contracts should be updated — unmodified contracts remain on the version of their last change.
 
 ## Testing
 
-### Deployer Template
-
-This repo provides a deployer template library for consistency between scripts and unit tests. For more information on how to use the template, check [here](https://github.com/0xPolygon/contract-deployer-template#readme).
+See the [README](README.md#testing) for the test workflow (forge tests, hardhat tests, coverage, local bor chain).
 
 ## Deployment
 
-This repo utilizes versioned deployments. Any changes to a contract should update the version of this specific contract. A script is provided that extracts deployment information from the `run-latest.json` file within the `broadcast` directory generated while the forge script runs. From this information a JSON and markdown file is generated containing various information about the deployment itself as well as past deployments.
+Forge scripts live under `script/`, organised as:
 
-### Deployer Template
+- `script/setup/` — system deployment / scaffolding
+- `script/upgrades/` — proxy implementation swaps and new deployments
+- `script/updates/` — governance setting/config updates
 
-This repo provides a deployer template library for consistency between scripts and unit tests. For more information on how to use the template, check [here](https://github.com/0xPolygon/contract-deployer-template#readme).
+Pre-configured RPCs in `foundry.toml` (all use Tenderly's public gateways — no API key required, rate-limited):
 
-### Deployment
+- `anvil` — local (127.0.0.1:8545)
+- `mainnet` — Ethereum Mainnet
+- `sepolia` — Ethereum Sepolia
+- `polygon_pos` — Polygon PoS
+- `polygon_amoy` — Polygon Amoy testnet
 
-This repo set up the following RPCs in the `foundry.toml` file:
+Select a network with `--rpc-url <name>`. To override a default with a private endpoint (higher limits, or a Tenderly access-token URL), set the per-chain env var Foundry honours — e.g. `MAINNET_RPC_URL`, `POLYGON_POS_RPC_URL`. Add `--broadcast` to send transactions, and `--verify` to verify on Etherscan (requires `ETHERSCAN_API_KEY` for Ethereum networks and `POLYGONSCAN_API_KEY` for Polygon networks in `.env`). If verification times out, re-run with `--resume` instead of `--broadcast`.
 
-- mainnet: Ethereum Mainnet
-- goerli: Ethereum Goerli
-- sepolia: Ethereum Sepolia
-- polygon_pos: Polygon PoS
-- mumbai: Polygon Mumbai
-- polygon_zkevm: Polygon zkEVM
-- polygon_zkevm_testnet: Polygon zkEVM Testnet
-
-To deploy the contracts, provide the `--broadcast` flag to the forge script command. Should the etherscan verification time out, it can be picked up again by replacing the `--broadcast` flag with `--resume`.
-Deploy the contracts to one of the predefined networks by providing the according key with the `--rpc-url` flag. Most of the predefined networks require the `INFURA_KEY` environment variable to be set in the `.env` file.
-Including the `--verify` flag will verify deployed contracts on Etherscan. Define the appropriate environment variable for the Etherscan api key in the `.env` file.
-
-```shell
-forge script script/Deploy.s.sol --broadcast --rpc-url <rpc_url> --verify
-```
 
 ## Releases
 
