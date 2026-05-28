@@ -1,8 +1,6 @@
-# Matic contracts
+# Polygon PoS contracts
 
-![Build Status](https://github.com/maticnetwork/contracts/workflows/CI/badge.svg)
-
-Ethereum smart contracts that power the [Matic Network](https://polygon.technology/polygon-pos).
+Ethereum smart contracts that power [Polygon PoS](https://polygon.technology/polygon-pos).
 
 ## Development
 
@@ -58,7 +56,7 @@ forge test
 
 All tests are run against a fork of mainnet using Hardhat's forking functionality. No need to run any local chain!
 
-- Start Matic side chain. Requires docker.
+- Start the bor side chain. Requires docker.
 
 ```
 npm run bor:simulate
