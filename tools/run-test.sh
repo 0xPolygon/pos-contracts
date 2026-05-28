@@ -36,7 +36,7 @@ wait_for_rpc() {
   local timeout="$3"
   echo "Waiting up to ${timeout}s for $name RPC at $url..."
   local i=0
-  while [ "$i" -lt "$timeout" ]; do
+  while [[ "$i" -lt "$timeout" ]]; do
     if curl -sf -X POST -H 'content-type: application/json' \
          -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
          "$url" > /dev/null 2>&1; then
