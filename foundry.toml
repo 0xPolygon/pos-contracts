@@ -10,7 +10,7 @@ cache_path = 'forge-cache'
 verbosity = 2
 memory_limit = 40003554432
 gas_limit = "18446744073709551615"
-ignored_warnings_from = ["scripts/helpers/interfaces"]
+ignored_warnings_from = ["tools/interfaces"]
 ffi = true
 remappings = [
   "eth-gas-reporter/=node_modules/eth-gas-reporter/",
@@ -18,7 +18,6 @@ remappings = [
   "hardhat/=node_modules/hardhat/",
 ]
 fs_permissions = [
-  { access = "read", path = "./scripts/" },
   { access = "read", path = "./script/" },
   { access = "read", path = "./test/" },
   { access = "read", path = "./out/" },

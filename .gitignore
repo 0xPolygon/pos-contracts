@@ -9,7 +9,7 @@ broadcast/*/*/dry-run
 contracts/root/predicates/TransferWithSigUtils.sol
 contracts/common/mixin/ChainIdMixin.sol
 test/helpers/marketplaceUtils.js
-scripts/helpers/interfaces
+tools/interfaces
 cache_hardhat/
 forge-cache/
 
@@ -28,5 +28,4 @@ coverage/
 
 coverage.json
 
-scripts/helpers/interfaces
 cache

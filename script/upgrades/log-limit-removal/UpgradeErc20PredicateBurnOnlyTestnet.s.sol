@@ -3,8 +3,8 @@ pragma solidity ^0.8.4;
 
 import "forge-std/Script.sol";
 
-import {Registry} from "../../scripts/helpers/interfaces/Registry.generated.sol";
-import {Governance} from "../../scripts/helpers/interfaces/Governance.generated.sol";
+import {Registry} from "../../../tools/interfaces/Registry.generated.sol";
+import {Governance} from "../../../tools/interfaces/Governance.generated.sol";
 
 /**
  * Sepolia-flavoured version of UpgradeErc20PredicateBurnOnly.
@@ -50,7 +50,7 @@ contract UpgradeErc20PredicateBurnOnlyTestnet is Script {
         vm.selectFork(vm.createFork(rpc));
         require(block.chainid == 11155111, "expected Sepolia chain id 11155111");
 
-        string memory input = vm.readFile("script/log-limit-removal/input.json");
+        string memory input = vm.readFile("script/upgrades/log-limit-removal/input.json");
         string memory slug = '["11155111"]';
         registry = Registry(input.readAddress(string.concat(slug, ".registry")));
         depositManager = input.readAddress(string.concat(slug, ".depositManagerProxy"));
