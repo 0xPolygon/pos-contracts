@@ -17,10 +17,10 @@
     "petersburgBlock": 0,
     "istanbulBlock": 0,
     "bor": {
-      "period": 1,
-      "producerDelay": 4,
-      "sprint": 64,
-      "backupMultiplier": 1,
+      "period": { "0": 1 },
+      "producerDelay": { "0": 4 },
+      "sprint": { "0": 64 },
+      "backupMultiplier": { "0": 1 },
       "validatorContract": "0x0000000000000000000000000000000000001000",
       "stateReceiverContract": "0x0000000000000000000000000000000000001001"
     }
