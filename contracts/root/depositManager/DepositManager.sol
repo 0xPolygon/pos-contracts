@@ -13,10 +13,7 @@ import {DepositManagerStorage} from "./DepositManagerStorage.sol";
 import {StateSender} from "../stateSyncer/StateSender.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {RootChain} from "../RootChain.sol";
-
-interface IPolygonMigration {
-    function migrate(uint256 amount) external;
-}
+import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 
 contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder {
     using SafeMath for uint256;
