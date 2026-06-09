@@ -24,26 +24,26 @@ pragma solidity ^0.8.0;
 // import {StateSender} from "../../contracts/root/stateSyncer/StateSender.sol";
 
 // Interfaces
-import {StakeManager} from "../../scripts/helpers/interfaces/StakeManager.generated.sol";
-import {StakeManagerExtension} from "../../scripts/helpers/interfaces/StakeManagerExtension.generated.sol";
-import {StakeManagerProxy} from "../../scripts/helpers/interfaces/StakeManagerProxy.generated.sol";
-import {StakingNFT} from "../../scripts/helpers/interfaces/StakingNFT.generated.sol";
-import {ValidatorShare} from "../../scripts/helpers/interfaces/ValidatorShare.generated.sol";
-import {ValidatorShareFactory} from "../../scripts/helpers/interfaces/ValidatorShareFactory.generated.sol";
-import {EventsHub} from "../../scripts/helpers/interfaces/EventsHub.generated.sol";
-import {EventsHubProxy} from "../../scripts/helpers/interfaces/EventsHubProxy.generated.sol";
-import {StakingInfo} from "../../scripts/helpers/interfaces/StakingInfo.generated.sol";
+import {StakeManager} from "../../tools/interfaces/StakeManager.generated.sol";
+import {StakeManagerExtension} from "../../tools/interfaces/StakeManagerExtension.generated.sol";
+import {StakeManagerProxy} from "../../tools/interfaces/StakeManagerProxy.generated.sol";
+import {StakingNFT} from "../../tools/interfaces/StakingNFT.generated.sol";
+import {ValidatorShare} from "../../tools/interfaces/ValidatorShare.generated.sol";
+import {ValidatorShareFactory} from "../../tools/interfaces/ValidatorShareFactory.generated.sol";
+import {EventsHub} from "../../tools/interfaces/EventsHub.generated.sol";
+import {EventsHubProxy} from "../../tools/interfaces/EventsHubProxy.generated.sol";
+import {StakingInfo} from "../../tools/interfaces/StakingInfo.generated.sol";
 
-import {Registry} from "../../scripts/helpers/interfaces/Registry.generated.sol";
-import {Governance} from "../../scripts/helpers/interfaces/Governance.generated.sol";
-import {GovernanceProxy} from "../../scripts/helpers/interfaces/GovernanceProxy.generated.sol";
-import {PolygonMigration} from "../../scripts/helpers/interfaces/PolygonMigration.generated.sol";
-import {ERC20Permit} from "../../scripts/helpers/interfaces/ERC20Permit.generated.sol";
-import {TestToken} from "../../scripts/helpers/interfaces/TestToken.generated.sol";
+import {Registry} from "../../tools/interfaces/Registry.generated.sol";
+import {Governance} from "../../tools/interfaces/Governance.generated.sol";
+import {GovernanceProxy} from "../../tools/interfaces/GovernanceProxy.generated.sol";
+import {PolygonMigration} from "../../tools/interfaces/PolygonMigration.generated.sol";
+import {ERC20Permit} from "../../tools/interfaces/ERC20Permit.generated.sol";
+import {TestToken} from "../../tools/interfaces/TestToken.generated.sol";
 
-import {RootChain} from "../../scripts/helpers/interfaces/RootChain.generated.sol";
-import {RootChainProxy} from "../../scripts/helpers/interfaces/RootChainProxy.generated.sol";
-import {StateSender} from "../../scripts/helpers/interfaces/StateSender.generated.sol";
+import {RootChain} from "../../tools/interfaces/RootChain.generated.sol";
+import {RootChainProxy} from "../../tools/interfaces/RootChainProxy.generated.sol";
+import {StateSender} from "../../tools/interfaces/StateSender.generated.sol";
 
 import {ArtifactPath} from "./ArtifactPath.sol";
 

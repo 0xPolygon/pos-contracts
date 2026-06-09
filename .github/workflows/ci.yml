@@ -29,16 +29,16 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      - name: Process templates
-        run: npm run template:process
-
-      - name: Run Coverage and Hardhat tests
-        run: npm run test:ci
-
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+
+      - name: Process templates
+        run: npm run template:process
+
+      - name: Run Hardhat tests
+        run: npm run test:ci
 
       - name: Generate Interfaces
         continue-on-error: true
@@ -51,7 +51,5 @@ jobs:
         id: build
 
       - name: Run Forge tests
-        env:
-          INFURA_TOKEN: ${{ secrets.INFURA_TOKEN }}
         run: forge test -vvv
         id: test

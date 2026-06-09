@@ -1,12 +1,3 @@
-[submodule "lib/deployment-log-generator"]
-	path = lib/deployment-log-generator
-	url = https://github.com/0xPolygon/deployment-log-generator
-[submodule "lib/contract-deployer-template"]
-	path = lib/contract-deployer-template
-	url = https://github.com/0xPolygon/contract-deployer-template
-[submodule "lib/storage-layout-checker"]
-	path = lib/storage-layout-checker
-	url = https://github.com/0xPolygon/storage-layout-checker
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
