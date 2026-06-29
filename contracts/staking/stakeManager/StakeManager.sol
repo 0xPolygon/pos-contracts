@@ -19,6 +19,8 @@ import {IGovernance} from "../../common/governance/IGovernance.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {StakeManagerExtension} from "./StakeManagerExtension.sol";
 import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
+import {Registry} from "../../common/Registry.sol";
+import {IValidatorPass} from "./IValidatorPass.sol";
 
 contract StakeManager is
     StakeManagerStorage,
@@ -29,6 +31,9 @@ contract StakeManager is
 {
     using SafeMath for uint256;
     using Merkle for bytes32;
+
+    // Registry key of the optional validator-pass module that permissions new validator entry.
+    bytes32 constant VALIDATOR_PASS_KEY = keccak256("validatorPass");
 
     struct UnsignedValidatorsContext {
         uint256 unsignedValidatorIndex;
@@ -401,6 +406,14 @@ contract StakeManager is
     ) internal {
         require(currentValidatorSetSize() < validatorThreshold, "no more slots");
         require(amount >= minDeposit, "not enough deposit");
+
+        // Permissioned entry: a registered validator-pass module must consume a single-use pass for
+        // the entrant (issued by governance) before funds move; unregistered => permissionless.
+        address validatorPass = Registry(registry).contractMap(VALIDATOR_PASS_KEY);
+        if (validatorPass != address(0)) {
+            require(IValidatorPass(validatorPass).consumePass(user, signerPubkey), "no valid pass");
+        }
+
         _transferAndTopUp(user, msg.sender, heimdallFee, amount, pol);
         _stakeFor(user, amount, acceptDelegation, signerPubkey);
     }
