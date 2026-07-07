@@ -346,7 +346,10 @@ contract StakeManager is
         // the entrant (issued by governance) before funds move; unregistered => permissionless.
         address validatorPass = Registry(registry).contractMap(VALIDATOR_PASS_KEY);
         if (validatorPass != address(0)) {
-            require(IValidatorPass(validatorPass).consumePass(user, signerPubkey), "no valid pass");
+            require(
+                IValidatorPass(validatorPass).consumePass(user, signerPubkey, amount, msg.sender),
+                "no valid pass"
+            );
         }
 
         _transferAndTopUp(user, msg.sender, heimdallFee, amount, pol);
