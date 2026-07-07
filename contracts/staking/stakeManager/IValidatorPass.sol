@@ -6,9 +6,15 @@ pragma solidity 0.5.17;
 interface IValidatorPass {
     /// @notice Consume a validator's single-use pass on entry. Governance authorizes by issuing the
     ///         pass; this consumes it. State-changing, so implementations MUST restrict it to the
-    ///         StakeManager.
+    ///         StakeManager. This call is the frozen boundary of the pass system (widening it later
+    ///         requires a StakeManager upgrade), so it forwards the full entry context; modules are
+    ///         free to ignore what their policy does not need.
     /// @param validator Prospective validator (the `user` of `stakeFor`).
     /// @param signerPubkey Consensus key supplied to `stakeFor`.
+    /// @param amount Stake amount the entrant is joining with (excludes the heimdall fee).
+    /// @param funder `msg.sender` of the stake call — the account paying (third-party entry allowed).
     /// @return consumed True if a valid pass was consumed (entry permitted); false otherwise.
-    function consumePass(address validator, bytes calldata signerPubkey) external returns (bool consumed);
+    function consumePass(address validator, bytes calldata signerPubkey, uint256 amount, address funder)
+        external
+        returns (bool consumed);
 }
