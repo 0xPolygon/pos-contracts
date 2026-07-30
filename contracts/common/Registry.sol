@@ -1,9 +1,13 @@
 pragma solidity ^0.5.2;
 
-import {Governable} from "./governance/Governable.sol";
+import {GovernableLegacy} from "./governance/GovernableLegacy.sol";
 import {IWithdrawManager} from "../root/withdrawManager/IWithdrawManager.sol";
 
-contract Registry is Governable {
+// Registry has a single, immutable deployment that predates the Governable
+// refactor (commit 49b39d8a). It therefore inherits GovernableLegacy (the old
+// inlined onlyGovernance) so a normal `forge build` reproduces its on-chain
+// bytecode. Behaviour is identical to the modern Governable.
+contract Registry is GovernableLegacy {
     // @todo hardcode constants
     bytes32 private constant WETH_TOKEN = keccak256("wethToken");
     bytes32 private constant DEPOSIT_MANAGER = keccak256("depositManager");
@@ -43,7 +47,7 @@ contract Registry is Governable {
     event PredicateRemoved(address indexed predicate, address indexed from);
     event ContractMapUpdated(bytes32 indexed key, address indexed previousContract, address indexed newContract);
 
-    constructor(address _governance) public Governable(_governance) {}
+    constructor(address _governance) public GovernableLegacy(_governance) {}
 
     function updateContractMap(bytes32 _key, address _address) external onlyGovernance {
         emit ContractMapUpdated(_key, contractMap[_key], _address);
