@@ -207,17 +207,6 @@ contract StakeManager is
 
     // New implementation upgrade
 
-    function migrateValidatorsData(uint256 validatorIdFrom, uint256 validatorIdTo) public onlyOwner {
-        delegatedFwd(
-            extensionCode,
-            abi.encodeWithSelector(
-                StakeManagerExtension(extensionCode).migrateValidatorsData.selector,
-                validatorIdFrom,
-                validatorIdTo
-            )
-        );
-    }
-
     function insertSigners(address[] memory _signers) public onlyOwner {
         signers = _signers;
     }

@@ -7,7 +7,6 @@ import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
-import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 
 // DEPLOYMENT CONSTRAINT: a new version of this contract cannot be installed on the live system as
 // things stand. `extensionCode` has no writer at all in the shipped StakeManager — the genesis
@@ -15,9 +14,9 @@ import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 // deployed in 2021 (0xef49Ea6996073752b6840CDA34773FFA78F78166). A new extension can be deployed
 // but never pointed at.
 //
-// The StakeManager upgrade itself is unaffected: it delegates only `migrateValidatorsData`,
-// `updateCommissionRate` and `updateCheckpointRewardParams`, all three of which the deployed 2021
-// extension already implements, so the StakeManager can ship on its own and keep using it.
+// The StakeManager upgrade itself is unaffected: it delegates only `updateCommissionRate` and
+// `updateCheckpointRewardParams`, both of which the deployed 2021 extension already implements, so
+// the StakeManager can ship on its own and keep using it.
 //
 // To actually replace this contract, one of:
 //   1. fold it into StakeManager and drop `extensionCode` altogether — the intended direction; or
@@ -30,22 +29,6 @@ contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManag
     using SafeMath for uint256;
 
     constructor() public GovernanceLockable(address(0x0)) {}
-
-    function migrateValidatorsData(uint256 validatorIdFrom, uint256 validatorIdTo) external {       
-        for (uint256 i = validatorIdFrom; i < validatorIdTo; ++i) {
-            ValidatorShare contractAddress = ValidatorShare(validators[i].contractAddress);
-            if (contractAddress != ValidatorShare(0)) {
-                // move validator rewards out from ValidatorShare contract
-                validators[i].reward = contractAddress.validatorRewards_deprecated().add(INITIALIZED_AMOUNT);
-                validators[i].delegatedAmount = contractAddress.activeAmount();
-                validators[i].commissionRate = contractAddress.commissionRate_deprecated();
-            } else {
-                validators[i].reward = validators[i].reward.add(INITIALIZED_AMOUNT);
-            }
-
-            validators[i].delegatorsReward = INITIALIZED_AMOUNT;
-        }
-    }
 
     function updateCheckpointRewardParams(
         uint256 _rewardDecreasePerCheckpoint,
