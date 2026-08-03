@@ -7,8 +7,8 @@ import {GovernableLegacy} from "../governance/GovernableLegacy.sol";
 // "Is Locked", lock()/unlock() external+onlyGovernance.
 //
 // The modern split (mixin/Lockable.sol + mixin/GovernanceLockable.sol, commit
-// d0cbfb42) reordered inheritance and moved the `locked` storage slot. That
-// split is used by the currently-deployed implementations, so it must stay.
+// d0cbfb42) reordered inheritance, which changes the resulting storage layout.
+// That split is used by the currently-deployed implementations, so it must stay.
 // The immutable DepositManagerProxy (deployed BEFORE the split) uses this legacy
 // copy via DepositManagerStorageLegacy so a normal `forge build` reproduces its
 // on-chain bytecode and storage layout. Do not edit.

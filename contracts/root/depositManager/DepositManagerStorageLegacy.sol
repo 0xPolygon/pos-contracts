@@ -8,13 +8,11 @@ import {StateSender} from "../stateSyncer/StateSender.sol";
 import {LockableLegacy} from "../../common/mixin/LockableLegacy.sol";
 import {DepositManagerHeader} from "./DepositManagerStorage.sol";
 
-// Frozen, pre-refactor DepositManager storage. Inherits the legacy
-// `LockableLegacy is GovernableLegacy`, which places `locked` at slot 2 (the
-// deployed proxy's layout). The modern DepositManagerStorage inherits
-// GovernanceLockable, which places `locked` at slot 1 — that layout is used by
-// the live implementation, so both must coexist. Used ONLY by the immutable
-// DepositManagerProxy. Do not edit. (The proxy/impl slot divergence is the known
-// pause-slot issue; this preserves the on-chain reality byte-for-byte.)
+// Frozen, pre-refactor DepositManager storage, reproducing the storage layout of
+// the immutable DepositManagerProxy byte-for-byte. It inherits the pre-refactor
+// `LockableLegacy is GovernableLegacy`; the modern DepositManagerStorage inherits
+// GovernanceLockable and is used by the live implementation, so both must coexist.
+// Used ONLY by DepositManagerProxy. Do not edit.
 contract DepositManagerStorageLegacy is ProxyStorage, LockableLegacy, DepositManagerHeader {
     Registry public registry;
     RootChain public rootChain;

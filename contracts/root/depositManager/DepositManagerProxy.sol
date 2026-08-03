@@ -6,12 +6,12 @@ import {Registry} from "../../common/Registry.sol";
 import {RootChain} from "../RootChain.sol";
 import {LockableLegacy} from "../../common/mixin/LockableLegacy.sol";
 
-// The DepositManagerProxy has a single, immutable deployment that predates the
-// Lockable/GovernanceLockable split (commit d0cbfb42). It therefore uses the
-// legacy storage (LockableLegacy => `locked` at slot 2) so a normal `forge build`
-// reproduces its on-chain bytecode and layout. The live implementation uses the
-// modern DepositManagerStorage (`locked` at slot 1); the divergence is the known
-// pause-slot issue and is preserved here on purpose.
+// The DepositManagerProxy has a single, immutable deployment that predates a later
+// refactor of the shared Governable/Lockable base contracts (commit d0cbfb42). It
+// therefore inherits the frozen pre-refactor storage so that a normal `forge build`
+// reproduces its deployed bytecode and storage layout exactly. The live
+// implementation is built on the current bases and must stay that way.
+// Do not change this inheritance without re-verifying against the deployed bytecode.
 contract DepositManagerProxy is Proxy, DepositManagerStorageLegacy {
     constructor(
         address _proxyTo,
