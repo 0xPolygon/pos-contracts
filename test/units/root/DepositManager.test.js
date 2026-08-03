@@ -273,7 +273,12 @@ describe('DepositManager', async function (accounts) {
 
       it('must deposit successfully', async function () {
         const result = await (await this.depositManager.depositBulk(tokens, amounts, user)).wait()
-        logs = logDecoder.decodeLogs(result.events, this.contracts.testToken.interface, testErc721.interface ,this.depositManager.interface)
+        logs = logDecoder.decodeLogs(
+          result.events,
+          this.contracts.testToken.interface,
+          testErc721.interface,
+          this.depositManager.interface
+        )
       })
 
       describe('erc20 transfers', function () {
@@ -348,98 +353,40 @@ describe('DepositManager', async function (accounts) {
     })
   })
 
-  describe('when paused', async function () {
-    beforeEach(freshDeploy)
+  describe('lock', function () {
+    before(freshDeploy)
 
-    describe('depositEther', async function () {
-      const value = web3.utils.toWei('1', 'ether')
-
-      beforeEach(async function () {
-        await deployer.deployMaticWeth()
-        await this.contracts.governance.update(
-          this.depositManager.address,
-          this.depositManager.interface.encodeFunctionData('lock')
-        )
+    describe('when from is not governance', function () {
+      it('reverts locking', async function () {
+        await expectRevert(this.depositManager.lock(), 'Only governance contract is authorized')
       })
 
-      it('must revert', async function () {
-        await expectRevert(
-          this.depositManager.depositEther({
-            value
-          }),
-          'locked'
-        )
+      it('reverts unlocking', async function () {
+        await expectRevert(this.depositManager.unlock(), 'Only governance contract is authorized')
       })
     })
 
-    describe('depositERC20', async function () {
-      beforeEach(async function () {
-        const testToken = await deployer.deployTestErc20()
-        await testToken.approve(this.depositManager.address, amount.toString())
-        await this.contracts.governance.update(
-          this.depositManager.address,
-          this.depositManager.interface.encodeFunctionData('lock')
-        )
-        this.testToken = testToken
-      })
-
-      it('must revert', async function () {
-        await expectRevert(this.depositManager.depositERC20(this.testToken.address, amount.toString()), 'locked')
-      })
-    })
-
-    describe('depositERC721 reverts', async function () {
-      let tokenId = '1212'
-
-      beforeEach(async function () {
-        const testToken = await deployer.deployTestErc721()
-        await testToken.mint(tokenId)
-        await testToken.approve(this.depositManager.address, tokenId)
-        await this.contracts.governance.update(
-          this.depositManager.address,
-          this.depositManager.interface.encodeFunctionData('lock')
-        )
-
-        this.testToken = testToken
-      })
-
-      it('must revert', async function () {
-        await expectRevert(this.depositManager.depositERC721(this.testToken.address, tokenId), 'locked')
-      })
-    })
-
-    describe('depositBulk', async function () {
-      const tokens = []
-      const amounts = []
-      const NUM_DEPOSITS = 15
-      const user = accounts[1]
-
-      beforeEach(async function () {
-        for (let i = 1; i <= NUM_DEPOSITS; i++) {
-          const testToken = await deployer.deployTestErc20()
-          const _amount = amount.add(web3.utils.toBN(i)).toString()
-          await testToken.approve(this.depositManager.address, _amount)
-          tokens.push(testToken.address)
-          amounts.push(_amount)
-        }
-
-        for (let i = 0; i < NUM_DEPOSITS; i++) {
-          const testToken = await deployer.deployTestErc721()
-          const tokenId = web3.utils.toBN(crypto.randomBytes(32).toString('hex'), 16).toString()
-          await testToken.mint(tokenId)
-          await testToken.approve(this.depositManager.address, tokenId)
-          tokens.push(testToken.address)
-          amounts.push(tokenId)
-        }
-
+    describe('when from is governance', function () {
+      it('must lock', async function () {
         await this.contracts.governance.update(
           this.depositManager.address,
           this.depositManager.interface.encodeFunctionData('lock')
         )
       })
 
-      it('must revert', async function () {
-        await expectRevert(this.depositManager.depositBulk(tokens, amounts, user), 'locked')
+      it('must have locked = true', async function () {
+        assert.isTrue(await this.depositManager.locked())
+      })
+
+      it('must unlock', async function () {
+        await this.contracts.governance.update(
+          this.depositManager.address,
+          this.depositManager.interface.encodeFunctionData('unlock')
+        )
+      })
+
+      it('must have locked = false', async function () {
+        assert.isFalse(await this.depositManager.locked())
       })
     })
   })
