@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 // Don't import, wrong solidity version
 // import {StakeManager} from "../../contracts/staking/stakeManager/StakeManager.sol";
-// import {StakeManagerExtension} from "../../contracts/staking/stakeManager/StakeManagerExtension.sol";
 // import {StakeManagerProxy} from "../../contracts/staking/stakeManager/StakeManagerProxy.sol";
 // import {StakingNFT} from "../../contracts/staking/stakeManager/StakingNFT.sol";
 // import {ValidatorShare} from "../../contracts/staking/validatorShare/ValidatorShare.sol";
@@ -25,7 +24,6 @@ pragma solidity ^0.8.0;
 
 // Interfaces
 import {StakeManager} from "../../tools/interfaces/StakeManager.generated.sol";
-import {StakeManagerExtension} from "../../tools/interfaces/StakeManagerExtension.generated.sol";
 import {StakeManagerProxy} from "../../tools/interfaces/StakeManagerProxy.generated.sol";
 import {StakeManagerTestInit} from "../../tools/interfaces/StakeManagerTestInit.generated.sol";
 import {StakingNFT} from "../../tools/interfaces/StakingNFT.generated.sol";
@@ -66,7 +64,6 @@ contract DeploySystem is Script, ArtifactPath {
     address governanceProxy;
     address stakingNFT;
     address validatorShareFactory;
-    address stakeManagerExtension;
 
     function run() public {}
 
@@ -109,7 +106,6 @@ contract DeploySystem is Script, ArtifactPath {
         address stakeManagerProxy = deployCode(StakeManagerProxyPath, abi.encode(address(0)));
         stakeManager = StakeManager(stakeManagerProxy);
         updateRegistryContractMap("stakeManager", address(stakeManager));
-        stakeManagerExtension = deployCode(StakeManagerExtensionPath);
 
         // No shipped StakeManager implementation carries an initializer — the live proxy was
         // initialized in 2020 and everything since is installed over that state. Bring the proxy up
@@ -129,7 +125,6 @@ contract DeploySystem is Script, ArtifactPath {
                         validatorShareFactory,
                         governanceProxy,
                         owner,
-                        stakeManagerExtension,
                         address(polToken),
                         address(polygonMigration)
                     )
