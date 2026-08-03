@@ -6,13 +6,13 @@ import {Registry} from "../../common/Registry.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {IStakeManager} from "./IStakeManager.sol";
 import {StakeManagerStorage} from "./StakeManagerStorage.sol";
-import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
+import {StakeManagerStorageExtensionLegacy} from "./StakeManagerStorageExtensionLegacy.sol";
 import {Math} from "../../common/oz/math/Math.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
 import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 
-contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManagerStorageExtension {
+contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManagerStorageExtensionLegacy {
     using SafeMath for uint256;
 
     constructor() public GovernanceLockable(address(0x0)) {}

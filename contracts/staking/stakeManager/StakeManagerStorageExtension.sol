@@ -2,22 +2,15 @@ pragma solidity 0.5.17;
 
 import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
+import {StakeManagerStorageExtensionLegacy} from "./StakeManagerStorageExtensionLegacy.sol";
 
-contract StakeManagerStorageExtension {
-    address public eventsHub;
-    uint256 public rewardPerStake;
-    address public extensionCode;
-    address[] public signers;
-
-    uint256 internal constant CHK_REWARD_PRECISION = 100;
-    uint256 public prevBlockInterval;
-    // how much less reward per skipped checkpoint, 0 - 100%
-    uint256 public rewardDecreasePerCheckpoint;
-    // how many checkpoints to reward
-    uint256 public maxRewardedCheckpoints;
-    // increase / decrease value for faster or slower checkpoints, 0 - 100%
-    uint256 public checkpointRewardDelta;
-
+// Layout used by the deployed `StakeManager` implementation
+// (0x3AD88467E40399dc6Ae10427f8B0842348d9076c): the pre-POL prefix in
+// `StakeManagerStorageExtensionLegacy` plus the two POL slots added for the MATIC->POL migration.
+//
+// The extension deployed at 0xef49Ea6996073752b6840CDA34773FFA78F78166 predates those two slots and
+// therefore inherits the Legacy base directly. See StakeManagerStorageExtensionLegacy.sol.
+contract StakeManagerStorageExtension is StakeManagerStorageExtensionLegacy {
     IERC20 public tokenMatic;
     IPolygonMigration public migration;
 }
