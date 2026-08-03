@@ -7,28 +7,11 @@ import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
-import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 
 contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManagerStorageExtension {
     using SafeMath for uint256;
 
     constructor() public GovernanceLockable(address(0x0)) {}
-
-    function migrateValidatorsData(uint256 validatorIdFrom, uint256 validatorIdTo) external {
-        for (uint256 i = validatorIdFrom; i < validatorIdTo; ++i) {
-            ValidatorShare contractAddress = ValidatorShare(validators[i].contractAddress);
-            if (contractAddress != ValidatorShare(0)) {
-                // move validator rewards out from ValidatorShare contract
-                validators[i].reward = contractAddress.validatorRewards_deprecated().add(INITIALIZED_AMOUNT);
-                validators[i].delegatedAmount = contractAddress.activeAmount();
-                validators[i].commissionRate = contractAddress.commissionRate_deprecated();
-            } else {
-                validators[i].reward = validators[i].reward.add(INITIALIZED_AMOUNT);
-            }
-
-            validators[i].delegatorsReward = INITIALIZED_AMOUNT;
-        }
-    }
 
     function updateCheckpointRewardParams(
         uint256 _rewardDecreasePerCheckpoint,
