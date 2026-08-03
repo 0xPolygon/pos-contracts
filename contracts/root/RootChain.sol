@@ -62,6 +62,13 @@ contract RootChain is RootChainStorage, IRootChain {
         return headerBlocks[currentHeaderBlock()].end;
     }
 
+    // NOTE: kept only so this source reproduces the currently-deployed RootChain impl
+    // (0x536c…bd03), which still contains this no-op. It was removed in 0c08057a
+    // ("finish clean slash removal"); re-added here as an empty no-op (identical
+    // bytecode) until the removal is actually deployed. DELETE on the next RootChain
+    // redeploy. Kept at its original source position so the byte layout matches.
+    function slash() external {}
+
     function currentHeaderBlock() public view returns (uint256) {
         return _nextHeaderBlock.sub(MAX_DEPOSITS);
     }
