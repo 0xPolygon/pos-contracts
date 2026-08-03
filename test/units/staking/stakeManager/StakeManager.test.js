@@ -94,7 +94,7 @@ describe('StakeManager', function (accounts) {
       await proxy.updateImplementation(initImpl.address)
 
       await expectRevert(
-        StakeManagerTestInit.attach(this.stakeManager.address).initialize(...new Array(10).fill(ZeroAddr)),
+        StakeManagerTestInit.attach(this.stakeManager.address).initialize(...new Array(11).fill(ZeroAddr)),
         'already inited'
       )
     })

@@ -42,9 +42,11 @@ contract StakeManagerTestInit is StakeManager {
         address _validatorShareFactory,
         address _governance,
         address _owner,
+        address _eventsHub,
         address _token,
         address _migration
     ) external initializer {
+        eventsHub = _eventsHub;
         governance = IGovernance(_governance);
         registry = _registry;
         rootChain = _rootchain;

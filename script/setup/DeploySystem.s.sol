@@ -125,6 +125,7 @@ contract DeploySystem is Script, ArtifactPath {
                         validatorShareFactory,
                         governanceProxy,
                         owner,
+                        address(eventsHub),
                         address(polToken),
                         address(polygonMigration)
                     )

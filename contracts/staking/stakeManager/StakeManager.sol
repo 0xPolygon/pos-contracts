@@ -13,7 +13,6 @@ import {StakingInfo} from "../StakingInfo.sol";
 import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
-import {Registry} from "../../common/Registry.sol";
 import {EventsHub} from "../EventsHub.sol";
 
 contract StakeManager is
@@ -200,13 +199,23 @@ contract StakeManager is
         maxRewardedCheckpoints = _maxRewardedCheckpoints;
         checkpointRewardDelta = _checkpointRewardDelta;
 
-        _getOrCacheEventsHub().logRewardParams(_rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta);
+        EventsHub(eventsHub).logRewardParams(_rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta);
     }
 
     // New implementation upgrade
 
     function insertSigners(address[] memory _signers) public onlyOwner {
         signers = _signers;
+    }
+
+    /**
+        @dev One-off cleanup for deployments upgraded from the extension-based implementation.
+        The extension has been folded into this contract, so `extensionCode` is no longer read
+        by anything and its stale value is cleared here. Idempotent; a no-op on fresh deployments,
+        where `initialize` never sets it in the first place.
+     */
+    function reinitialize() external onlyOwner {
+        extensionCode = address(0x0);
     }
 
     /**
@@ -561,18 +570,9 @@ contract StakeManager is
         );
 
         require(newCommissionRate <= MAX_COMMISION_RATE, "Incorrect value");
-        _getOrCacheEventsHub().logUpdateCommissionRate(validatorId, newCommissionRate, validators[validatorId].commissionRate);
+        EventsHub(eventsHub).logUpdateCommissionRate(validatorId, newCommissionRate, validators[validatorId].commissionRate);
         validators[validatorId].commissionRate = newCommissionRate;
         validators[validatorId].lastCommissionUpdate = _epoch;
-    }
-
-    function _getOrCacheEventsHub() private returns(EventsHub) {
-        EventsHub _eventsHub = EventsHub(eventsHub);
-        if (_eventsHub == EventsHub(0x0)) {
-            _eventsHub = EventsHub(Registry(registry).contractMap(keccak256("eventsHub")));
-            eventsHub = address(_eventsHub);
-        }
-        return _eventsHub;
     }
 
     function withdrawDelegatorsReward(uint256 validatorId) public onlyDelegation(validatorId) returns (uint256) {
