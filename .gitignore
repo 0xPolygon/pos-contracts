@@ -29,3 +29,12 @@ coverage/
 coverage.json
 
 cache
+
+# script/pinning/verify-bytecode.sh work dir (cached on-chain code, per-solc builds, diffs)
+verify-onchain
+__pycache__/
+
+regression-replay
+.test-port
+
+.claude
