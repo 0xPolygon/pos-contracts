@@ -6,12 +6,18 @@ Invoked by verify-bytecode.sh. For each pinned contract it reads
   - the cached on-chain code from <work>/onchain/<chain>_<address>.hex
 
 Comparison levels:
-  MATCH            byte-for-byte identical
-  MATCH_NO_META    identical after stripping the trailing CBOR metadata blob
-                   (source was reformatted/commented but compiles to the same logic)
-  MISMATCH         logic bytecode differs; both stripped blobs are dumped to <work>/diffs/
-  NO_CODE          address has no code on-chain
-  MISSING_ARTIFACT local build did not produce the expected artifact
+  MATCH              byte-for-byte identical
+  MATCH_NO_META      identical after stripping the trailing CBOR metadata blob
+                     (source was reformatted/commented but compiles to the same logic)
+  MISMATCH           logic bytecode differs; both stripped blobs are dumped to <work>/diffs/
+  STALE_POINTER      the live system no longer points at this address (see 'liveness')
+  POINTER_UNRESOLVED the liveness call could not be read at all — usually a flaky RPC, NOT
+                     evidence of drift. Kept distinct from STALE_POINTER so a transient
+                     failure is never mistaken for a real proxy upgrade, and vice versa.
+  NO_CODE            address has no code on-chain
+  MISSING_ARTIFACT   local build did not produce the expected artifact
+
+Everything except MATCH and MATCH_NO_META is a failure and exits non-zero.
 
 Library deployments have their own address embedded at byte offset 1 (PUSH20),
 which is masked on both sides. Unresolved link references are masked the same way.
@@ -19,6 +25,7 @@ which is masked on both sides. Unresolved link references are masked the same wa
 
 import json
 import os
+import re
 import sys
 
 
@@ -78,9 +85,17 @@ def main():
         if c.get("liveness"):
             live_path = os.path.join(work, "liveness", f"{c['chain']}_{c['address'].lower()}.addr")
             resolved = open(live_path).read().strip() if os.path.exists(live_path) else ""
+            if not re.fullmatch(r"0x[0-9a-fA-F]{40}", resolved):
+                # No address came back (RPC error, reverted call, sentinel from the shell). This is
+                # a failure to CHECK, not a detected drift — do not cry proxy upgrade.
+                entry["status"] = "POINTER_UNRESOLVED"
+                entry["points_at"] = resolved or "(empty)"
+                entry["liveness"] = c["liveness"]
+                results.append(entry)
+                continue
             if resolved.lower() != c["address"].lower():
                 entry["status"] = "STALE_POINTER"
-                entry["points_at"] = resolved or "(unresolved)"
+                entry["points_at"] = resolved
                 entry["liveness"] = c["liveness"]
                 results.append(entry)
                 continue
@@ -151,6 +166,13 @@ def main():
                         f.write(blob.hex())
         results.append(entry)
 
+    # Verifying nothing is not success. A typo'd chain filter or an inventory that lost its entries
+    # would otherwise report a clean run, which is the one way this script could lie.
+    if not results:
+        sys.exit(
+            f"error: no inventory entries matched (chains requested: {', '.join(chains) or 'all'})"
+        )
+
     with open(os.path.join(work, "results.json"), "w") as f:
         json.dump(results, f, indent=2)
 
@@ -162,8 +184,9 @@ def main():
         "STALE_POINTER": 1,
         "MISSING_ARTIFACT": 2,
         "NO_CODE": 3,
-        "MATCH_NO_META": 4,
-        "MATCH": 5,
+        "POINTER_UNRESOLVED": 4,
+        "MATCH_NO_META": 5,
+        "MATCH": 6,
     }
     for r in sorted(results, key=lambda r: (rank[r["status"]], r["chain"], r["name"])):
         extra = ""
@@ -171,6 +194,8 @@ def main():
             extra = f"  (len {r['len_local']} vs {r['len_onchain']}, first diff @{r['first_diff_offset']})"
         elif r["status"] == "STALE_POINTER":
             extra = f"  ({r['liveness']['sig']} now returns {r['points_at']})"
+        elif r["status"] == "POINTER_UNRESOLVED":
+            extra = f"  (could not read {r['liveness']['sig']} on {r['liveness']['target']} — retry)"
         print(f"{r['name']:<{width}}{r['chain']:<7}{r['solc']:<9}{r['status']}{extra}")
 
     bad = [r for r in results if r["status"] not in ("MATCH", "MATCH_NO_META")]

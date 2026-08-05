@@ -123,7 +123,11 @@ It prints a table and exits non-zero if anything is a real mismatch.
 | `MATCH` | Byte-identical including metadata. Rare — see below. |
 | `MISMATCH` | Logic differs. Both stripped blobs are dumped to `verify-onchain/diffs/`. |
 | `STALE_POINTER` | The live system no longer points at the address we pin — see below. |
+| `POINTER_UNRESOLVED` | The liveness call could not be read at all. Usually a flaky RPC, **not** drift — retry before investigating. |
 | `NO_CODE` / `MISSING_ARTIFACT` | Nothing deployed at the address / the local build produced no artifact. |
+
+Only `MATCH` and `MATCH_NO_META` pass; every other status exits non-zero. Verifying zero contracts
+(a typo'd chain argument, say) is also an error rather than a clean run.
 
 `MATCH_NO_META` rather than `MATCH` is the normal result: solc appends a CBOR trailer that hashes the
 source paths and compiler settings, so it is never reproducible and is stripped from both sides before
