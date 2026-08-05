@@ -71,6 +71,20 @@ def main():
             continue
         entry = {k: c[k] for k in ("chain", "name", "address", "artifact", "solc", "file")}
 
+        # Pointer liveness (fetched by verify-bytecode.sh step 2b). If the live system no longer
+        # points at the address we pin, that address still holds the same immutable bytecode, so
+        # comparing it would pass while telling us nothing about what is actually deployed. Report
+        # the drift instead; the fix is to repoint the inventory and re-run.
+        if c.get("liveness"):
+            live_path = os.path.join(work, "liveness", f"{c['chain']}_{c['address'].lower()}.addr")
+            resolved = open(live_path).read().strip() if os.path.exists(live_path) else ""
+            if resolved.lower() != c["address"].lower():
+                entry["status"] = "STALE_POINTER"
+                entry["points_at"] = resolved or "(unresolved)"
+                entry["liveness"] = c["liveness"]
+                results.append(entry)
+                continue
+
         src_base = os.path.basename(c["file"])
         # Must mirror verify-bytecode.sh's cache layout, including the bor-chain-id
         # level: the same file+solc can be built at two different chain ids.
@@ -143,11 +157,20 @@ def main():
     width = max(len(r["name"]) for r in results) + 2
     print(f"\n{'CONTRACT':<{width}}{'CHAIN':<7}{'SOLC':<9}STATUS")
     print("-" * (width + 30))
-    rank = {"MISMATCH": 0, "MISSING_ARTIFACT": 1, "NO_CODE": 2, "MATCH_NO_META": 3, "MATCH": 4}
+    rank = {
+        "MISMATCH": 0,
+        "STALE_POINTER": 1,
+        "MISSING_ARTIFACT": 2,
+        "NO_CODE": 3,
+        "MATCH_NO_META": 4,
+        "MATCH": 5,
+    }
     for r in sorted(results, key=lambda r: (rank[r["status"]], r["chain"], r["name"])):
         extra = ""
         if r["status"] == "MISMATCH":
             extra = f"  (len {r['len_local']} vs {r['len_onchain']}, first diff @{r['first_diff_offset']})"
+        elif r["status"] == "STALE_POINTER":
+            extra = f"  ({r['liveness']['sig']} now returns {r['points_at']})"
         print(f"{r['name']:<{width}}{r['chain']:<7}{r['solc']:<9}{r['status']}{extra}")
 
     bad = [r for r in results if r["status"] not in ("MATCH", "MATCH_NO_META")]

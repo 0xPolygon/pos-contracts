@@ -14,7 +14,7 @@ cd "$(dirname "$0")/../.."
 CONFIG=script/pinning/pinned-contracts.json
 WORK=verify-onchain
 ISTAKE=contracts/staking/stakeManager/IStakeManager.sol
-mkdir -p "$WORK/build" "$WORK/onchain"
+mkdir -p "$WORK/build" "$WORK/onchain" "$WORK/liveness"
 
 CHAINS=("$@")
 if [ ${#CHAINS[@]} -eq 0 ]; then
@@ -72,6 +72,24 @@ for chain in "${CHAINS[@]}"; do
       cast code "$addr" --rpc-url "$rpc" > "$out"
     fi
   done
+done
+
+# 2b. resolve liveness pointers. Bytecode at a fixed address is immutable, so comparing it can
+#     never catch the system being re-pointed at a DIFFERENT address — a proxy upgrade or a Registry
+#     re-registration leaves the old address, and this check, perfectly green. That has already
+#     happened once (Registry.erc20Predicate moved 0x626fb210... -> 0x4EeA1780...). So for entries
+#     that are reached through a pointer, ask the live system what it points at now and require it
+#     to still be the address we pin. NOT cached: this is the one value that can change.
+for chain in "${CHAINS[@]}"; do
+  rpc=$(jq -r --arg c "$chain" '.rpc[$c]' "$CONFIG")
+  while IFS='|' read -r addr target sig; do
+    [ -z "$addr" ] && continue
+    out="$WORK/liveness/${chain}_$(echo "$addr" | tr 'A-F' 'a-f').addr"
+    echo "==> cast call $target $sig (chain $chain)"
+    cast call "$target" "$sig" --rpc-url "$rpc" >"$out" 2>/dev/null || echo "CALL_FAILED" >"$out"
+  done < <(jq -r --arg c "$chain" '.contracts[]
+             | select(.chain == $c) | select(.exclude != true) | select(.liveness)
+             | "\(.address)|\(.liveness.target)|\(.liveness.sig)"' "$CONFIG")
 done
 
 # 3. compare

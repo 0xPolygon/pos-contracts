@@ -122,6 +122,7 @@ It prints a table and exits non-zero if anything is a real mismatch.
 | `MATCH_NO_META` | **The expected pass.** Identical once the trailing metadata is stripped. |
 | `MATCH` | Byte-identical including metadata. Rare — see below. |
 | `MISMATCH` | Logic differs. Both stripped blobs are dumped to `verify-onchain/diffs/`. |
+| `STALE_POINTER` | The live system no longer points at the address we pin — see below. |
 | `NO_CODE` / `MISSING_ARTIFACT` | Nothing deployed at the address / the local build produced no artifact. |
 
 `MATCH_NO_META` rather than `MATCH` is the normal result: solc appends a CBOR trailer that hashes the
@@ -144,6 +145,14 @@ schema. The fields that matter:
   informationally: the repo should still reproduce whatever is live today.
 - `exclude` — documented but skipped, for contracts that legitimately cannot reproduce from current
   source. Do not add this to silence a regression.
+- `liveness` — a `target` + `sig` call whose returned address must still equal the entry's own
+  `address`. Bytecode at a fixed address is immutable, so comparing bytecode can never detect the
+  system being re-pointed at a **different** address: after a proxy upgrade or a Registry
+  re-registration the old address keeps its code and the check would stay green while `main` no
+  longer mirrors what is live. That has already happened once — `Registry.erc20Predicate()` moved
+  from `0x626fb210…` to `0x4EeA1780…`. Add it to anything reached through a pointer; a drift is
+  reported as `STALE_POINTER` naming the address now returned, and the fix is to repoint the
+  inventory and re-run to see whether the new implementation still reproduces.
 
 Because those build inputs are load-bearing, a plain `forge build` will *silently* mismatch several
 contracts. Any CI guard has to drive the build the same way this script does.

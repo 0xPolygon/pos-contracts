@@ -1,5 +1,5 @@
 {
-  "_comment": "Non-upgradeable (pinned) contracts: deployed bytecode at these addresses can never change, so the repo sources must always compile to exactly this bytecode. 'solc' is the compiler version the contract was deployed with (from Etherscan verified metadata). 'borChainId' (optional) pins the ChainIdMixin template value for contracts that embed it — it is per-contract, not global: read networkId()/CHAINID() from the live contract (0x89=137, 0x3a99=15001) and set it here; the verifier renders tools/process-templates.cjs -c <borChainId> before building. Entries without borChainId do not embed ChainIdMixin and build identically regardless. 'exclude':true entries are documented but skipped (legacy / not pinnable to current source). 'unverified' = no verified source on the explorer; artifact mapping is a best guess. 'upgradeable':true entries are implementations reached through a proxy or a Registry lookup: they are replaceable, so they are not pins in the strict sense, but they are verified informationally — the repo should reproduce whatever is live today. Deployed-but-out-of-repo contracts (POL token suite, Timelock, EIP1559Burn, WMATIC, L1 MaticToken) are tracked in their own repos.",
+  "_comment": "Non-upgradeable (pinned) contracts: deployed bytecode at these addresses can never change, so the repo sources must always compile to exactly this bytecode. 'solc' is the compiler version the contract was deployed with (from Etherscan verified metadata). 'borChainId' (optional) pins the ChainIdMixin template value for contracts that embed it — it is per-contract, not global: read networkId()/CHAINID() from the live contract (0x89=137, 0x3a99=15001) and set it here; the verifier renders tools/process-templates.cjs -c <borChainId> before building. Entries without borChainId do not embed ChainIdMixin and build identically regardless. 'exclude':true entries are documented but skipped (legacy / not pinnable to current source). 'unverified' = no verified source on the explorer; artifact mapping is a best guess. 'upgradeable':true entries are implementations reached through a proxy or a Registry lookup: they are replaceable, so they are not pins in the strict sense, but they are verified informationally — the repo should reproduce whatever is live today. 'liveness' (optional) guards against the system being re-pointed at a DIFFERENT address: 'target'+'sig' is a call whose returned address must still equal this entry's 'address'. Bytecode at a fixed address is immutable, so the bytecode comparison alone can never catch a proxy upgrade or a Registry re-registration — it has already happened once (Registry.erc20Predicate moved 0x626fb210... -> 0x4EeA1780...). Add it to anything reached through a pointer. Deployed-but-out-of-repo contracts (POL token suite, Timelock, EIP1559Burn, WMATIC, L1 MaticToken) are tracked in their own repos.",
   "rpc": {
     "1": "mainnet",
     "137": "polygon_pos"
@@ -155,6 +155,10 @@
       "artifact": "ERC20PredicateBurnOnly",
       "solc": "0.5.17",
       "borChainId": "137",
+      "liveness": {
+        "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "sig": "erc20Predicate()(address)"
+      },
       "note": "ADDRESS CORRECTED: Registry.erc20Predicate() returns 0x4EeA1780..., a NEWER deployment with the log limit removed. The older 0x626fb210... predicate is no longer registered. Embeds ChainIdMixin (via IPredicate); deployed networkId()=0x89 → bor-chain-id 137 (unlike the original 2020 ERC721 predicate, which is 15001). Matches repo logic exactly once built with 137."
     },
     {
@@ -165,6 +169,10 @@
       "artifact": "ERC721PredicateBurnOnly",
       "solc": "0.5.17",
       "borChainId": "15001",
+      "liveness": {
+        "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "sig": "erc721Predicate()(address)"
+      },
       "note": "Original 2020 deployment. Embeds ChainIdMixin (via IPredicate); deployed networkId()=0x3a99 → build with bor-chain-id 15001 (the Mumbai-era default), NOT 137."
     },
     {
@@ -248,6 +256,10 @@
       "borChainId": "137",
       "upgradeable": true,
       "unverified": true,
+      "liveness": {
+        "target": "0x84000b263080BC37D1DD73A29D92794A6CF1564e",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind ChildTokenProxy 0x84000b26… (the current DAI child). Unverified on Polygonscan; identified by bytecode. Deployed networkId()=0x89 → bor-chain-id 137. Same source as the deprecated impl 0xa45b96… — the only bytecode difference is the 3-byte ChainIdMixin constant, which is very likely why DAI was redeployed and remapped. Reproduces only with the pre-POL-rename EIP712 domain; see contracts/child/misc/EIP712.sol."
     },
     {
@@ -260,6 +272,10 @@
       "borChainId": "15001",
       "upgradeable": true,
       "unverified": true,
+      "liveness": {
+        "target": "0x1FF58e665531953a3C667E2D831586777fE4Be31",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind ChildTokenProxy 0x1FF58e66… (LORD). Unverified on Polygonscan; identified by bytecode. Deployed networkId()=0x3a99 → bor-chain-id 15001 — still the Mumbai-era value, unlike the current DAI impl which was moved to 137."
     },
     {
@@ -270,6 +286,10 @@
       "artifact": "DepositManager",
       "solc": "0.5.17",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x401F6c983eA34274ec46f84D70b31C151321188b",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind DepositManagerProxy. Not an immutable pin — verified informationally (repo should reproduce the current impl). Uses the modern GovernanceLockable/Governable bases."
     },
     {
@@ -280,6 +300,10 @@
       "artifact": "WithdrawManager",
       "solc": "0.5.17",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x2A88696e0fFA76bAA1338F2C74497cC013495922",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind WithdrawManagerProxy. This is the impl the proxy points at today; the older 0x31f9… address is stale."
     },
     {
@@ -291,6 +315,10 @@
       "solc": "0.5.17",
       "borChainId": "137",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x86E4Dc95c7FBdBf52e33D563BbDB00823894C287",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind RootChainProxy (chain-id 137). Reproduces from current source. NOTE: RootChain.sol keeps an empty no-op `function slash() {}` solely to match this deployed impl, which still has it (the slash removal 0c08057a is not yet deployed to RootChain) — that no-op is marked for deletion on the next RootChain redeploy."
     },
     {
@@ -301,6 +329,10 @@
       "artifact": "Governance",
       "solc": "0.5.11",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind GovernanceProxy."
     },
     {
@@ -311,6 +343,10 @@
       "artifact": "ValidatorShare",
       "solc": "0.5.17",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "sig": "getValidatorShareAddress()(address)"
+      },
       "note": "UPGRADEABLE impl, current one registered via Registry.getValidatorShareAddress() (all ValidatorShareProxy instances delegate to it); the older 0x053FA9b9… address is stale. Reproduces from current repo source."
     },
     {
@@ -321,6 +357,10 @@
       "artifact": "StakeManager",
       "solc": "0.5.17",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+        "sig": "implementation()(address)"
+      },
       "note": "UPGRADEABLE impl behind StakeManagerProxy, deployed 2024-10-30, 24212 bytes. Reproduces from current source: main was reverted to this deployed version (built from 5b7e40e5) so the repo mirrors the chain. It was deployed with the 9-argument `initialize` and migrated to POL afterwards by a separate governance `initializePOL` call — the POL-aware initializer was never deployed, so the deploy/test harnesses run that two-step sequence. Delegates to the StakeManagerExtension below, which predates the two POL storage slots; see StakeManagerStorageExtensionLegacy.sol."
     },
     {
@@ -331,6 +371,10 @@
       "artifact": "StakeManagerExtension",
       "solc": "0.5.17",
       "upgradeable": true,
+      "liveness": {
+        "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+        "sig": "extensionCode()(address)"
+      },
       "note": "UPGRADEABLE `extensionCode` that the StakeManager delegates to, deployed 2021-03-26 (truffle era), 7653 bytes. Reproduces from current source (built from a1e3e275). It predates the MATIC->POL migration, so it inherits StakeManagerStorageExtensionLegacy (the pre-POL prefix) rather than StakeManagerStorageExtension: because it declares public state, inheriting the two POL slots would emit two extra getters into its runtime and it would no longer reproduce."
     }
   ]
