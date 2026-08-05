@@ -1,0 +1,77 @@
+name: Verify on-chain pinning
+
+# Deliberately main-only.
+#
+# `main` mirrors what is deployed; `dev` holds what we intend to deploy NEXT and is therefore
+# EXPECTED to diverge from the chain.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # No schedule, deliberately. Bytecode at a fixed address never changes, so re-fetching the same
+  # addresses on a timer proves nothing about the bytecode. The verifier's `liveness` check DOES
+  # detect the system being re-pointed at a different address, which can happen with no commit at
+  # all — so a periodic run would catch something here. Left off by choice; add a `schedule:` if you
+  # want proxy upgrades surfaced without waiting for the next PR.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-pinning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-pinning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.OS }}-npm-cache-${{ hashFiles('./package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-npm-cache-
+
+      # Needed for tools/process-templates.cjs (commander, nunjucks, glob), which the verifier
+      # calls to render ChainIdMixin per contract. jq and python3 are preinstalled on the runner.
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      # Builds every inventory entry with its recorded solc and bor-chain-id and compares the
+      # metadata-stripped runtime against eth_getCode. Exits non-zero on any real mismatch.
+      #
+      # ~35 eth_getCode calls against the keyless Tenderly gateways in foundry.toml. Caching the
+      # fetched code under verify-onchain/onchain/ would be safe — bytecode at a fixed address is
+      # immutable — but is not worth the complexity at this size.
+      - name: Verify pinned contracts reproduce on-chain bytecode
+        run: script/pinning/verify-bytecode.sh
+
+      # verify-onchain/ is gitignored, so on failure these are the only way to see WHERE the
+      # bytecode diverged rather than just that it did.
+      - name: Upload diff artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinning-diffs
+          path: |
+            verify-onchain/results.json
+            verify-onchain/diffs/
+            verify-onchain/build-failures.log
+          if-no-files-found: ignore
+          retention-days: 14
