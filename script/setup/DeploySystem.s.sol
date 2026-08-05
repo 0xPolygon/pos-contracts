@@ -124,12 +124,18 @@ contract DeploySystem is Script, ArtifactPath {
                         validatorShareFactory,
                         governanceProxy,
                         owner,
-                        stakeManagerExtension,
-                        address(polToken),
-                        address(polygonMigration)
+                        stakeManagerExtension
                     )
                 )
             );
+
+        // Mainnet was initialized with the 9-argument `initialize` above and then migrated to POL by a
+        // separate governance `initializePOL` call. Reproduce that two-step sequence rather than a
+        // single POL-aware initializer, which has never been deployed.
+        governanceUpdateCall(
+            address(stakeManager),
+            abi.encodeCall(StakeManager.initializePOL, (address(polToken), address(polygonMigration)))
+        );
 
         StakingNFT(stakingNFT).transferOwnership(address(stakeManager));
 

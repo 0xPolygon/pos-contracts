@@ -1,0 +1,395 @@
+{
+  "_comment": "Non-upgradeable (pinned) contracts: deployed bytecode at these addresses can never change, so the repo sources must always compile to exactly this bytecode. 'solc' is the compiler version the contract was deployed with (from Etherscan verified metadata). 'borChainId' (optional) pins the ChainIdMixin template value for contracts that embed it — it is per-contract, not global: read networkId()/CHAINID() from the live contract (0x89=137, 0x3a99=15001) and set it here; the verifier renders tools/process-templates.cjs -c <borChainId> before building. Entries without borChainId do not embed ChainIdMixin and build identically regardless. 'exclude':true entries are documented but skipped (legacy / not pinnable to current source). 'unverified' = no verified source on the explorer; artifact mapping is a best guess. 'upgradeable':true entries are implementations reached through a proxy or a Registry lookup: they are replaceable, so they are not pins in the strict sense, but they are verified informationally — the repo should reproduce whatever is live today. 'liveness' (optional) guards against the system being re-pointed at a DIFFERENT address: 'target'+'sig' is a call whose returned address must still equal this entry's 'address'. Bytecode at a fixed address is immutable, so the bytecode comparison alone can never catch a proxy upgrade or a Registry re-registration — it has already happened once (Registry.erc20Predicate moved 0x626fb210... -> 0x4EeA1780...). Add it to anything reached through a pointer. Deployed-but-out-of-repo contracts (POL token suite, Timelock, EIP1559Burn, WMATIC, L1 MaticToken) are tracked in their own repos.",
+  "rpc": {
+    "1": "mainnet",
+    "137": "polygon_pos"
+  },
+  "contracts": [
+    {
+      "chain": "1",
+      "name": "Registry",
+      "address": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+      "file": "contracts/common/Registry.sol",
+      "artifact": "Registry",
+      "solc": "0.5.11",
+      "note": "Registry (single immutable deployment) inherits GovernableLegacy (contracts/common/governance/GovernableLegacy.sol), the pre-49b39d8a inlined onlyGovernance. The modern Governable (_assertGovernance) is kept for the live impls that use it. Reproduces byte-for-byte under a normal forge build."
+    },
+    {
+      "chain": "1",
+      "name": "GovernanceProxy",
+      "address": "0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48",
+      "file": "contracts/common/governance/GovernanceProxy.sol",
+      "artifact": "GovernanceProxy",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "RootChainProxy",
+      "address": "0x86E4Dc95c7FBdBf52e33D563BbDB00823894C287",
+      "file": "contracts/root/RootChainProxy.sol",
+      "artifact": "RootChainProxy",
+      "solc": "0.5.11",
+      "borChainId": "137",
+      "note": "Embeds ChainIdMixin (via RootChainStorage). Deployed networkId()=0x89 → build with bor-chain-id 137."
+    },
+    {
+      "chain": "1",
+      "name": "StateSender",
+      "address": "0x28e4F3a7f651294B9564800b2D01f35189A5bFbE",
+      "file": "contracts/root/stateSyncer/StateSender.sol",
+      "artifact": "StateSender",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "DepositManagerProxy",
+      "address": "0x401F6c983eA34274ec46f84D70b31C151321188b",
+      "file": "contracts/root/depositManager/DepositManagerProxy.sol",
+      "artifact": "DepositManagerProxy",
+      "solc": "0.5.11",
+      "note": "The proxy (single immutable deployment) inherits DepositManagerStorageLegacy -> LockableLegacy (locked at slot 2), the pre-d0cbfb42 layout. The modern Lockable/GovernanceLockable (locked at slot 1) is kept for the live impl. Reproduces byte-for-byte under a normal forge build. Both layouts must coexist and neither may be re-pointed at the other's bases — see the comments in LockableLegacy.sol and DepositManagerStorageLegacy.sol."
+    },
+    {
+      "chain": "1",
+      "name": "WithdrawManagerProxy",
+      "address": "0x2A88696e0fFA76bAA1338F2C74497cC013495922",
+      "file": "contracts/root/withdrawManager/WithdrawManagerProxy.sol",
+      "artifact": "WithdrawManagerProxy",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "ExitNFT",
+      "address": "0xDF74156420Bd57ab387B195ed81EcA36F9fABAca",
+      "file": "contracts/root/withdrawManager/ExitNFT.sol",
+      "artifact": "ExitNFT",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "PriorityQueue",
+      "address": "0x61AdDcD534Bdc1721c91740Cf711dBEcE936053e",
+      "file": "contracts/common/lib/PriorityQueue.sol",
+      "artifact": "PriorityQueue",
+      "solc": "0.5.11",
+      "isLibrary": true
+    },
+    {
+      "chain": "1",
+      "name": "MaticWETH",
+      "address": "0xa45b966996374E9e65ab991C6FE4Bfce3a56DDe8",
+      "file": "contracts/common/tokens/MaticWETH.sol",
+      "artifact": "MaticWETH",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "TestToken",
+      "address": "0x3db715989dA05C1D17441683B5b41d4510512722",
+      "file": "contracts/common/tokens/TestToken.sol",
+      "artifact": "TestToken",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "RootERC721",
+      "address": "0x96CDDF45C0Cd9a59876A2a29029d7c54f6e54AD3",
+      "file": "contracts/common/tokens/RootERC721.sol",
+      "artifact": "RootERC721",
+      "solc": "0.5.11"
+    },
+    {
+      "chain": "1",
+      "name": "StakeManagerProxy",
+      "address": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+      "file": "contracts/staking/stakeManager/StakeManagerProxy.sol",
+      "artifact": "StakeManagerProxy",
+      "solc": "0.5.17"
+    },
+    {
+      "chain": "1",
+      "name": "EventsHubProxy",
+      "address": "0x6dF5CB08d3f0193C768C8A01f42ac4424DC5086b",
+      "file": "contracts/staking/EventsHubProxy.sol",
+      "artifact": "EventsHubProxy",
+      "solc": "0.5.17"
+    },
+    {
+      "chain": "1",
+      "name": "StakingInfo",
+      "address": "0xa59C847Bd5aC0172Ff4FE912C5d29E5A71A7512B",
+      "file": "contracts/staking/StakingInfo.sol",
+      "artifact": "StakingInfo",
+      "solc": "0.5.17"
+    },
+    {
+      "chain": "1",
+      "name": "StakingNFT",
+      "address": "0x47Cbe25BbDB40a774cC37E1dA92d10C2C7Ec897F",
+      "file": "contracts/staking/stakeManager/StakingNFT.sol",
+      "artifact": "StakingNFT",
+      "solc": "0.5.17"
+    },
+    {
+      "chain": "1",
+      "name": "ValidatorShareFactory",
+      "address": "0xc4FA447A0e77Eff9717b09C057B40570813bb642",
+      "file": "contracts/staking/validatorShare/ValidatorShareFactory.sol",
+      "artifact": "ValidatorShareFactory",
+      "solc": "0.5.17"
+    },
+    {
+      "chain": "1",
+      "name": "ValidatorShareProxy (instance, validator 8)",
+      "address": "0xF74A300e3adE7e50BB807a6F706DC5eB4e8cA540",
+      "file": "contracts/staking/validatorShare/ValidatorShareProxy.sol",
+      "artifact": "ValidatorShareProxy",
+      "solc": "0.5.17",
+      "note": "Factory-deployed instance; creation code is baked into the deployed ValidatorShareFactory, every instance shares this runtime code."
+    },
+    {
+      "chain": "1",
+      "name": "ERC20PredicateBurnOnly",
+      "address": "0x4EeA1780c06709D7FA0BCaA6D0f1aB29673586c0",
+      "file": "contracts/root/predicates/ERC20PredicateBurnOnly.sol",
+      "artifact": "ERC20PredicateBurnOnly",
+      "solc": "0.5.17",
+      "borChainId": "137",
+      "liveness": {
+        "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "sig": "erc20Predicate()(address)"
+      },
+      "note": "ADDRESS CORRECTED: Registry.erc20Predicate() returns 0x4EeA1780..., a NEWER deployment with the log limit removed. The older 0x626fb210... predicate is no longer registered. Embeds ChainIdMixin (via IPredicate); deployed networkId()=0x89 → bor-chain-id 137 (unlike the original 2020 ERC721 predicate, which is 15001). Matches repo logic exactly once built with 137."
+    },
+    {
+      "chain": "1",
+      "name": "ERC721PredicateBurnOnly",
+      "address": "0x36C2503d53C6948331144b85D1e74a3B96731d1b",
+      "file": "contracts/root/predicates/ERC721PredicateBurnOnly.sol",
+      "artifact": "ERC721PredicateBurnOnly",
+      "solc": "0.5.17",
+      "borChainId": "15001",
+      "liveness": {
+        "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "sig": "erc721Predicate()(address)"
+      },
+      "note": "Original 2020 deployment. Embeds ChainIdMixin (via IPredicate); deployed networkId()=0x3a99 → build with bor-chain-id 15001 (the Mumbai-era default), NOT 137."
+    },
+    {
+      "chain": "137",
+      "name": "ChildChain",
+      "address": "0xD9c7C4ED4B66858301D0cb28Cc88bf655Fe34861",
+      "file": "contracts/child/ChildChain.sol",
+      "artifact": "ChildChain",
+      "solc": "0.5.11",
+      "borChainId": "137",
+      "note": "Immutable plasma factory. Its bytecode embeds the CREATION code of the OLD ChildERC20/ChildERC721. ChildChain.sol now imports the frozen contracts/child/legacy/* token chain (aliased), so it reproduces byte-for-byte. The modern/proxified token code (live for DAI/LORD) is untouched. Embeds ChainIdMixin CHAINID=137."
+    },
+    {
+      "chain": "137",
+      "name": "MRC20 (genesis 0x1010)",
+      "address": "0x0000000000000000000000000000000000001010",
+      "file": "contracts/child/MRC20.sol",
+      "artifact": "MRC20",
+      "solc": "0.5.17",
+      "borChainId": "15001",
+      "note": "Genesis contract; only changeable via bor hardfork. Embeds ChainIdMixin (via EIP712); deployed CHAINID()=15001 / networkId()=0x3a99 → build with bor-chain-id 15001."
+    },
+    {
+      "chain": "137",
+      "name": "MaticWeth (child, old ChildERC20)",
+      "address": "0x8cc8538d60901d19692F5ba22684732Bc28F54A3",
+      "file": "contracts/child/legacy/ChildERC20Legacy.sol",
+      "artifact": "ChildERC20Legacy",
+      "solc": "0.5.11",
+      "borChainId": "137",
+      "unverified": true,
+      "note": "Auto-deployed by old ChildChain via `new ChildERC20(...)`. Unverified on Polygonscan, but its runtime reproduces from the frozen ChildERC20Legacy (the exact old code ChildChain embeds)."
+    },
+    {
+      "chain": "137",
+      "name": "TestToken (child, old ChildERC20)",
+      "address": "0x5E1DDF2e5a0eCDD923692d4b4429d8603825A8C6",
+      "file": "contracts/child/legacy/ChildERC20Legacy.sol",
+      "artifact": "ChildERC20Legacy",
+      "solc": "0.5.11",
+      "borChainId": "137",
+      "unverified": true,
+      "note": "Auto-deployed by old ChildChain. Reproduces from ChildERC20Legacy (same runtime as MaticWeth child)."
+    },
+    {
+      "chain": "137",
+      "name": "RootERC721 (child, old ChildERC721)",
+      "address": "0xa35363CFf92980F8268299D0132D5f45834A9527",
+      "file": "contracts/child/legacy/ChildERC721Legacy.sol",
+      "artifact": "ChildERC721Legacy",
+      "solc": "0.5.11",
+      "borChainId": "137",
+      "unverified": true,
+      "note": "Auto-deployed by old ChildChain via `new ChildERC721(...)`. Reproduces from the frozen ChildERC721Legacy."
+    },
+    {
+      "chain": "137",
+      "name": "ChildTokenProxy (LORD, proxified ERC721)",
+      "address": "0x1FF58e665531953a3C667E2D831586777fE4Be31",
+      "file": "contracts/child/proxifiedChildToken/ChildTokenProxy.sol",
+      "artifact": "ChildTokenProxy",
+      "solc": "0.5.17",
+      "note": "Immutable proxy shell (UpgradableProxy) for the LORD ERC721, manually mapped. Delegates to the upgradeable ChildERC721Proxified impl 0xd2Cb63…, tracked separately below. All ChildTokenProxy instances share this runtime."
+    },
+    {
+      "chain": "137",
+      "name": "ChildTokenProxy (DAI, proxified ERC20)",
+      "address": "0x84000b263080BC37D1DD73A29D92794A6CF1564e",
+      "file": "contracts/child/proxifiedChildToken/ChildTokenProxy.sol",
+      "artifact": "ChildTokenProxy",
+      "solc": "0.5.17",
+      "note": "Immutable proxy shell for the current DAI child. Delegates to the ChildERC20Proxified impl 0x53a0BB…, tracked separately below. A superseded DAI shell 0x453b75d2… is also still on-chain but no longer registered (Registry.rootToChildToken(DAI) returns this address), so it is not tracked."
+    },
+    {
+      "chain": "137",
+      "name": "ChildERC20Proxified (DAI impl, current)",
+      "address": "0x53a0BBCcAc4945DDC09819b9686DdFC2295d2616",
+      "file": "contracts/child/proxifiedChildToken/ChildERC20Proxified.sol",
+      "artifact": "ChildERC20Proxified",
+      "solc": "0.5.17",
+      "borChainId": "137",
+      "upgradeable": true,
+      "unverified": true,
+      "liveness": {
+        "target": "0x84000b263080BC37D1DD73A29D92794A6CF1564e",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind ChildTokenProxy 0x84000b26… (the current DAI child). Unverified on Polygonscan; identified by bytecode. Deployed networkId()=0x89 → bor-chain-id 137. Same source as the deprecated impl 0xa45b96… — the only bytecode difference is the 3-byte ChainIdMixin constant, which is very likely why DAI was redeployed and remapped. Reproduces only with the pre-POL-rename EIP712 domain; see contracts/child/misc/EIP712.sol."
+    },
+    {
+      "chain": "137",
+      "name": "ChildERC721Proxified (LORD impl)",
+      "address": "0xd2Cb630Fd8e56c4a96B9cB3A03Fa6bF96ba4b7Ad",
+      "file": "contracts/child/proxifiedChildToken/ChildERC721Proxified.sol",
+      "artifact": "ChildERC721Proxified",
+      "solc": "0.5.17",
+      "borChainId": "15001",
+      "upgradeable": true,
+      "unverified": true,
+      "liveness": {
+        "target": "0x1FF58e665531953a3C667E2D831586777fE4Be31",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind ChildTokenProxy 0x1FF58e66… (LORD). Unverified on Polygonscan; identified by bytecode. Deployed networkId()=0x3a99 → bor-chain-id 15001 — still the Mumbai-era value, unlike the current DAI impl which was moved to 137."
+    },
+    {
+      "chain": "1",
+      "name": "DepositManager (impl)",
+      "address": "0xb00aa68b87256E2F22058fB2Ba3246EEc54A44fc",
+      "file": "contracts/root/depositManager/DepositManager.sol",
+      "artifact": "DepositManager",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x401F6c983eA34274ec46f84D70b31C151321188b",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind DepositManagerProxy. Not an immutable pin — verified informationally (repo should reproduce the current impl). Uses the modern GovernanceLockable/Governable bases."
+    },
+    {
+      "chain": "1",
+      "name": "WithdrawManager (impl)",
+      "address": "0x6F8a42cf6f3CE657B66A9d5849f1251dE7a35168",
+      "file": "contracts/root/withdrawManager/WithdrawManager.sol",
+      "artifact": "WithdrawManager",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x2A88696e0fFA76bAA1338F2C74497cC013495922",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind WithdrawManagerProxy. This is the impl the proxy points at today; the older 0x31f9… address is stale."
+    },
+    {
+      "chain": "1",
+      "name": "RootChain (impl)",
+      "address": "0x536c55cFe4892E581806e10b38dFE8083551bd03",
+      "file": "contracts/root/RootChain.sol",
+      "artifact": "RootChain",
+      "solc": "0.5.17",
+      "borChainId": "137",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x86E4Dc95c7FBdBf52e33D563BbDB00823894C287",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind RootChainProxy (chain-id 137). Reproduces from current source. NOTE: RootChain.sol keeps an empty no-op `function slash() {}` solely to match this deployed impl, which still has it (the slash removal 0c08057a is not yet deployed to RootChain) — that no-op is marked for deletion on the next RootChain redeploy."
+    },
+    {
+      "chain": "1",
+      "name": "Governance (impl)",
+      "address": "0x98165b71cdDea047C0A49413350C40571195fd07",
+      "file": "contracts/common/governance/Governance.sol",
+      "artifact": "Governance",
+      "solc": "0.5.11",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x6e7a5820baD6cebA8Ef5ea69c0C92EbbDAc9CE48",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind GovernanceProxy."
+    },
+    {
+      "chain": "1",
+      "name": "ValidatorShare (impl)",
+      "address": "0xBe63B977ABBAA99fC0243e208340c530Dd4ee9E8",
+      "file": "contracts/staking/validatorShare/ValidatorShare.sol",
+      "artifact": "ValidatorShare",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
+        "sig": "getValidatorShareAddress()(address)"
+      },
+      "note": "UPGRADEABLE impl, current one registered via Registry.getValidatorShareAddress() (all ValidatorShareProxy instances delegate to it); the older 0x053FA9b9… address is stale. Reproduces from current repo source."
+    },
+    {
+      "chain": "1",
+      "name": "StakeManager (impl)",
+      "address": "0x3AD88467E40399dc6Ae10427f8B0842348d9076c",
+      "file": "contracts/staking/stakeManager/StakeManager.sol",
+      "artifact": "StakeManager",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind StakeManagerProxy, deployed 2024-10-30, 24212 bytes. Reproduces from current source: main was reverted to this deployed version (built from 5b7e40e5) so the repo mirrors the chain. It was deployed with the 9-argument `initialize` and migrated to POL afterwards by a separate governance `initializePOL` call — the POL-aware initializer was never deployed, so the deploy/test harnesses run that two-step sequence. Delegates to the StakeManagerExtension below, which predates the two POL storage slots; see StakeManagerStorageExtensionLegacy.sol."
+    },
+    {
+      "chain": "1",
+      "name": "StakeManagerExtension (impl)",
+      "address": "0xef49Ea6996073752b6840CDA34773FFA78F78166",
+      "file": "contracts/staking/stakeManager/StakeManagerExtension.sol",
+      "artifact": "StakeManagerExtension",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+        "sig": "extensionCode()(address)"
+      },
+      "note": "UPGRADEABLE `extensionCode` that the StakeManager delegates to, deployed 2021-03-26 (truffle era), 7653 bytes. Reproduces from current source (built from a1e3e275). It predates the MATIC->POL migration, so it inherits StakeManagerStorageExtensionLegacy (the pre-POL prefix) rather than StakeManagerStorageExtension: because it declares public state, inheriting the two POL slots would emit two extra getters into its runtime and it would no longer reproduce."
+    },
+    {
+      "chain": "1",
+      "name": "EventsHub (impl)",
+      "address": "0x0672777617CAA1E778083a4f74eBC997262C9EdD",
+      "file": "contracts/staking/EventsHub.sol",
+      "artifact": "EventsHub",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x6dF5CB08d3f0193C768C8A01f42ac4424DC5086b",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind EventsHubProxy 0x6dF5CB08…. Does not embed ChainIdMixin — verified identical when built at 137 and 15001 — so no borChainId is needed."
+    }
+  ]
+}
