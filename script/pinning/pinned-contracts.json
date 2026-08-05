@@ -227,7 +227,7 @@
       "file": "contracts/child/proxifiedChildToken/ChildTokenProxy.sol",
       "artifact": "ChildTokenProxy",
       "solc": "0.5.17",
-      "note": "Immutable proxy shell (UpgradableProxy) for the LORD ERC721, manually mapped. Delegates to an upgradeable ChildERC721Proxified impl (0xd2Cb63…, unverified, deferred). All ChildTokenProxy instances share this runtime."
+      "note": "Immutable proxy shell (UpgradableProxy) for the LORD ERC721, manually mapped. Delegates to the upgradeable ChildERC721Proxified impl 0xd2Cb63…, tracked separately below. All ChildTokenProxy instances share this runtime."
     },
     {
       "chain": "137",
@@ -236,7 +236,31 @@
       "file": "contracts/child/proxifiedChildToken/ChildTokenProxy.sol",
       "artifact": "ChildTokenProxy",
       "solc": "0.5.17",
-      "note": "Immutable proxy shell for the current DAI child. Delegates to ChildERC20Proxified impl 0x53a0BB… (unverified, deferred)."
+      "note": "Immutable proxy shell for the current DAI child. Delegates to the ChildERC20Proxified impl 0x53a0BB…, tracked separately below. A superseded DAI shell 0x453b75d2… is also still on-chain but no longer registered (Registry.rootToChildToken(DAI) returns this address), so it is not tracked."
+    },
+    {
+      "chain": "137",
+      "name": "ChildERC20Proxified (DAI impl, current)",
+      "address": "0x53a0BBCcAc4945DDC09819b9686DdFC2295d2616",
+      "file": "contracts/child/proxifiedChildToken/ChildERC20Proxified.sol",
+      "artifact": "ChildERC20Proxified",
+      "solc": "0.5.17",
+      "borChainId": "137",
+      "upgradeable": true,
+      "unverified": true,
+      "note": "UPGRADEABLE impl behind ChildTokenProxy 0x84000b26… (the current DAI child). Unverified on Polygonscan; identified by bytecode. Deployed networkId()=0x89 → bor-chain-id 137. Same source as the deprecated impl 0xa45b96… — the only bytecode difference is the 3-byte ChainIdMixin constant, which is very likely why DAI was redeployed and remapped. Reproduces only with the pre-POL-rename EIP712 domain; see contracts/child/misc/EIP712.sol."
+    },
+    {
+      "chain": "137",
+      "name": "ChildERC721Proxified (LORD impl)",
+      "address": "0xd2Cb630Fd8e56c4a96B9cB3A03Fa6bF96ba4b7Ad",
+      "file": "contracts/child/proxifiedChildToken/ChildERC721Proxified.sol",
+      "artifact": "ChildERC721Proxified",
+      "solc": "0.5.17",
+      "borChainId": "15001",
+      "upgradeable": true,
+      "unverified": true,
+      "note": "UPGRADEABLE impl behind ChildTokenProxy 0x1FF58e66… (LORD). Unverified on Polygonscan; identified by bytecode. Deployed networkId()=0x3a99 → bor-chain-id 15001 — still the Mumbai-era value, unlike the current DAI impl which was moved to 137."
     },
     {
       "chain": "1",
