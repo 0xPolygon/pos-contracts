@@ -376,6 +376,20 @@
         "sig": "extensionCode()(address)"
       },
       "note": "UPGRADEABLE `extensionCode` that the StakeManager delegates to, deployed 2021-03-26 (truffle era), 7653 bytes. Reproduces from current source (built from a1e3e275). It predates the MATIC->POL migration, so it inherits StakeManagerStorageExtensionLegacy (the pre-POL prefix) rather than StakeManagerStorageExtension: because it declares public state, inheriting the two POL slots would emit two extra getters into its runtime and it would no longer reproduce."
+    },
+    {
+      "chain": "1",
+      "name": "EventsHub (impl)",
+      "address": "0x0672777617CAA1E778083a4f74eBC997262C9EdD",
+      "file": "contracts/staking/EventsHub.sol",
+      "artifact": "EventsHub",
+      "solc": "0.5.17",
+      "upgradeable": true,
+      "liveness": {
+        "target": "0x6dF5CB08d3f0193C768C8A01f42ac4424DC5086b",
+        "sig": "implementation()(address)"
+      },
+      "note": "UPGRADEABLE impl behind EventsHubProxy 0x6dF5CB08…. Does not embed ChainIdMixin — verified identical when built at 137 and 15001 — so no borChainId is needed."
     }
   ]
 }
