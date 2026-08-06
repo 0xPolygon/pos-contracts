@@ -9,6 +9,23 @@ import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
 import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 
+// DEPLOYMENT CONSTRAINT: a new version of this contract cannot be installed on the live system as
+// things stand. `extensionCode` has exactly one writer — StakeManager.initialize, behind the
+// `initializer` guard — so on the already-initialized proxy it is frozen at the extension deployed
+// in 2021 (0xef49Ea6996073752b6840CDA34773FFA78F78166). A new extension can be deployed but never
+// pointed at.
+//
+// The StakeManager upgrade itself is unaffected: it delegates only `migrateValidatorsData`,
+// `updateCommissionRate` and `updateCheckpointRewardParams`, all three of which the deployed 2021
+// extension already implements, so the StakeManager can ship on its own and keep using it.
+//
+// To actually replace this contract, one of:
+//   1. fold it into StakeManager and drop `extensionCode` altogether — the intended direction; or
+//   2. add a governance-gated reinitializer so `extensionCode` can be repointed at the new
+//      deployment. Without that, changes here are dead code on mainnet.
+//
+// Note that the storage layouts must stay compatible either way: this contract and StakeManager
+// share storage through the delegatecall.
 contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManagerStorageExtension {
     using SafeMath for uint256;
 
