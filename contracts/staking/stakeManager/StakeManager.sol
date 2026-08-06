@@ -828,7 +828,6 @@ contract StakeManager is
                     validatorsStake,
                     valDelegatedAmount,
                     _getEligibleValidatorReward(
-                        validatorId,
                         combinedStakePower,
                         currentRewardPerStake,
                         initialRewardPerStake
@@ -838,7 +837,6 @@ contract StakeManager is
                 _increaseValidatorReward(
                     validatorId,
                     _getEligibleValidatorReward(
-                        validatorId,
                         validatorsStake,
                         currentRewardPerStake,
                         initialRewardPerStake
@@ -857,7 +855,6 @@ contract StakeManager is
     }
 
     function _getEligibleValidatorReward(
-        uint256 validatorId,
         uint256 validatorStakePower,
         uint256 currentRewardPerStake,
         uint256 initialRewardPerStake
