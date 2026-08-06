@@ -8,7 +8,6 @@ import {ECVerify} from "../../common/lib/ECVerify.sol";
 import {Merkle} from "../../common/lib/Merkle.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {DelegateProxyForwarder} from "../../common/misc/DelegateProxyForwarder.sol";
-import {Registry} from "../../common/Registry.sol";
 import {IStakeManager} from "./IStakeManager.sol";
 import {IValidatorShare} from "../validatorShare/IValidatorShare.sol";
 import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
@@ -372,7 +371,7 @@ contract StakeManager is
     }
 
     function _transferFunds(uint256 validatorId, uint256 amount, address delegator, bool pol) internal returns (bool) {
-        require(validators[validatorId].contractAddress == msg.sender || Registry(registry).getSlashingManagerAddress() == msg.sender, "not allowed");
+        require(validators[validatorId].contractAddress == msg.sender, "not allowed");
         if (!pol) _convertPOLToMatic(amount);
         IERC20 token_ = _getToken(pol);
         return token_.transfer(delegator, amount);
@@ -649,34 +648,6 @@ contract StakeManager is
         uint256 totalReward = validators[validatorId].delegatorsReward.sub(INITIALIZED_AMOUNT);
         validators[validatorId].delegatorsReward = INITIALIZED_AMOUNT;
         return totalReward;
-    }
-
-    function slash(bytes calldata _slashingInfoList) external returns (uint256) {
-        revert();
-    }
-
-    function unjail(uint256 validatorId) public onlyStaker(validatorId) {
-        require(validators[validatorId].status == Status.Locked, "Not jailed");
-        require(validators[validatorId].deactivationEpoch == 0, "Already unstaking");
-
-        uint256 _currentEpoch = currentEpoch;
-        require(validators[validatorId].jailTime <= _currentEpoch, "Incomplete jail period");
-
-        uint256 amount = validators[validatorId].amount;
-        require(amount >= minDeposit);
-
-        address delegationContract = validators[validatorId].contractAddress;
-        if (delegationContract != address(0x0)) {
-            IValidatorShare(delegationContract).unlock();
-        }
-
-        // undo timeline so that validator is normal validator
-        updateTimeline(int256(amount.add(validators[validatorId].delegatedAmount)), 1, 0);
-
-        validators[validatorId].status = Status.Active;
-
-        address signer = validators[validatorId].signer;
-        logger.logUnjailed(validatorId, signer);
     }
 
     function updateTimeline(
