@@ -10,7 +10,6 @@ import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {DelegateProxyForwarder} from "../../common/misc/DelegateProxyForwarder.sol";
 import {IStakeManager} from "./IStakeManager.sol";
 import {IValidatorShare} from "../validatorShare/IValidatorShare.sol";
-import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 import {StakingInfo} from "../StakingInfo.sol";
 import {StakingNFT} from "./StakingNFT.sol";
 import {ValidatorShareFactory} from "../validatorShare/ValidatorShareFactory.sol";
