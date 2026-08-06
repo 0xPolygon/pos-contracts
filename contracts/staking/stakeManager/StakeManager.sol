@@ -464,7 +464,16 @@ contract StakeManager is
     function _stakeFor(address user, uint256 amount, uint256 heimdallFee, bool acceptDelegation, bytes memory signerPubkey, bool pol) internal {
         require(currentValidatorSetSize() < validatorThreshold, "no more slots");
         require(amount >= minDeposit, "not enough deposit");
-        _transferAndTopUp(user, msg.sender, heimdallFee, amount, pol);
+        // The heimdall fee has to be credited to the SIGNER, not to the NFT owner: the signer is the
+        // address that spends it on heimdall fees. `_transferAndTopUp` only uses this argument for
+        // `logTopUpFee`, which is what heimdall reads to credit the balance, so passing `user` here
+        // books every onboarding fee against the wrong account.
+        //
+        // ILLUSTRATIVE ONLY: deriving the signer here repeats the derivation in the private
+        // `_stakeFor` below (an extra keccak plus an SLOAD). It is deliberately ugly to show where
+        // the accounting goes wrong — the real fix is to resolve the signer once and thread it
+        // through, or to emit the event after the signer is known.
+        _transferAndTopUp(_getAndAssertSigner(signerPubkey), msg.sender, heimdallFee, amount, pol);
         _stakeFor(user, amount, acceptDelegation, signerPubkey);
     }
 
