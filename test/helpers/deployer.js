@@ -45,19 +45,13 @@ class Deployer {
         this.validatorShareFactory.address,
         this.governance.address,
         owner,
-        auctionImpl.address
+        auctionImpl.address,
+        this.polToken.address,
+        this.migration.address
       ])
     )
 
     this.stakeManager = contractFactories.StakeManager.attach(stakeManagerProxy.address)
-
-    // Mainnet ran the 9-argument initialize above and then migrated to POL through a separate
-    // governance call. Reproduce that sequence; the POL-aware initializer was never deployed.
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
-    )
-
     // TODO cannot alter functions like we used to here, replace usage with actual impl like below
     // this.buildStakeManagerObject(this.stakeManager, this.governance)
     await this.governance.update(
@@ -119,16 +113,12 @@ class Deployer {
         this.governance.address,
         wallets[0].getAddressString(),
         auctionImpl.address,
+        this.polToken.address,
+        this.migration.address,
       ])
     )
 
     this.stakeManager = contractFactories.StakeManagerTestable.attach(proxy.address)
-
-    // See deployStakeManager: mainnet initialized with 9 arguments, then migrated to POL separately.
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
-    )
 
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
