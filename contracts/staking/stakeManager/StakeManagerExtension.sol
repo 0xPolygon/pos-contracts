@@ -4,12 +4,12 @@ import {SafeMath} from "../../common/oz/math/SafeMath.sol";
 import {Registry} from "../../common/Registry.sol";
 import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
 import {StakeManagerStorage} from "./StakeManagerStorage.sol";
-import {StakeManagerStorageExtensionLegacy} from "./StakeManagerStorageExtensionLegacy.sol";
+import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
 import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 
-contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManagerStorageExtensionLegacy {
+contract StakeManagerExtension is StakeManagerStorage, Initializable, StakeManagerStorageExtension {
     using SafeMath for uint256;
 
     constructor() public GovernanceLockable(address(0x0)) {}
