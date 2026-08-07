@@ -11,14 +11,10 @@ import {DelegateProxyForwarder} from "../../common/misc/DelegateProxyForwarder.s
 import {IStakeManager} from "./IStakeManager.sol";
 import {IValidatorShare} from "../validatorShare/IValidatorShare.sol";
 import {StakingInfo} from "../StakingInfo.sol";
-import {StakingNFT} from "./StakingNFT.sol";
-import {ValidatorShareFactory} from "../validatorShare/ValidatorShareFactory.sol";
 import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
-import {IGovernance} from "../../common/governance/IGovernance.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {StakeManagerExtension} from "./StakeManagerExtension.sol";
-import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 
 contract StakeManager is
     StakeManagerStorage,
@@ -62,50 +58,13 @@ contract StakeManager is
         require(validators[validatorId].contractAddress == msg.sender, "Invalid contract address");
     }
 
-    constructor() public GovernanceLockable(address(0x0)) {
-        _disableInitializer();
-    }
+    constructor() public GovernanceLockable(address(0x0)) {}
 
-    function initialize(
-        address _registry,
-        address _rootchain,
-        address _tokenLegacy,
-        address _NFTContract,
-        address _stakingLogger,
-        address _validatorShareFactory,
-        address _governance,
-        address _owner,
-        address _extensionCode,
-        address _token,
-        address _migration
-    ) external initializer {
-        require(isContract(_extensionCode), "extension impl incorrect");
-        extensionCode = _extensionCode;
-        governance = IGovernance(_governance);
-        registry = _registry;
-        rootChain = _rootchain;
-        token = IERC20(_token);
-        tokenMatic = IERC20(_tokenLegacy);
-        migration = IPolygonMigration(_migration);
-        NFTContract = StakingNFT(_NFTContract);
-        logger = StakingInfo(_stakingLogger);
-        validatorShareFactory = ValidatorShareFactory(_validatorShareFactory);
-        _transferOwnership(_owner);
-
-        WITHDRAWAL_DELAY = (2**13); // unit: epoch
-        currentEpoch = 1;
-        dynasty = 886; // unit: epoch 50 days
-        CHECKPOINT_REWARD = 20188 * (10**18); // update via governance
-        minDeposit = (10**18); // in ERC20 token
-        minHeimdallFee = (10**18); // in ERC20 token
-        checkPointBlockInterval = 1024;
-        signerUpdateLimit = 100;
-
-        validatorThreshold = 7; //128
-        NFTCounter = 1;
-        proposerBonus = 10; // 10 % of total rewards
-        delegationEnabled = true;
-    }
+    // There is no initializer here on purpose. The proxy
+    // (0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908) was initialized in 2020
+    //
+    // `Initializable` stays in the inheritance list for storage layout only: `inited` occupies the
+    // low byte of the slot it shares with StakeManagerStorageExtension.eventsHub.
 
     function isOwner() public view returns (bool) {
         address _owner;

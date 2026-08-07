@@ -27,6 +27,7 @@ pragma solidity ^0.8.0;
 import {StakeManager} from "../../tools/interfaces/StakeManager.generated.sol";
 import {StakeManagerExtension} from "../../tools/interfaces/StakeManagerExtension.generated.sol";
 import {StakeManagerProxy} from "../../tools/interfaces/StakeManagerProxy.generated.sol";
+import {StakeManagerTestInit} from "../../tools/interfaces/StakeManagerTestInit.generated.sol";
 import {StakingNFT} from "../../tools/interfaces/StakingNFT.generated.sol";
 import {ValidatorShare} from "../../tools/interfaces/ValidatorShare.generated.sol";
 import {ValidatorShareFactory} from "../../tools/interfaces/ValidatorShareFactory.generated.sol";
@@ -110,11 +111,15 @@ contract DeploySystem is Script, ArtifactPath {
         updateRegistryContractMap("stakeManager", address(stakeManager));
         stakeManagerExtension = deployCode(StakeManagerExtensionPath);
 
+        // No shipped StakeManager implementation carries an initializer — the live proxy was
+        // initialized in 2020 and everything since is installed over that state. Bring the proxy up
+        // on the test-only implementation that still has one, then upgrade it away, so everything
+        // below runs against the implementation that actually deploys.
         StakeManagerProxy(payable(stakeManagerProxy))
             .updateAndCall(
-                stakeManagerImpl,
+                deployCode(StakeManagerTestInitPath),
                 abi.encodeCall(
-                    StakeManager.initialize,
+                    StakeManagerTestInit.initialize,
                     (
                         address(registry),
                         address(rootChain),
@@ -130,6 +135,8 @@ contract DeploySystem is Script, ArtifactPath {
                     )
                 )
             );
+
+        StakeManagerProxy(payable(stakeManagerProxy)).updateImplementation(stakeManagerImpl);
 
         StakingNFT(stakingNFT).transferOwnership(address(stakeManager));
 

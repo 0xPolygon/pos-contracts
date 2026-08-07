@@ -5,6 +5,7 @@ abstract contract ArtifactPath {
     string StakeManagerPath = "out/StakeManager.sol/StakeManager.json";
     string StakeManagerExtensionPath = "out/StakeManagerExtension.sol/StakeManagerExtension.json";
     string StakeManagerProxyPath = "out/StakeManagerProxy.sol/StakeManagerProxy.json";
+    string StakeManagerTestInitPath = "out/StakeManagerTestInit.sol/StakeManagerTestInit.json";
     string StakingNFTPath = "out/StakingNFT.sol/StakingNFT.json";
     string ValidatorSharePath = "out/ValidatorShare.sol/ValidatorShare.json";
     string ValidatorShareFactoryPath = "out/ValidatorShareFactory.sol/ValidatorShareFactory.json";
