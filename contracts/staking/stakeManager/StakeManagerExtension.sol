@@ -10,10 +10,10 @@ import {EventsHub} from "../EventsHub.sol";
 import {ValidatorShare} from "../validatorShare/ValidatorShare.sol";
 
 // DEPLOYMENT CONSTRAINT: a new version of this contract cannot be installed on the live system as
-// things stand. `extensionCode` has exactly one writer — StakeManager.initialize, behind the
-// `initializer` guard — so on the already-initialized proxy it is frozen at the extension deployed
-// in 2021 (0xef49Ea6996073752b6840CDA34773FFA78F78166). A new extension can be deployed but never
-// pointed at.
+// things stand. `extensionCode` has no writer at all in the shipped StakeManager — the genesis
+// initializer that used to set it is gone — so on the live proxy it is frozen at the extension
+// deployed in 2021 (0xef49Ea6996073752b6840CDA34773FFA78F78166). A new extension can be deployed
+// but never pointed at.
 //
 // The StakeManager upgrade itself is unaffected: it delegates only `migrateValidatorsData`,
 // `updateCommissionRate` and `updateCheckpointRewardParams`, all three of which the deployed 2021
