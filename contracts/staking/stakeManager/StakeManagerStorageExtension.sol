@@ -11,7 +11,13 @@ contract StakeManagerStorageExtension {
     // Initializable.inited, so dropping it would shift every variable below.
     address internal eventsHub_deprecated;
     uint256 public rewardPerStake;
-    address public extensionCode;
+    // DEPRECATED. Held the StakeManagerExtension that `migrateValidatorsData`,
+    // `updateCommissionRate` and `updateCheckpointRewardParams` were delegated to. That contract has
+    // been folded into StakeManager, so nothing reads or writes this slot any more; it is kept only
+    // to hold the layout and is deliberately left populated rather than cleared. On the live proxy it
+    // still points at the extension deployed in 2021,
+    // 0xef49Ea6996073752b6840CDA34773FFA78F78166.
+    address internal extensionCode_deprecated;
     address[] public signers;
 
     uint256 internal constant CHK_REWARD_PRECISION = 100;
