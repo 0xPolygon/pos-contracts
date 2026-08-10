@@ -223,16 +223,6 @@ contract StakeManager is
     }
 
     /**
-        @dev One-off cleanup for deployments upgraded from the extension-based implementation.
-        The extension has been folded into this contract, so `extensionCode` is no longer read
-        by anything and its stale value is cleared here. Idempotent; a no-op on fresh deployments,
-        where `initialize` never sets it in the first place.
-     */
-    function reinitialize() external onlyOwner {
-        extensionCode = address(0x0);
-    }
-
-    /**
         @dev Users must exit before this update or all funds may get lost
      */
     function updateValidatorContractAddress(uint256 validatorId, address newContractAddress) public onlyGovernance {
