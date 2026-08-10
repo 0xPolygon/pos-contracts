@@ -4,7 +4,12 @@ import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 import {IERC20} from "../../common/oz/token/ERC20/IERC20.sol";
 
 contract StakeManagerStorageExtension {
-    address public eventsHub;
+    // DEPRECATED. The EventsHub is resolved from the Registry on every use — see
+    // StakeManager.eventsHub. Nothing reads or writes this slot any more; it is kept only to hold
+    // the layout. It cannot be removed or reordered: on the live proxy it still holds the address
+    // written in 2021, and it packs into the low bytes of the slot it shares with
+    // Initializable.inited, so dropping it would shift every variable below.
+    address internal eventsHub_deprecated;
     uint256 public rewardPerStake;
     address public extensionCode;
     address[] public signers;

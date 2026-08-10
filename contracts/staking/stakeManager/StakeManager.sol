@@ -14,6 +14,7 @@ import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
 import {Initializable} from "../../common/mixin/Initializable.sol";
 import {EventsHub} from "../EventsHub.sol";
+import {Registry} from "../../common/Registry.sol";
 
 contract StakeManager is
     StakeManagerStorage,
@@ -79,6 +80,19 @@ contract StakeManager is
 
     function getRegistry() public view returns (address) {
         return registry;
+    }
+
+    /**
+        @dev Resolves the EventsHub from the Registry rather than from the deprecated
+        `eventsHub_deprecated` storage slot, so that governance can repoint it through the Registry
+        without a StakeManager upgrade.
+     */
+    function eventsHub() public view returns (address) {
+        return address(_getEventsHub());
+    }
+
+    function _getEventsHub() internal view returns (EventsHub) {
+        return EventsHub(Registry(registry).contractMap(keccak256("eventsHub")));
     }
 
     /**
@@ -199,7 +213,7 @@ contract StakeManager is
         maxRewardedCheckpoints = _maxRewardedCheckpoints;
         checkpointRewardDelta = _checkpointRewardDelta;
 
-        EventsHub(eventsHub).logRewardParams(_rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta);
+        _getEventsHub().logRewardParams(_rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta);
     }
 
     // New implementation upgrade
@@ -570,7 +584,7 @@ contract StakeManager is
         );
 
         require(newCommissionRate <= MAX_COMMISION_RATE, "Incorrect value");
-        EventsHub(eventsHub).logUpdateCommissionRate(validatorId, newCommissionRate, validators[validatorId].commissionRate);
+        _getEventsHub().logUpdateCommissionRate(validatorId, newCommissionRate, validators[validatorId].commissionRate);
         validators[validatorId].commissionRate = newCommissionRate;
         validators[validatorId].lastCommissionUpdate = _epoch;
     }

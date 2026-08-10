@@ -35,7 +35,6 @@ class Deployer {
         args.validatorShareFactory,
         args.governance,
         args.owner,
-        args.eventsHub,
         args.polToken,
         args.migration
       ])
@@ -69,7 +68,6 @@ class Deployer {
       validatorShareFactory: this.validatorShareFactory.address,
       governance: this.governance.address,
       owner,
-      eventsHub: this.eventsHub.address,
       polToken: this.polToken.address,
       migration: this.migration.address
     })
@@ -132,7 +130,6 @@ class Deployer {
       validatorShareFactory: this.validatorShareFactory.address,
       governance: this.governance.address,
       owner: wallets[0].getAddressString(),
-      eventsHub: this.eventsHub.address,
       polToken: this.polToken.address,
       migration: this.migration.address
     })
