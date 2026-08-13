@@ -361,21 +361,7 @@
         "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
         "sig": "implementation()(address)"
       },
-      "note": "UPGRADEABLE impl behind StakeManagerProxy, deployed 2024-10-30, 24212 bytes. Reproduces from current source: main was reverted to this deployed version (built from 5b7e40e5) so the repo mirrors the chain. It was deployed with the 9-argument `initialize` and migrated to POL afterwards by a separate governance `initializePOL` call — the POL-aware initializer was never deployed, so the deploy/test harnesses run that two-step sequence. Delegates to the StakeManagerExtension below, which predates the two POL storage slots; see StakeManagerStorageExtensionLegacy.sol."
-    },
-    {
-      "chain": "1",
-      "name": "StakeManagerExtension (impl)",
-      "address": "0xef49Ea6996073752b6840CDA34773FFA78F78166",
-      "file": "contracts/staking/stakeManager/StakeManagerExtension.sol",
-      "artifact": "StakeManagerExtension",
-      "solc": "0.5.17",
-      "upgradeable": true,
-      "liveness": {
-        "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
-        "sig": "extensionCode()(address)"
-      },
-      "note": "UPGRADEABLE `extensionCode` that the StakeManager delegates to, deployed 2021-03-26 (truffle era), 7653 bytes. Reproduces from current source (built from a1e3e275). It predates the MATIC->POL migration, so it inherits StakeManagerStorageExtensionLegacy (the pre-POL prefix) rather than StakeManagerStorageExtension: because it declares public state, inheriting the two POL slots would emit two extra getters into its runtime and it would no longer reproduce."
+      "note": "UPGRADEABLE impl behind StakeManagerProxy, deployed 2024-10-30, 24212 bytes. Reproduces from current source: main was reverted to this deployed version (built from 5b7e40e5) so the repo mirrors the chain. It was deployed with the 9-argument `initialize` and migrated to POL afterwards by a separate governance `initializePOL` call — the POL-aware initializer was never deployed, so the deploy/test harnesses run that two-step sequence. Delegated `migrateValidatorsData`, `updateCommissionRate` and `updateCheckpointRewardParams` to a separate `extensionCode` contract at 0xef49Ea6996073752b6840CDA34773FFA78F78166 (deployed 2021-03-26, 7653 bytes). That extension is no longer pinned: it was folded into StakeManager, and the source needed to reproduce its bytecode \u2014 the pre-POL StakeManagerStorageExtensionLegacy prefix \u2014 was removed in f284817a. The next StakeManager implementation does not delegate to it at all, so it drops out of the live system on upgrade."
     },
     {
       "chain": "1",

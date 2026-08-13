@@ -42,12 +42,9 @@ contract StakeManagerTestInit is StakeManager {
         address _validatorShareFactory,
         address _governance,
         address _owner,
-        address _extensionCode,
         address _token,
         address _migration
     ) external initializer {
-        require(isContract(_extensionCode), "extension impl incorrect");
-        extensionCode = _extensionCode;
         governance = IGovernance(_governance);
         registry = _registry;
         rootChain = _rootchain;
