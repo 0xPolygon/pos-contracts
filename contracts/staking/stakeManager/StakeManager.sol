@@ -1013,11 +1013,11 @@ contract StakeManager is
         if (!pol && destination == address(this)) _convertMaticToPOL(amount);
     }
 
-    function _transferAndTopUp(address user, address from, uint256 fee, uint256 additionalAmount, bool pol) private {
+    function _transferAndTopUp(address feeBeneficiary, address from, uint256 fee, uint256 additionalAmount, bool pol) private {
         require(fee >= minHeimdallFee, "fee too small");
         _transferTokenFrom(from, address(this), fee.add(additionalAmount), pol);
         totalHeimdallFee = totalHeimdallFee.add(fee);
-        logger.logTopUpFee(user, fee);
+        logger.logTopUpFee(feeBeneficiary, fee);
     }
 
     function _insertSigner(address newSigner) internal {
