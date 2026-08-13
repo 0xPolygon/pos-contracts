@@ -10,6 +10,7 @@ export const GovernanceProxy = await ethers.getContractFactory('GovernanceProxy'
 export const StakeManager = await ethers.getContractFactory('StakeManager')
 export const StakeManagerExtension = await ethers.getContractFactory('StakeManagerExtension')
 export const StakeManagerTest = await ethers.getContractFactory('StakeManagerTest')
+export const StakeManagerTestInit = await ethers.getContractFactory('StakeManagerTestInit')
 export const StakeManagerProxy = await ethers.getContractFactory('StakeManagerProxy')
 export const DrainStakeManager = await ethers.getContractFactory('DrainStakeManager')
 
