@@ -97,6 +97,10 @@ describe('StakeManager', function (accounts) {
         StakeManagerTestInit.attach(this.stakeManager.address).initialize(...new Array(10).fill(ZeroAddr)),
         'already inited'
       )
+
+      // Point the proxy back at the implementation under test so any test that later shares this
+      // deployment does not run against StakeManagerTestInit.
+      await proxy.updateImplementation(deployedImpl)
     })
   })
 
