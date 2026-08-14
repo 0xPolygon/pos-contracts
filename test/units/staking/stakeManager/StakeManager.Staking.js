@@ -345,6 +345,58 @@ describe('stake', function () {
       await expectRevert(doStake(wallets[3], { signer: AliceWallet.getPublicKeyString() }).call(this), 'Invalid signer')
     })
   })
+
+  describe('stake with separate signer', function () {
+    const owner = wallets[1]
+    const signerWallet = wallets[2]
+    const stakeAmount = web3.utils.toWei('150')
+    const fee = web3.utils.toWei('5')
+
+    before(async function () {
+      await freshDeploy.call(this)
+    })
+
+    before('Approve', async function () {
+      const stakeTokenOwner = this.stakeToken.connect(this.stakeToken.provider.getSigner(owner.getAddressString()))
+      await stakeTokenOwner.approve(this.stakeManager.address, new BN(stakeAmount).add(new BN(fee)).toString())
+    })
+
+    it('must stake', async function () {
+      const stakeManagerOwner = this.stakeManager.connect(
+        this.stakeManager.provider.getSigner(owner.getAddressString())
+      )
+      this.receipt = await (
+        await stakeManagerOwner.stakeFor(
+          owner.getChecksumAddressString(),
+          stakeAmount,
+          fee,
+          false,
+          signerWallet.getPublicKeyString()
+        )
+      ).wait()
+    })
+
+    it('must credit the heimdall fee to the signer', async function () {
+      utils.assertInTransaction(this.receipt, StakingInfo, 'TopUpFee', {
+        user: signerWallet.getChecksumAddressString(),
+        fee: fee
+      })
+    })
+
+    it('must emit Staked with the signer', async function () {
+      utils.assertInTransaction(this.receipt, StakingInfo, 'Staked', {
+        signerPubkey: signerWallet.getPublicKeyString(),
+        signer: signerWallet.getChecksumAddressString(),
+        amount: stakeAmount
+      })
+    })
+
+    it('must mint the NFT to the owner', async function () {
+      const validatorId = await this.stakeManager.getValidatorId(owner.getChecksumAddressString())
+      const nftOwner = await this.stakeManager.ownerOf(validatorId)
+      assert.equal(nftOwner.toLowerCase(), owner.getAddressString().toLowerCase())
+    })
+  })
 })
 
 describe('unstake', function () {

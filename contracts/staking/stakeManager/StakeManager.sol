@@ -351,8 +351,12 @@ contract StakeManager is
             );
         }
 
-        _transferAndTopUp(user, msg.sender, heimdallFee, amount, pol);
-        _stakeFor(user, amount, acceptDelegation, signerPubkey);
+        // The heimdall fee has to be credited to the SIGNER, not to the NFT owner: the signer is
+        // the address that spends it on heimdall tx fees, and `_transferAndTopUp` uses this argument
+        // only for `logTopUpFee`, which is what heimdall reads to credit the balance.
+        address signer = _getAndAssertSigner(signerPubkey);
+        _transferAndTopUp(signer, msg.sender, heimdallFee, amount, pol);
+        _stakeFor(user, amount, acceptDelegation, signerPubkey, signer);
     }
 
     function unstakeClaim(uint256 validatorId) public onlyStaker(validatorId) {
@@ -911,9 +915,9 @@ contract StakeManager is
         address user,
         uint256 amount,
         bool acceptDelegation,
-        bytes memory signerPubkey
+        bytes memory signerPubkey,
+        address signer
     ) internal returns (uint256) {
-        address signer = _getAndAssertSigner(signerPubkey);
         uint256 _currentEpoch = currentEpoch;
         uint256 validatorId = NFTCounter;
         StakingInfo _logger = logger;
@@ -1012,11 +1016,11 @@ contract StakeManager is
         if (!pol && destination == address(this)) _convertMaticToPOL(amount);
     }
 
-    function _transferAndTopUp(address user, address from, uint256 fee, uint256 additionalAmount, bool pol) private {
+    function _transferAndTopUp(address feeBeneficiary, address from, uint256 fee, uint256 additionalAmount, bool pol) private {
         require(fee >= minHeimdallFee, "fee too small");
         _transferTokenFrom(from, address(this), fee.add(additionalAmount), pol);
         totalHeimdallFee = totalHeimdallFee.add(fee);
-        logger.logTopUpFee(user, fee);
+        logger.logTopUpFee(feeBeneficiary, fee);
     }
 
     function _insertSigner(address newSigner) internal {
