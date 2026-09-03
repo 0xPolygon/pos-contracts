@@ -474,7 +474,7 @@ contract StakeManager is
         validators[validatorId].delegatedAmount = validators[validatorId].delegatedAmount.add(amount);
     }
 
-    function decreaseValidatorDelegatedAmount(uint256 validatorId, uint256 amount) public onlyDelegation(validatorId) {
+    function decreaseValidatorDelegatedAmount(uint256 validatorId, uint256 amount) private {
         validators[validatorId].delegatedAmount = validators[validatorId].delegatedAmount.sub(amount);
     }
 
