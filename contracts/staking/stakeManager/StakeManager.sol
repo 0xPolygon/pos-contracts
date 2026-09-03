@@ -181,10 +181,6 @@ contract StakeManager is
         _unstake(validatorId, currentEpoch, true);
     }
 
-    function setCurrentEpoch(uint256 _currentEpoch) external onlyGovernance {
-        currentEpoch = _currentEpoch;
-    }
-
     /**
      * @dev Change the number of validators required to allow a passed header root
      */

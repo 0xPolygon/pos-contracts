@@ -445,9 +445,7 @@ describe('unstake', function () {
     const AliceWallet = wallets[1]
     const others = [wallets[2], wallets[3]]
 
-    before(async function() {
-      await freshDeploy.call(this)
-    })
+    before('Fresh deploy', prepareForTest(2, 3))
     before(doStake(AliceWallet))
     before(doStake(others[0]))
     before(doStake(others[1]))
@@ -471,12 +469,8 @@ describe('unstake', function () {
       ), 'Update failed')
     })
     it('Alice cannot be forceUnstaked after claiming', async function () {
-      const endEpoch = this.lastSyncedEpoch.add(await this.stakeManager.WITHDRAWAL_DELAY())
       // mock for i ... range(delay) checkPoint()
-      await this.governance.update(
-        this.stakeManager.address,
-        this.stakeManager.interface.encodeFunctionData('setCurrentEpoch', [endEpoch + 1])
-      )
+      await this.stakeManager.advanceEpoch((await this.stakeManager.WITHDRAWAL_DELAY()).add(1))
 
       await this.stakeManager
         .connect(this.stakeManager.provider.getSigner(AliceWallet.getAddressString()))
