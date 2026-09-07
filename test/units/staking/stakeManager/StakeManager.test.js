@@ -1,5 +1,11 @@
 import utils from 'ethereumjs-util'
-import { ValidatorShare, StakingInfo, TestToken, StakeManager } from '../../../helpers/artifacts.js'
+import {
+  ValidatorShare,
+  StakingInfo,
+  TestToken,
+  StakeManagerProxy,
+  StakeManagerTestInit
+} from '../../../helpers/artifacts.js'
 import { buildTreeFee } from '../../../helpers/proofs.js'
 import {
   checkPoint,
@@ -75,28 +81,22 @@ describe('StakeManager', function (accounts) {
   }) 
   
   describe('initialize', function () {
-    describe('when called directly on implementation', function () {
-      before(freshDeploy)
-      before(async function () {
-        this.stakeManagerImpl = await StakeManager.attach(this.stakeManager.address)
-      })
+    before(freshDeploy)
 
-      it('reverts', async function () {
-        await expectRevert(
-          this.stakeManagerImpl.initialize(
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr,
-            ZeroAddr
-          ),
-          'already inited'
-        )
-      })
+    it('reverts when re-run on the initialized proxy', async function () {
+      // No shipped implementation carries a genesis initializer, so point the proxy back at the
+      // one that does — StakeManagerTestInit, which the deployment upgraded away from — and check
+      // the guard holds against the storage the proxy is already carrying.
+      const proxy = StakeManagerProxy.attach(this.stakeManager.address)
+      const deployedImpl = await proxy.implementation()
+      const initImpl = await StakeManagerTestInit.deploy()
+
+      await proxy.updateImplementation(initImpl.address)
+
+      await expectRevert(
+        StakeManagerTestInit.attach(this.stakeManager.address).initialize(...new Array(11).fill(ZeroAddr)),
+        'already inited'
+      )
     })
   })
 
