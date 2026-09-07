@@ -347,7 +347,7 @@ contract StakeManager is
         address validatorPass = Registry(registry).contractMap(VALIDATOR_PASS_KEY);
         if (validatorPass != address(0)) {
             require(
-                IValidatorPass(validatorPass).consumePass(user, signerPubkey, amount, msg.sender),
+                IValidatorPass(validatorPass).consumePass(user, signerPubkey, acceptDelegation, amount, msg.sender),
                 "no valid pass"
             );
         }
