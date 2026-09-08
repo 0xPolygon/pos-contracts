@@ -47,8 +47,11 @@ import {StateSender} from "../../tools/interfaces/StateSender.generated.sol";
 import {ArtifactPath} from "./ArtifactPath.sol";
 
 import "forge-std/Script.sol";
+import {stdStorage, StdStorage} from "forge-std/StdStorage.sol";
 
 contract DeploySystem is Script, ArtifactPath {
+    using stdStorage for StdStorage;
+
     Governance governance;
     StakeManager stakeManager;
     Registry registry;
@@ -294,6 +297,12 @@ contract DeploySystem is Script, ArtifactPath {
 
     function getValidatorShareContract(uint8 _validatorId) public view returns (ValidatorShare) {
         return ValidatorShare(stakeManager.getValidatorContract(_validatorId));
+    }
+
+    /// @dev Fast-forward the StakeManager's epoch counter by writing it directly. Tests that only
+    ///      need the withdrawal delay behind them shouldn't have to mine a checkpoint per epoch.
+    function setStakeManagerEpoch(uint256 _epoch) public {
+        stdstore.target(address(stakeManager)).sig(StakeManager.currentEpoch.selector).checked_write(_epoch);
     }
 
     function progressCheckpointWithRewards(Validator[] memory _validators, address _proposer) public returns (uint256) {

@@ -181,10 +181,6 @@ contract StakeManager is
         _unstake(validatorId, currentEpoch, true);
     }
 
-    function setCurrentEpoch(uint256 _currentEpoch) external onlyGovernance {
-        currentEpoch = _currentEpoch;
-    }
-
     /**
      * @dev Change the number of validators required to allow a passed header root
      */
@@ -478,7 +474,7 @@ contract StakeManager is
         validators[validatorId].delegatedAmount = validators[validatorId].delegatedAmount.add(amount);
     }
 
-    function decreaseValidatorDelegatedAmount(uint256 validatorId, uint256 amount) public onlyDelegation(validatorId) {
+    function decreaseValidatorDelegatedAmount(uint256 validatorId, uint256 amount) private {
         validators[validatorId].delegatedAmount = validators[validatorId].delegatedAmount.sub(amount);
     }
 
