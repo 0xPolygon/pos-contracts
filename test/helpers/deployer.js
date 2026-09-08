@@ -35,7 +35,6 @@ class Deployer {
         args.validatorShareFactory,
         args.governance,
         args.owner,
-        args.extension,
         args.polToken,
         args.migration
       ])
@@ -60,7 +59,6 @@ class Deployer {
 
     let stakeManagerProxy = await contractFactories.StakeManagerProxy.deploy(utils.ZeroAddress)
     let stakeManager = await contractFactories.StakeManagerTest.deploy()
-    const auctionImpl = await contractFactories.StakeManagerExtension.deploy()
     await this.initStakeManagerProxy(stakeManagerProxy, stakeManager.address, {
       registry: this.registry.address,
       rootChain: this.rootChain.address,
@@ -70,7 +68,6 @@ class Deployer {
       validatorShareFactory: this.validatorShareFactory.address,
       governance: this.governance.address,
       owner,
-      extension: auctionImpl.address,
       polToken: this.polToken.address,
       migration: this.migration.address
     })
@@ -124,7 +121,6 @@ class Deployer {
     let stakeManager = await contractFactories.StakeManagerTestable.deploy()
     const rootChainOwner = wallets[1]
     let proxy = await contractFactories.StakeManagerProxy.deploy(utils.ZeroAddress)
-    const auctionImpl = await contractFactories.StakeManagerExtension.deploy()
     await this.initStakeManagerProxy(proxy, stakeManager.address, {
       registry: this.registry.address,
       rootChain: rootChainOwner.getAddressString(),
@@ -134,7 +130,6 @@ class Deployer {
       validatorShareFactory: this.validatorShareFactory.address,
       governance: this.governance.address,
       owner: wallets[0].getAddressString(),
-      extension: auctionImpl.address,
       polToken: this.polToken.address,
       migration: this.migration.address
     })
