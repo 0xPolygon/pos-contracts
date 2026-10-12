@@ -22,8 +22,10 @@ import {StakeManager} from "../staking/stakeManager/StakeManager.sol";
 // Everything after step 3 exercises the implementation under test, which never carries an
 // initializer of its own.
 //
-// This body is now the only description of the genesis state. It must keep matching what the live
-// proxy's storage holds, not whatever a test finds convenient.
+// This body is now the only description of the genesis state. It must keep matching what the
+// genesis initializer wrote, not whatever a test finds convenient. Note that slots governance
+// changed after genesis (e.g. currentEpoch, auctionPeriod, replacementCoolDown) hold their 2020
+// values here, not what the live proxy reads today.
 //
 // The initializer machinery lives entirely here: the constructor burns `inited` on this
 // implementation, so it can only be initialized through a proxy. StakeManager's own constructor
@@ -42,12 +44,9 @@ contract StakeManagerTestInit is StakeManager {
         address _validatorShareFactory,
         address _governance,
         address _owner,
-        address _extensionCode,
         address _token,
         address _migration
     ) external initializer {
-        require(isContract(_extensionCode), "extension impl incorrect");
-        extensionCode = _extensionCode;
         governance = IGovernance(_governance);
         registry = _registry;
         rootChain = _rootchain;
@@ -70,6 +69,7 @@ contract StakeManagerTestInit is StakeManager {
 
         validatorThreshold = 7; //128
         NFTCounter = 1;
+        auctionPeriod = (2**13) / 4; // 1 week in epochs
         proposerBonus = 10; // 10 % of total rewards
         delegationEnabled = true;
     }
