@@ -11,10 +11,15 @@ interface IValidatorPass {
     ///         free to ignore what their policy does not need.
     /// @param validator Prospective validator (the `user` of `stakeFor`).
     /// @param signerPubkey Consensus key supplied to `stakeFor`.
+    /// @param acceptDelegation Whether the entrant is opening a delegation contract on entry.
     /// @param amount Stake amount the entrant is joining with (excludes the heimdall fee).
     /// @param funder `msg.sender` of the stake call — the account paying (third-party entry allowed).
     /// @return consumed True if a valid pass was consumed (entry permitted); false otherwise.
-    function consumePass(address validator, bytes calldata signerPubkey, uint256 amount, address funder)
-        external
-        returns (bool consumed);
+    function consumePass(
+        address validator,
+        bytes calldata signerPubkey,
+        bool acceptDelegation,
+        uint256 amount,
+        address funder
+    ) external returns (bool consumed);
 }
