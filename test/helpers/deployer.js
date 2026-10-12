@@ -17,6 +17,33 @@ class Deployer {
     return contractFactories.EventsHub.attach(proxy.address)
   }
 
+  // No StakeManager implementation carries an initializer any more — the live proxy was
+  // initialized in 2020 and everything since is installed over that state. To get a fresh proxy
+  // there, bring it up on StakeManagerTestInit (the test-only subclass that still has the genesis
+  // initializer), initialize it, then upgrade the proxy to the implementation under test.
+  async initStakeManagerProxy(proxy, implementation, args) {
+    const initImpl = await contractFactories.StakeManagerTestInit.deploy()
+
+    await proxy.updateAndCall(
+      initImpl.address,
+      initImpl.interface.encodeFunctionData('initialize', [
+        args.registry,
+        args.rootChain,
+        args.stakeToken,
+        args.stakingNFT,
+        args.stakingInfo,
+        args.validatorShareFactory,
+        args.governance,
+        args.owner,
+        args.extension,
+        args.polToken,
+        args.migration
+      ])
+    )
+
+    await proxy.updateImplementation(implementation)
+  }
+
   async freshDeploy(owner) {
     this.governance = await this.deployGovernance()
     this.registry = await contractFactories.Registry.deploy(this.governance.address)
@@ -34,30 +61,21 @@ class Deployer {
     let stakeManagerProxy = await contractFactories.StakeManagerProxy.deploy(utils.ZeroAddress)
     let stakeManager = await contractFactories.StakeManagerTest.deploy()
     const auctionImpl = await contractFactories.StakeManagerExtension.deploy()
-    await stakeManagerProxy.updateAndCall(
-      stakeManager.address,
-      stakeManager.interface.encodeFunctionData('initialize', [
-        this.registry.address,
-        this.rootChain.address,
-        this.stakeToken.address,
-        this.stakingNFT.address,
-        this.stakingInfo.address,
-        this.validatorShareFactory.address,
-        this.governance.address,
-        owner,
-        auctionImpl.address
-      ])
-    )
+    await this.initStakeManagerProxy(stakeManagerProxy, stakeManager.address, {
+      registry: this.registry.address,
+      rootChain: this.rootChain.address,
+      stakeToken: this.stakeToken.address,
+      stakingNFT: this.stakingNFT.address,
+      stakingInfo: this.stakingInfo.address,
+      validatorShareFactory: this.validatorShareFactory.address,
+      governance: this.governance.address,
+      owner,
+      extension: auctionImpl.address,
+      polToken: this.polToken.address,
+      migration: this.migration.address
+    })
 
     this.stakeManager = contractFactories.StakeManager.attach(stakeManagerProxy.address)
-
-    // Mainnet ran the 9-argument initialize above and then migrated to POL through a separate
-    // governance call. Reproduce that sequence; the POL-aware initializer was never deployed.
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
-    )
-
     // TODO cannot alter functions like we used to here, replace usage with actual impl like below
     // this.buildStakeManagerObject(this.stakeManager, this.governance)
     await this.governance.update(
@@ -107,28 +125,21 @@ class Deployer {
     const rootChainOwner = wallets[1]
     let proxy = await contractFactories.StakeManagerProxy.deploy(utils.ZeroAddress)
     const auctionImpl = await contractFactories.StakeManagerExtension.deploy()
-    await proxy.updateAndCall(
-      stakeManager.address,
-      stakeManager.interface.encodeFunctionData('initialize', [
-        this.registry.address,
-        rootChainOwner.getAddressString(),
-        this.stakeToken.address,
-        this.stakingNFT.address,
-        this.stakingInfo.address,
-        this.validatorShareFactory.address,
-        this.governance.address,
-        wallets[0].getAddressString(),
-        auctionImpl.address,
-      ])
-    )
+    await this.initStakeManagerProxy(proxy, stakeManager.address, {
+      registry: this.registry.address,
+      rootChain: rootChainOwner.getAddressString(),
+      stakeToken: this.stakeToken.address,
+      stakingNFT: this.stakingNFT.address,
+      stakingInfo: this.stakingInfo.address,
+      validatorShareFactory: this.validatorShareFactory.address,
+      governance: this.governance.address,
+      owner: wallets[0].getAddressString(),
+      extension: auctionImpl.address,
+      polToken: this.polToken.address,
+      migration: this.migration.address
+    })
 
     this.stakeManager = contractFactories.StakeManagerTestable.attach(proxy.address)
-
-    // See deployStakeManager: mainnet initialized with 9 arguments, then migrated to POL separately.
-    await this.governance.update(
-      this.stakeManager.address,
-      this.stakeManager.interface.encodeFunctionData('initializePOL', [this.polToken.address, this.migration.address])
-    )
 
     await this.stakingNFT.transferOwnership(this.stakeManager.address)
     await this.updateContractMap(ethUtils.keccak256('stakeManager'), this.stakeManager.address)
