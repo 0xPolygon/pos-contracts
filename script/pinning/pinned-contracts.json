@@ -352,7 +352,7 @@
     {
       "chain": "1",
       "name": "StakeManager (impl)",
-      "address": "0x3AD88467E40399dc6Ae10427f8B0842348d9076c",
+      "address": "0x428D1067b33B2bCa826cF66344dbEcBd5AA6506e",
       "file": "contracts/staking/stakeManager/StakeManager.sol",
       "artifact": "StakeManager",
       "solc": "0.5.17",
@@ -361,7 +361,7 @@
         "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
         "sig": "implementation()(address)"
       },
-      "note": "UPGRADEABLE impl behind StakeManagerProxy, deployed 2024-10-30, 24212 bytes. Reproduces from current source: main was reverted to this deployed version (built from 5b7e40e5) so the repo mirrors the chain. It was deployed with the 9-argument `initialize` and migrated to POL afterwards by a separate governance `initializePOL` call — the POL-aware initializer was never deployed, so the deploy/test harnesses run that two-step sequence. Delegated `migrateValidatorsData`, `updateCommissionRate` and `updateCheckpointRewardParams` to a separate `extensionCode` contract at 0xef49Ea6996073752b6840CDA34773FFA78F78166 (deployed 2021-03-26, 7653 bytes). That extension is no longer pinned: it was folded into StakeManager, and the source needed to reproduce its bytecode \u2014 the pre-POL StakeManagerStorageExtensionLegacy prefix \u2014 was removed in f284817a. The next StakeManager implementation does not delegate to it at all, so it drops out of the live system on upgrade."
+      "note": "UPGRADEABLE impl behind StakeManagerProxy. Validator-permissioning build (part 1), deployed 2026-09-17 via the ERC-2470 factory at zero salt, 21475 bytes stripped / 21527 with metadata. Reproduces from current source. Adds the optional permissioned-entry hook: `stakeFor` consumes a single-use ValidatorPass when Registry.contractMap(keccak256(\"validatorPass\")) is set, and entry stays permissionless while it is zero. The pass module itself lives in 0xPolygon/pos-contracts-v2 and is tracked there, not here. Supersedes 0x3AD88467E40399dc6Ae10427f8B0842348d9076c (deployed 2024-10-30, 24212 bytes stripped), which this source no longer reproduces because part 1 removed the auction, slashing and unjail entrypoints. Still delegates `migrateValidatorsData`, `updateCommissionRate` and `updateCheckpointRewardParams` to the 2021 extensionCode at 0xef49Ea6996073752b6840CDA34773FFA78F78166; see the excluded entry below."
     },
     {
       "chain": "1",
