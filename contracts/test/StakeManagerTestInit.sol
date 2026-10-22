@@ -27,7 +27,7 @@ import {StakeManager} from "../staking/stakeManager/StakeManager.sol";
 // changed after genesis (e.g. currentEpoch, auctionPeriod, replacementCoolDown) hold their 2020
 // values here, not what the live proxy reads today.
 //
-// The initializer machinery lives entirely here: the constructor burns `inited` on this
+// The initializer machinery lives entirely here: the constructor burns `initializedVersion` on this
 // implementation, so it can only be initialized through a proxy. StakeManager's own constructor
 // supplies GovernanceLockable's argument, so this one does not repeat it.
 contract StakeManagerTestInit is StakeManager {

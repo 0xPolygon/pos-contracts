@@ -239,10 +239,10 @@ contract DeploySystem is Script, ArtifactPath {
         fundAddr(_from, _amount);
 
         vm.prank(_from);
-        polToken.approve(address(validatorShare), _amount);
+        polToken.approve(address(stakeManager), _amount);
 
         vm.prank(_from);
-        validatorShare.buyVoucher(_amount, _amount);
+        validatorShare.buyVoucherPOL(_amount, 0);
     }
 
     function buyVouchersPOLPermit(uint8 _validatorId, address _from, uint256 _pk, uint256 _amount) public {
@@ -283,7 +283,7 @@ contract DeploySystem is Script, ArtifactPath {
         ValidatorShare validatorShare = getValidatorShareContract(_validatorId);
 
         vm.prank(_from);
-        validatorShare.sellVoucher_newPOL(_amount, 0);
+        validatorShare.sellVoucher_newPOL(_amount, type(uint256).max);
 
         return validatorShare.unbondNonces(_from);
     }

@@ -12,14 +12,14 @@ import {IValidatorShare} from "../validatorShare/IValidatorShare.sol";
 import {StakingInfo} from "../StakingInfo.sol";
 import {StakeManagerStorage} from "./StakeManagerStorage.sol";
 import {StakeManagerStorageExtension} from "./StakeManagerStorageExtension.sol";
-import {Initializable} from "../../common/mixin/Initializable.sol";
+import {InitializableVersioned} from "../../common/mixin/InitializableVersioned.sol";
 import {EventsHub} from "../EventsHub.sol";
 import {Registry} from "../../common/Registry.sol";
 import {IValidatorPass} from "./IValidatorPass.sol";
 
 contract StakeManager is
     StakeManagerStorage,
-    Initializable,
+    InitializableVersioned,
     IStakeManager,
     StakeManagerStorageExtension
 {
@@ -63,11 +63,9 @@ contract StakeManager is
 
     constructor() public GovernanceLockable(address(0x0)) {}
 
-    // There is no initializer here on purpose. The proxy
-    // (0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908) was initialized in 2020
-    //
-    // `Initializable` stays in the inheritance list for storage layout only: `inited` occupies the
-    // low byte of the slot it shares with StakeManagerStorageExtension.eventsHub.
+    // There is no initializer here on purpose: the proxy
+    // (0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908) was initialized in 2020, which left the version at 1.
+    // One-off migrations run once each under `reinitializer(n)`.
 
     function isOwner() public view returns (bool) {
         address _owner;
@@ -214,6 +212,28 @@ contract StakeManager is
         checkpointRewardDelta = _checkpointRewardDelta;
 
         _getEventsHub().logRewardParams(_rewardDecreasePerCheckpoint, _maxRewardedCheckpoints, _checkpointRewardDelta);
+    }
+
+    /**
+        @dev Recomputes `validatorState.amount` from the per-validator records, fixing drift from the
+        pre-2022 double subtraction (48f22883). Reverts unless it rises by exactly `expectedIncrease`
+        and the counted validators match `validatorState.stakerCount`.
+     */
+    function reinitializeValidatorState(uint256 expectedIncrease) external onlyGovernance reinitializer(2) {
+        uint256 _currentEpoch = currentEpoch;
+        uint256 total;
+        uint256 count;
+        for (uint256 i = 1; i < NFTCounter; ++i) {
+            Validator storage v = validators[i];
+            // active, or in its notice period (its removal is still queued in validatorStateChanges)
+            if (v.status == Status.Active && (v.deactivationEpoch == 0 || v.deactivationEpoch > _currentEpoch)) {
+                total = total.add(v.amount).add(v.delegatedAmount);
+                count++;
+            }
+        }
+        require(count == validatorState.stakerCount, "unexpected staker count");
+        require(total.sub(validatorState.amount) == expectedIncrease, "unexpected increase");
+        validatorState.amount = total;
     }
 
     // New implementation upgrade

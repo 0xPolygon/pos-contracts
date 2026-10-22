@@ -1,0 +1,10 @@
+{
+    "1": {
+        "stakeManagerProxy": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
+        "rootChainProxy": "0x86E4Dc95c7FBdBf52e33D563BbDB00823894C287"
+    },
+    "11155111": {
+        "stakeManagerProxy": "0x4AE8f648B1Ec892B6cc68C89cc088583964d08bE",
+        "rootChainProxy": "0xbd07D7E1E93c8d4b2a261327F3C28a8EA7167209"
+    }
+}
