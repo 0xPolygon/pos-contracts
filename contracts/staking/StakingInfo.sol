@@ -377,8 +377,8 @@ contract StakingInfo is Ownable {
         emit ConfirmAuction(newValidatorId, oldValidatorId, amount);
     }
 
-    function logTopUpFee(address user, uint256 fee) public onlyStakeManager {
-        emit TopUpFee(user, fee);
+    function logTopUpFee(address feeBeneficiary, uint256 fee) public onlyStakeManager {
+        emit TopUpFee(feeBeneficiary, fee);
     }
 
     function logClaimFee(address user, uint256 fee) public onlyStakeManager {

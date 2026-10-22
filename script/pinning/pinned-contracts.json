@@ -365,20 +365,6 @@
     },
     {
       "chain": "1",
-      "name": "StakeManagerExtension (impl)",
-      "address": "0xef49Ea6996073752b6840CDA34773FFA78F78166",
-      "file": "contracts/staking/stakeManager/StakeManagerExtensionLegacy.sol",
-      "artifact": "StakeManagerExtensionLegacy",
-      "solc": "0.5.17",
-      "upgradeable": true,
-      "liveness": {
-        "target": "0x5e3Ef299fDDf15eAa0432E6e66473ace8c13D908",
-        "sig": "extensionCode()(address)"
-      },
-      "note": "UPGRADEABLE `extensionCode` the StakeManager delegatecalls into, deployed 2021-03-26 (truffle era), 7653 bytes. Part 1 still delegates to it and cannot repoint it (no writer for `extensionCode` in the shipped StakeManager), so it stays live and must stay verified. Part 1 rewrote the working StakeManagerExtension.sol — removing `startAuction`/`confirmAuctionBid` (6aff1a0a) and the pre-POL storage prefix (f284817a) — so that file no longer reproduces this deployment. It is therefore pinned against a FROZEN copy, StakeManagerExtensionLegacy.sol, in the same spirit as GovernableLegacy / LockableLegacy / DepositManagerStorageLegacy. The frozen copy needs IStakeManagerLegacy.sol and StakeManagerStorageExtensionLegacy.sol alongside it; all three are build-only and must not be edited. Reproduces at logic level (MATCH_NO_META: the metadata differs only because the contract was renamed). Part 2 folds the extension into StakeManager and stops delegating, at which point this entry and all three frozen files can be deleted."
-    },
-    {
-      "chain": "1",
       "name": "EventsHub (impl)",
       "address": "0x0672777617CAA1E778083a4f74eBC997262C9EdD",
       "file": "contracts/staking/EventsHub.sol",
