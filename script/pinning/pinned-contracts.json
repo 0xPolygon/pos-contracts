@@ -159,7 +159,7 @@
         "target": "0x33a02E6cC863D393d6Bf231B697b82F6e499cA71",
         "sig": "erc20Predicate()(address)"
       },
-      "note": "ADDRESS CORRECTED: Registry.erc20Predicate() returns 0x4EeA1780..., a NEWER deployment with the log limit removed. The older 0x626fb210... predicate is no longer registered. Embeds ChainIdMixin (via IPredicate); deployed networkId()=0x89 → bor-chain-id 137 (unlike the original 2020 ERC721 predicate, which is 15001). Matches repo logic exactly once built with 137."
+      "note": "ADDRESS CORRECTED: Registry.erc20Predicate() returns 0x4EeA1780..., a NEWER deployment with the log limit removed. The older 0x626fb210bf50e201ED62cA2705c16DE2a53DC966 predicate is still registered too (Registry.predicates(0x626fb210bf50e201ED62cA2705c16DE2a53DC966) == 1, ERC20; last PredicateAdded in tx 0x6c19967589a68c1d32c3b8d846bb92ce3c19eba1ebd3b4c026e2f29f93f68e3e, never removed since), so WithdrawManager and DepositManager, which only check Registry.predicates(msg.sender), still authorize it; it is not pinned here because its pre-log-limit-removal code no longer matches the repo source. Embeds ChainIdMixin (via IPredicate); deployed networkId()=0x89 → bor-chain-id 137 (unlike the original 2020 ERC721 predicate, which is 15001). Matches repo logic exactly once built with 137."
     },
     {
       "chain": "1",
