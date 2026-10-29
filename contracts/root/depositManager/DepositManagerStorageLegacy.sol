@@ -10,9 +10,9 @@ import {DepositManagerHeader} from "./DepositManagerStorage.sol";
 
 // Frozen, pre-refactor DepositManager storage, reproducing the storage layout of
 // the immutable DepositManagerProxy byte-for-byte. It inherits the pre-refactor
-// `LockableLegacy is GovernableLegacy`; the modern DepositManagerStorage inherits
-// GovernanceLockable and is used by the live implementation, so both must coexist.
-// Used ONLY by DepositManagerProxy. Do not edit.
+// `LockableLegacy is GovernableLegacy`, which puts `locked` at slot 2 byte 20.
+// Used by DepositManagerProxy and by the DepositManager implementation, so both
+// declare the same layout. Do not edit.
 contract DepositManagerStorageLegacy is ProxyStorage, LockableLegacy, DepositManagerHeader {
     Registry public registry;
     RootChain public rootChain;

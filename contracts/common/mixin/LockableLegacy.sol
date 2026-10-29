@@ -11,7 +11,8 @@ import {GovernableLegacy} from "../governance/GovernableLegacy.sol";
 // That split is used by the currently-deployed implementations, so it must stay.
 // The immutable DepositManagerProxy (deployed BEFORE the split) uses this legacy
 // copy via DepositManagerStorageLegacy so a normal `forge build` reproduces its
-// on-chain bytecode and storage layout. Do not edit.
+// on-chain bytecode and storage layout. The DepositManager implementation uses it
+// too, to match the proxy's layout. Do not edit.
 contract LockableLegacy is GovernableLegacy {
     bool public locked;
 
