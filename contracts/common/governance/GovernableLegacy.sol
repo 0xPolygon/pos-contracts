@@ -8,9 +8,10 @@ import {IGovernance} from "./IGovernance.sol";
 // The modern Governable (governance/Governable.sol) extracts the check into a
 // private _assertGovernance() helper (commit 49b39d8a). That refactor is used by
 // the currently-deployed implementations (StakeManager/WithdrawManager/
-// DepositManager/RootChain), so it must stay. Immutable contracts deployed
-// BEFORE the refactor (Registry) inherit this legacy copy instead, so a normal
-// `forge build` reproduces their on-chain bytecode. Behaviour is identical to the
+// RootChain), so it must stay. Immutable contracts deployed BEFORE the refactor
+// (Registry, DepositManagerProxy) inherit this legacy copy instead, so a normal
+// `forge build` reproduces their on-chain bytecode. The DepositManager
+// implementation inherits it through DepositManagerStorageLegacy. Behaviour is identical to the
 // modern version; only the bytecode shape differs. Do not edit.
 contract GovernableLegacy {
     IGovernance public governance;

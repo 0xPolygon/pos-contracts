@@ -9,13 +9,16 @@ import {SafeERC20} from "../../common/oz/token/ERC20/SafeERC20.sol";
 import {Registry} from "../../common/Registry.sol";
 import {WETH} from "../../common/tokens/WETH.sol";
 import {IDepositManager} from "./IDepositManager.sol";
-import {DepositManagerStorage} from "./DepositManagerStorage.sol";
+import {DepositManagerStorageLegacy} from "./DepositManagerStorageLegacy.sol";
 import {StateSender} from "../stateSyncer/StateSender.sol";
-import {GovernanceLockable} from "../../common/mixin/GovernanceLockable.sol";
+import {LockableLegacy} from "../../common/mixin/LockableLegacy.sol";
 import {RootChain} from "../RootChain.sol";
 import {IPolygonMigration} from "../../common/misc/IPolygonMigration.sol";
 
-contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder {
+// Inherits the legacy storage so that `locked` sits where the immutable DepositManagerProxy
+// stores it (slot 2, byte 20). The proxy handles `lock()`/`unlock()` itself and never
+// forwards them, so `onlyWhenUnlocked` must read the proxy's slot.
+contract DepositManager is DepositManagerStorageLegacy, IDepositManager, ERC721Holder {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -29,7 +32,7 @@ contract DepositManager is DepositManagerStorage, IDepositManager, ERC721Holder 
         _;
     }
 
-    constructor() public GovernanceLockable(address(0x0)) {}
+    constructor() public LockableLegacy(address(0x0)) {}
 
     // deposit ETH by sending to this contract
     function() external payable {
