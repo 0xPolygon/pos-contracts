@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 abstract contract ArtifactPath {
     string StakeManagerPath = "out/StakeManager.sol/StakeManager.json";
-    string StakeManagerExtensionPath = "out/StakeManagerExtension.sol/StakeManagerExtension.json";
     string StakeManagerProxyPath = "out/StakeManagerProxy.sol/StakeManagerProxy.json";
     string StakeManagerTestInitPath = "out/StakeManagerTestInit.sol/StakeManagerTestInit.json";
     string StakingNFTPath = "out/StakingNFT.sol/StakingNFT.json";

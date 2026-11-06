@@ -371,8 +371,7 @@ contract ValidatorShareTest is Test, DeploySystem {
 
         uint256 currentEpoch = stakeManager.currentEpoch();
         uint256 withdrawEpoch = currentEpoch + stakeManager.withdrawalDelay() + 100;
-        vm.prank(address(governance));
-        stakeManager.setCurrentEpoch(withdrawEpoch);
+        setStakeManagerEpoch(withdrawEpoch);
         vm.prank(StakingNFT(stakeManager.NFTContract()).ownerOf(defaultValidatorId));
         stakeManager.unstakeClaimPOL(defaultValidatorId);
 
@@ -996,8 +995,7 @@ contract ValidatorShareTest is Test, DeploySystem {
 
         uint256 currentEpoch = stakeManager.currentEpoch();
         uint256 withdrawEpoch = currentEpoch + stakeManager.withdrawalDelay() + 100;
-        vm.prank(address(governance));
-        stakeManager.setCurrentEpoch(withdrawEpoch);
+        setStakeManagerEpoch(withdrawEpoch);
 
         vm.expectEmit(true, true, true, true, transferedToken);
         emit ERC20Permit.Transfer(address(stakeManager), _user, _amount);
@@ -1151,8 +1149,7 @@ contract ValidatorShareTest is Test, DeploySystem {
         assertEq(shares, initialShares + aliceRewards, "Unbond shares should match initial shares plus rewards");
 
         uint256 delay = stakeManager.withdrawalDelay();
-        vm.prank(stakeManager.governance());
-        stakeManager.setCurrentEpoch(withdrawEpoch + delay + 1);
+        setStakeManagerEpoch(withdrawEpoch + delay + 1);
 
         vm.prank(alice);
         defaultValidator.unstakeClaimTokens_newPOL(unboundNonce);
